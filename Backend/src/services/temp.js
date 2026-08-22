@@ -1,5 +1,5 @@
-﻿require("dotenv").config();
-const { generateInterviewReport } = require("./src/services/ai.service");
+require("dotenv").config();
+const invokeGeminiAi = require("./ai.service");
 
 const selfDescription = `
 I am a passionate Full-Stack JavaScript Developer with over 2 years of experience building modern, responsive, and scalable web applications. I have a strong foundation in the MERN stack (MongoDB, Express.js, React, Node.js) along with clean code practices, RESTful API design, and database modeling. I am a quick learner who thrives in agile team environments and enjoys solving complex technical challenges.
@@ -67,19 +67,39 @@ module.exports = {
   jobDescription,
 };
 
+
 // If run directly: node temp.js
 if (require.main === module) {
-  console.log("Generating Interview Report with Gemini AI...\n");
-  generateInterviewReport({ selfDescription, resume, jobDescription })
-    .then((report) => {
-      console.log("=== INTERVIEW REPORT GENERATED ===");
-      console.log("Match Score:", report.matchScore);
-      console.log("\nSkill Gaps:", JSON.stringify(report.skillGaps, null, 2));
-      console.log("\nTechnical Questions:", JSON.stringify(report.technicalQuestions, null, 2));
-      console.log("\nBehavioral Questions:", JSON.stringify(report.behavioralQuestions, null, 2));
-      console.log("\nPreparation Plan:", JSON.stringify(report.preparationPlan, null, 2));
+  const prompt = `
+You are an expert technical interviewer and career coach.
+Analyze the following candidate's profile against the given Job Description:
+
+---
+JOB DESCRIPTION:
+${jobDescription}
+
+---
+RESUME:
+${resume}
+
+---
+SELF DESCRIPTION:
+${selfDescription}
+
+---
+Provide a brief assessment including:
+1. Match Score (0 - 100)
+2. Key Strengths
+3. Skill Gaps
+4. 3 Sample Technical & Behavioral Interview Questions
+`;
+
+  console.log("Invoking Gemini AI with test input...\n");
+  invokeGeminiAi(prompt)
+    .then(() => {
+      console.log("\nSuccessfully generated AI response!");
     })
     .catch((err) => {
-      console.error("Error generating interview report:", err);
+      console.error("Error invoking AI:", err);
     });
 }
