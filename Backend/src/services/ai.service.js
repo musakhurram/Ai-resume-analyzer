@@ -1,92 +1,191 @@
-﻿const { GoogleGenAI } = require("@google/genai")
-const { z } = require("zod")
+﻿const { GoogleGenAI } = require("@google/genai");
+const { z } = require("zod");
 
 const ai = new GoogleGenAI({
-    apiKey: process.env.GOOGLE_GENAI_API_KEY
-})
+  apiKey: process.env.GOOGLE_GENAI_API_KEY,
+});
 
 const interviewReportSchema = z.object({
-    matchScore: z.number().describe("A score between 0 and 100 indicating how well the candidate matches the job description"),
-    technicalQuestions: z.array(z.object({
-        question: z.string().describe("The technical question that can be asked in the interview"),
-        intention: z.string().describe("The intention of the interviewer behind asking this question"),
-        answer: z.string().describe("How to answer, what key concepts and points to cover")
-    })).describe("List of technical interview questions tailored to the candidate and role"),
-    behavioralQuestions: z.array(z.object({
-        question: z.string().describe("The behavioral question that can be asked in the interview"),
-        intention: z.string().describe("The intention of the interviewer behind asking this question"),
-        answer: z.string().describe("How to answer using the STAR method (Situation, Task, Action, Result) and key points to cover")
-    })).describe("List of behavioral interview questions"),
-    skillGaps: z.array(z.object({
+  matchScore: z
+    .number()
+    .describe(
+      "A score between 0 and 100 indicating how well the candidate matches the job description",
+    ),
+  technicalQuestions: z
+    .array(
+      z.object({
+        question: z
+          .string()
+          .describe(
+            "The technical question that can be asked in the interview",
+          ),
+        intention: z
+          .string()
+          .describe(
+            "The intention of the interviewer behind asking this question",
+          ),
+        answer: z
+          .string()
+          .describe("How to answer, what key concepts and points to cover"),
+      }),
+    )
+    .describe(
+      "List of technical interview questions tailored to the candidate and role",
+    ),
+  behavioralQuestions: z
+    .array(
+      z.object({
+        question: z
+          .string()
+          .describe(
+            "The behavioral question that can be asked in the interview",
+          ),
+        intention: z
+          .string()
+          .describe(
+            "The intention of the interviewer behind asking this question",
+          ),
+        answer: z
+          .string()
+          .describe(
+            "How to answer using the STAR method (Situation, Task, Action, Result) and key points to cover",
+          ),
+      }),
+    )
+    .describe("List of behavioral interview questions"),
+  skillGaps: z
+    .array(
+      z.object({
         skill: z.string().describe("The missing or weak skill identified"),
-        severity: z.enum(["low", "medium", "high"]).describe("Severity level of the skill gap")
-    })).describe("Identified gaps between candidate qualifications and job requirements"),
-    preparationPlan: z.array(z.object({
-        day: z.number().describe("Day number of the study/preparation plan (e.g. 1, 2, 3...)"),
-        focus: z.string().describe("The primary focus area or topic for this day"),
-        tasks: z.string().describe("Detailed practice tasks, resources, or topics to study")
-    })).describe("Step-by-step day-wise interview preparation roadmap")
-})
+        severity: z
+          .enum(["low", "medium", "high"])
+          .describe("Severity level of the skill gap"),
+      }),
+    )
+    .describe(
+      "Identified gaps between candidate qualifications and job requirements",
+    ),
+  preparationPlan: z
+    .array(
+      z.object({
+        day: z
+          .number()
+          .describe(
+            "Day number of the study/preparation plan (e.g. 1, 2, 3...)",
+          ),
+        focus: z
+          .string()
+          .describe("The primary focus area or topic for this day"),
+        tasks: z
+          .string()
+          .describe("Detailed practice tasks, resources, or topics to study"),
+      }),
+    )
+    .describe("Step-by-step day-wise interview preparation roadmap"),
+});
 
 // Clean JSON schema for Gemini's structured output (zodToJsonSchema output
 // includes $schema/additionalProperties that Gemini's parser sometimes rejects).
 const interviewReportJsonSchema = {
-    type: "object",
-    properties: {
-        matchScore: { type: "number", description: "A score between 0 and 100 indicating how well the candidate matches the job description" },
-        technicalQuestions: {
-            type: "array",
-            items: {
-                type: "object",
-                properties: {
-                    question: { type: "string" },
-                    intention: { type: "string" },
-                    answer: { type: "string" }
-                },
-                required: ["question", "intention", "answer"]
-            }
-        },
-        behavioralQuestions: {
-            type: "array",
-            items: {
-                type: "object",
-                properties: {
-                    question: { type: "string" },
-                    intention: { type: "string" },
-                    answer: { type: "string" }
-                },
-                required: ["question", "intention", "answer"]
-            }
-        },
-        skillGaps: {
-            type: "array",
-            items: {
-                type: "object",
-                properties: {
-                    skill: { type: "string" },
-                    severity: { type: "string", enum: ["low", "medium", "high"] }
-                },
-                required: ["skill", "severity"]
-            }
-        },
-        preparationPlan: {
-            type: "array",
-            items: {
-                type: "object",
-                properties: {
-                    day: { type: "number" },
-                    focus: { type: "string" },
-                    tasks: { type: "string" }
-                },
-                required: ["day", "focus", "tasks"]
-            }
-        }
+  type: "object",
+  properties: {
+    matchScore: {
+      type: "number",
+      description:
+        "A score between 0 and 100 indicating how well the candidate matches the job description",
     },
-    required: ["matchScore", "technicalQuestions", "behavioralQuestions", "skillGaps", "preparationPlan"]
+    technicalQuestions: {
+      type: "array",
+      items: {
+        type: "object",
+        properties: {
+          question: { type: "string" },
+          intention: { type: "string" },
+          answer: { type: "string" },
+        },
+        required: ["question", "intention", "answer"],
+      },
+    },
+    behavioralQuestions: {
+      type: "array",
+      items: {
+        type: "object",
+        properties: {
+          question: { type: "string" },
+          intention: { type: "string" },
+          answer: { type: "string" },
+        },
+        required: ["question", "intention", "answer"],
+      },
+    },
+    skillGaps: {
+      type: "array",
+      items: {
+        type: "object",
+        properties: {
+          skill: { type: "string" },
+          severity: { type: "string", enum: ["low", "medium", "high"] },
+        },
+        required: ["skill", "severity"],
+      },
+    },
+    preparationPlan: {
+      type: "array",
+      items: {
+        type: "object",
+        properties: {
+          day: { type: "number" },
+          focus: { type: "string" },
+          tasks: { type: "string" },
+        },
+        required: ["day", "focus", "tasks"],
+      },
+    },
+  },
+  required: [
+    "matchScore",
+    "technicalQuestions",
+    "behavioralQuestions",
+    "skillGaps",
+    "preparationPlan",
+  ],
+};
+
+// Smallest, most economical stable model with the most generous free-tier
+// rate limits. Older lite models (gemini-2.5-flash-lite) are deprecated for
+// new users; the API recommends gemini-3.5-flash-lite. Preview models like
+// gemini-3.6-flash have far stricter free-tier limits and cause 429s.
+const MODEL_NAME = "gemini-3.5-flash-lite";
+
+// Retry transient failures (429 rate limit, 5xx) with exponential backoff
+// so a single rate-limit hit doesn't fail the whole request.
+async function generateContentWithRetry(payload, maxRetries = 3) {
+  let lastError;
+  for (let attempt = 0; attempt <= maxRetries; attempt++) {
+    try {
+      return await ai.models.generateContent(payload);
+    } catch (err) {
+      lastError = err;
+      const status = err.status || err.code;
+      const retryable =
+        status === 429 || (status >= 500 && status < 600) || !status;
+      if (!retryable || attempt === maxRetries) break;
+      const delayMs = 1000 * Math.pow(2, attempt) + Math.random() * 500;
+      console.warn(
+        `Gemini request failed (${status}), retrying in ${Math.round(delayMs)}ms (attempt ${attempt + 1}/${maxRetries})`,
+      );
+      await new Promise((resolve) => setTimeout(resolve, delayMs));
+    }
+  }
+  throw lastError;
 }
 
-async function generateInterviewReport({ resume, selfDescription, jobDescription }) {
-    const prompt = `
+async function generateInterviewReport({
+  resume,
+  selfDescription,
+  jobDescription,
+}) {
+  const prompt = `
 You are an expert technical interviewer and hiring manager.
 Analyze the candidate's profile against the given Job Description and generate a comprehensive interview preparation report.
 
@@ -111,33 +210,36 @@ Provide a structured assessment including:
 5. A day-wise preparation plan to help the candidate succeed in the interview
 `;
 
-    // Try structured output first; if Gemini's schema validation fails,
-    // retry once without the schema and parse the JSON from the text.
-    try {
-        const response = await ai.models.generateContent({
-            model: "gemini-3.6-flash",
-            contents: prompt,
-            config: {
-                responseMimeType: "application/json",
-                responseSchema: interviewReportJsonSchema
-            }
-        })
-        return JSON.parse(response.text)
-    } catch (err) {
-        console.warn("Structured output failed, retrying without schema:", err.message)
-        const response = await ai.models.generateContent({
-            model: "gemini-3.6-flash",
-            contents: prompt,
-            config: {
-                responseMimeType: "application/json"
-            }
-        })
-        return JSON.parse(response.text)
-    }
+  // Try structured output first; if Gemini's schema validation fails,
+  // retry once without the schema and parse the JSON from the text.
+  try {
+    const response = await generateContentWithRetry({
+      model: MODEL_NAME,
+      contents: prompt,
+      config: {
+        responseMimeType: "application/json",
+        responseSchema: interviewReportJsonSchema,
+      },
+    });
+    return JSON.parse(response.text);
+  } catch (err) {
+    console.warn(
+      "Structured output failed, retrying without schema:",
+      err.message,
+    );
+    const response = await generateContentWithRetry({
+      model: MODEL_NAME,
+      contents: prompt,
+      config: {
+        responseMimeType: "application/json",
+      },
+    });
+    return JSON.parse(response.text);
+  }
 }
 
 module.exports = {
-    generateInterviewReport,
-    interviewReportSchema
-}
-module.exports.generateInterviewReport = generateInterviewReport
+  generateInterviewReport,
+  interviewReportSchema,
+};
+module.exports.generateInterviewReport = generateInterviewReport;

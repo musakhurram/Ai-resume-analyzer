@@ -10,7 +10,7 @@
     justify-content: space-between;
     padding: var(--space-7) var(--space-7);
     background: var(--accent-strong);
-    color: #f5f6f3;
+    color: #ffffff;
     overflow: hidden;
   }
 
@@ -24,12 +24,14 @@
   &__mark {
     width: 28px;
     height: 28px;
+    flex-shrink: 0;
   }
 
   &__wordmark {
     font-family: var(--font-display);
-    font-size: 1.15rem;
+    font-size: 1.05rem;
     font-weight: 600;
+    letter-spacing: -0.01em;
   }
 
   &__gauge {
@@ -42,19 +44,19 @@
 
     &-track {
       fill: none;
-      stroke: rgba(245, 246, 243, 0.14);
+      stroke: rgba(255, 255, 255, 0.14);
       stroke-width: 1;
     }
 
     &-arc {
       fill: none;
-      stroke: rgba(245, 246, 243, 0.65);
+      stroke: rgba(255, 255, 255, 0.65);
       stroke-width: 1.5;
       stroke-dasharray: 340 490;
     }
 
     &-tick {
-      stroke: rgba(245, 246, 243, 0.3);
+      stroke: rgba(255, 255, 255, 0.3);
       stroke-width: 1.5;
     }
   }
@@ -74,12 +76,12 @@
   &__sub {
     font-size: 0.9375rem;
     line-height: 1.6;
-    color: rgba(245, 246, 243, 0.75);
+    color: rgba(255, 255, 255, 0.75);
   }
 
   &__foot {
     z-index: 1;
-    color: rgba(245, 246, 243, 0.55);
+    color: rgba(255, 255, 255, 0.55);
   }
 
   &__panel {

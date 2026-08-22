@@ -5,6 +5,7 @@ import FileDropzone from "../../../shared/components/FileDropzone";
 import Button from "../../../shared/components/Button";
 import Callout from "../../../shared/components/Callout";
 import { submitReview } from "../services/interview.api";
+import { rememberResumeName } from "../../../shared/utils/resumeLabel";
 import "./NewReview.scss";
 
 const NewReview = () => {
@@ -36,6 +37,7 @@ const NewReview = () => {
       const data = await submitReview({ resume, selfDescription, jobDescription });
       const id = data?.interviewReport?._id;
       if (id) {
+        rememberResumeName(id, resume.name);
         navigate(`/reports/${id}`);
       } else {
         navigate("/reports");
@@ -57,9 +59,9 @@ const NewReview = () => {
         <p className="eyebrow">New submission</p>
         <h1>Open a review</h1>
         <p className="page-header__desc">
-          Attach a resume and the job you're targeting. Docket checks the fit, then
-          builds a question set and prep plan around what the interviewer is likely
-          to probe.
+          Attach a resume and the job you're targeting. Resume Analyzer checks the
+          fit, then builds a question set and prep plan around what the interviewer
+          is likely to probe.
         </p>
       </header>
 

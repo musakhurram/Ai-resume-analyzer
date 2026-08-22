@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
 
-const STORAGE_KEY = "resumeforge-theme";
+const STORAGE_KEY = "resume-analyzer-theme";
 
 function getInitialTheme() {
   if (typeof window === "undefined") return "light";

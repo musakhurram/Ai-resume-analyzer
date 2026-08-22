@@ -1,4 +1,4 @@
-﻿const pdfParse = require("pdf-parse");
+const { PDFParse } = require("pdf-parse");
 const { generateInterviewReport } = require("../services/ai.service");
 const interviewReportModel = require("../models/interviewReport.model");
 
@@ -19,14 +19,12 @@ async function generateInterviewReportController(req, res) {
 
     let resumeContent = "";
     if (req.file && req.file.buffer) {
-      if (typeof pdfParse === "function") {
-        const parsed = await pdfParse(req.file.buffer);
-        resumeContent = parsed.text || "";
-      } else if (pdfParse && pdfParse.PDFParse) {
-        const parser = new pdfParse.PDFParse({ data: req.file.buffer });
-        await parser.load();
+      const parser = new PDFParse({ data: req.file.buffer });
+      try {
         const parsed = await parser.getText();
-        resumeContent = parsed.text || parsed || "";
+        resumeContent = parsed.text || "";
+      } finally {
+        await parser.destroy();
       }
     } else if (req.body.resume) {
       resumeContent = req.body.resume;

@@ -7,6 +7,8 @@ import QuestionAccordion from "../components/QuestionAccordion";
 import PrepTimeline from "../components/PrepTimeline";
 import PageLoader from "../../../shared/components/PageLoader";
 import Callout from "../../../shared/components/Callout";
+import { parseJobMeta, stripMarkdown } from "../../../shared/utils/jobText";
+import { recallResumeName } from "../../../shared/utils/resumeLabel";
 import "./ReportDetail.scss";
 
 function formatDate(value) {
@@ -59,6 +61,9 @@ const ReportDetail = () => {
     return <PageLoader label="Opening report" />;
   }
 
+  const { title, company } = parseJobMeta(report.jobDescription);
+  const resumeName = recallResumeName(report._id);
+
   return (
     <div className="report-detail">
       <Link to="/reports" className="report-detail__back">
@@ -68,9 +73,15 @@ const ReportDetail = () => {
       <header className="report-detail__header">
         <ScoreDial score={report.matchScore} />
         <div className="report-detail__summary">
-          <p className="eyebrow">Filed {formatDate(report.createdAt)}</p>
-          <h1>Match review</h1>
-          <p className="report-detail__job">{report.jobDescription}</p>
+          <p className="eyebrow">
+            Filed {formatDate(report.createdAt)}
+            {resumeName && <> · {resumeName}</>}
+          </p>
+          <h1>
+            {title}
+            {company && <span className="report-detail__company"> at {company}</span>}
+          </h1>
+          <p className="report-detail__job">{stripMarkdown(report.jobDescription)}</p>
         </div>
       </header>
 

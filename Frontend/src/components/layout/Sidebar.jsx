@@ -39,7 +39,7 @@ const Sidebar = ({ open, onNavigate }) => {
           </svg>
         </span>
         <div>
-          <p className="sidebar__wordmark">Docket</p>
+          <p className="sidebar__wordmark">Resume Analyzer</p>
           <p className="sidebar__tagline eyebrow">Interview readiness</p>
         </div>
       </div>
@@ -62,7 +62,7 @@ const Sidebar = ({ open, onNavigate }) => {
       </nav>
 
       <div className="sidebar__footer">
-        <p className="eyebrow">Docket · Resume audit tool</p>
+        <p className="eyebrow">Resume Analyzer · Interview prep</p>
       </div>
     </aside>
   );

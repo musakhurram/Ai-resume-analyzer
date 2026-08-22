@@ -15,7 +15,7 @@ const AuthLayout = ({ eyebrow, title, children }) => {
               <path d="M8 14h12M8 9.5h12M8 18.5h7" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" />
             </svg>
           </span>
-          <span className="auth-layout__wordmark">Docket</span>
+          <span className="auth-layout__wordmark">Resume Analyzer</span>
         </div>
 
         <div className="auth-layout__gauge" aria-hidden="true">
@@ -41,8 +41,8 @@ const AuthLayout = ({ eyebrow, title, children }) => {
             Know where you stand before the interview does.
           </p>
           <p className="auth-layout__sub">
-            Docket compares your resume against the job, then builds the questions
-            and prep plan that follow from it.
+            Resume Analyzer compares your resume against the job, then builds the
+            questions and prep plan that follow from it.
           </p>
         </div>
 

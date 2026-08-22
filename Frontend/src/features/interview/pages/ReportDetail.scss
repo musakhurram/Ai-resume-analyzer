@@ -33,10 +33,16 @@
     }
   }
 
+  &__company {
+    font-weight: 500;
+    color: var(--ink-muted);
+  }
+
   &__job {
     color: var(--ink-muted);
     font-size: 0.875rem;
     line-height: 1.6;
+    white-space: pre-line;
     display: -webkit-box;
     -webkit-line-clamp: 4;
     -webkit-box-orient: vertical;
