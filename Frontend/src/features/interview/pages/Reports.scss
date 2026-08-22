@@ -1,0 +1,7 @@
+.reports-page {
+  &__list {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-3);
+  }
+}

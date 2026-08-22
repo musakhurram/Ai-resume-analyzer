@@ -1,19 +1,19 @@
 import { useAuth } from "../hooks/useAuth";
-import React from 'react'
 import { Navigate } from "react-router";
+import PageLoader from "../../../shared/components/PageLoader";
 
 const Protected = ({ children }) => {
-    const { loading, user } = useAuth()
+  const { loading, user } = useAuth();
 
-    if (loading) {
-        return (<main><h1>Loading....</h1></main>)
-    }
+  if (loading) {
+    return <PageLoader label="Checking your session" />;
+  }
 
-    if (!user) {
-        return <Navigate to={"/login"} replace />
-    }
+  if (!user) {
+    return <Navigate to="/login" replace />;
+  }
 
-    return <>{children}</>
-}
+  return <>{children}</>;
+};
 
-export default Protected
+export default Protected;

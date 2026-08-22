@@ -1,0 +1,98 @@
+.score-dial {
+  position: relative;
+  display: inline-flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  width: 176px;
+
+  &__svg {
+    width: 100%;
+    height: auto;
+    overflow: visible;
+  }
+
+  &__ticks line {
+    stroke: var(--border-strong);
+    stroke-width: 1.5;
+  }
+
+  &__track {
+    fill: none;
+    stroke: var(--surface-2);
+    stroke-width: 10;
+  }
+
+  &__inner-ring {
+    fill: none;
+    stroke: var(--border);
+    stroke-width: 1;
+    stroke-dasharray: 2 4;
+  }
+
+  &__progress {
+    fill: none;
+    stroke-width: 10;
+    stroke-linecap: round;
+    transition: stroke-dashoffset 900ms var(--ease);
+  }
+
+  &--strong &__progress {
+    stroke: var(--severity-low);
+  }
+
+  &--moderate &__progress {
+    stroke: var(--severity-medium);
+  }
+
+  &--weak &__progress {
+    stroke: var(--severity-high);
+  }
+
+  &__readout {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -46%);
+    display: flex;
+    align-items: baseline;
+    gap: 0.2rem;
+    font-family: var(--font-mono);
+  }
+
+  &__value {
+    font-size: 2.5rem;
+    font-weight: 500;
+    color: var(--ink);
+  }
+
+  &__scale {
+    font-size: 0.8125rem;
+    color: var(--ink-faint);
+  }
+
+  &__label {
+    margin-top: 0.65rem;
+  }
+
+  &--sm {
+    width: 96px;
+
+    .score-dial__value {
+      font-size: 1.35rem;
+    }
+
+    .score-dial__scale {
+      font-size: 0.625rem;
+    }
+
+    .score-dial__label {
+      display: none;
+    }
+
+    .score-dial__progress,
+    .score-dial__track {
+      stroke-width: 8;
+    }
+  }
+}

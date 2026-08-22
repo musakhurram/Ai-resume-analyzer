@@ -1,59 +1,80 @@
-import React, { useState } from "react"
-import "../auth.form.scss"
-import { Link } from 'react-router'
-import { useAuth } from "../hooks/useAuth"
-import { useNavigate } from "react-router"
+import { useState } from "react";
+import { Link, useNavigate } from "react-router";
+import AuthLayout from "../components/AuthLayout";
+import { Field, TextInput } from "../../../shared/components/Field";
+import Button from "../../../shared/components/Button";
+import Callout from "../../../shared/components/Callout";
+import PageLoader from "../../../shared/components/PageLoader";
+import { useAuth } from "../hooks/useAuth";
+import "../auth.form.scss";
 
 const Login = () => {
-    const navigate = useNavigate()
-    const { loading, handleLogin } = useAuth()
-    const [email, setEmail] = useState("")
-    const [password, setPassword] = useState("")
-    const [error, setError] = useState("")
+  const navigate = useNavigate();
+  const { loading, handleLogin } = useAuth();
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [error, setError] = useState("");
+  const [submitting, setSubmitting] = useState(false);
 
-    const handleSubmit = async (e) => {
-        e.preventDefault()
-        setError("")
-        try {
-            await handleLogin({ email, password })
-            navigate('/')
-        } catch (err) {
-            setError(err.response?.data?.message || err.message || "Login failed")
-        }
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setError("");
+    setSubmitting(true);
+    try {
+      await handleLogin({ email, password });
+      navigate("/");
+    } catch (err) {
+      setError(err.response?.data?.message || err.message || "Login failed");
+    } finally {
+      setSubmitting(false);
     }
+  };
 
-    if (loading) {
-        return (<main><h1>Loading.....</h1></main>)
-    }
+  if (loading) {
+    return <PageLoader label="Checking your session" />;
+  }
 
-    return (
-        <main>
-            <div className="form-container">
-                <h1>Login</h1>
+  return (
+    <AuthLayout eyebrow="Welcome back" title="Sign in">
+      <form className="auth-form" onSubmit={handleSubmit}>
+        {error && <Callout tone="error">{error}</Callout>}
 
-                {error && <p className="error-message" style={{ color: "red" }}>{error}</p>}
+        <Field label="Email" htmlFor="email">
+          <TextInput
+            id="email"
+            name="email"
+            type="email"
+            autoComplete="email"
+            placeholder="you@example.com"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            required
+          />
+        </Field>
 
-                <form onSubmit={handleSubmit}>
+        <Field label="Password" htmlFor="password">
+          <TextInput
+            id="password"
+            name="password"
+            type="password"
+            autoComplete="current-password"
+            placeholder="Enter your password"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            required
+          />
+        </Field>
 
-                    <div className="input-group">
-                        <label htmlFor="email">Email</label>
-                        <input onChange={(e) => { setEmail(e.target.value) }} type="email" id="email" name="email" placeholder='Enter email address'></input>
+        <Button type="submit" size="lg" loading={submitting} className="auth-form__submit">
+          Sign in
+        </Button>
+      </form>
 
-                    </div>
-                    <div className="input-group">
-                        <label htmlFor="password">Password</label>
-                        <input onChange={(e) => { setPassword(e.target.value) }} type="password" id="password" name="password" placeholder='Enter password' />
-                    </div>
-                    <button className="button primary-button">Login</button>
+      <p className="auth-form__switch">
+        Don't have an account? <Link to="/register">Create one</Link>
+      </p>
+    </AuthLayout>
+  );
+};
 
-
-                </form>
-
-
-                <p>Dont have an account? <Link to={"/register"}>Register</Link></p>
-            </div>
-        </main>
-    )
-}
-
-export default Login
+export default Login;

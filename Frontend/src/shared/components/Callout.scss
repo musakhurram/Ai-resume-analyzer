@@ -1,0 +1,33 @@
+.callout {
+  padding: var(--space-3) var(--space-4);
+  border-radius: var(--radius-md);
+  border: 1px solid var(--border);
+  border-left-width: 3px;
+  font-size: 0.875rem;
+  line-height: 1.5;
+
+  &__title {
+    font-weight: 600;
+    margin-bottom: 0.15rem;
+  }
+
+  &__body {
+    color: var(--ink-muted);
+  }
+
+  &--info {
+    background: var(--surface-2);
+    border-left-color: var(--accent);
+  }
+
+  &--error {
+    background: var(--danger-soft);
+    border-left-color: var(--danger);
+    color: var(--danger);
+
+    .callout__body {
+      color: inherit;
+      opacity: 0.85;
+    }
+  }
+}

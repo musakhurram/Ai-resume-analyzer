@@ -1,0 +1,45 @@
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.2rem 0.55rem;
+  border-radius: var(--radius-sm);
+  font-family: var(--font-mono);
+  font-size: 0.6875rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  white-space: nowrap;
+
+  &::before {
+    content: "";
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: currentColor;
+  }
+
+  &--neutral {
+    background: var(--surface-2);
+    color: var(--ink-muted);
+  }
+
+  &--low {
+    background: var(--accent-soft);
+    color: var(--severity-low);
+  }
+
+  &--medium {
+    background: var(--gold-soft);
+    color: var(--severity-medium);
+  }
+
+  &--high {
+    background: var(--danger-soft);
+    color: var(--severity-high);
+  }
+
+  &--accent {
+    background: var(--accent-soft);
+    color: var(--accent);
+  }
+}

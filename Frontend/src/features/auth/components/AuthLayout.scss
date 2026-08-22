@@ -1,0 +1,122 @@
+.auth-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  min-height: 100vh;
+
+  &__brand {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    padding: var(--space-7) var(--space-7);
+    background: var(--accent-strong);
+    color: #f5f6f3;
+    overflow: hidden;
+  }
+
+  &__brand-top {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    z-index: 1;
+  }
+
+  &__mark {
+    width: 28px;
+    height: 28px;
+  }
+
+  &__wordmark {
+    font-family: var(--font-display);
+    font-size: 1.15rem;
+    font-weight: 600;
+  }
+
+  &__gauge {
+    position: absolute;
+    right: -70px;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 420px;
+    opacity: 0.55;
+
+    &-track {
+      fill: none;
+      stroke: rgba(245, 246, 243, 0.14);
+      stroke-width: 1;
+    }
+
+    &-arc {
+      fill: none;
+      stroke: rgba(245, 246, 243, 0.65);
+      stroke-width: 1.5;
+      stroke-dasharray: 340 490;
+    }
+
+    &-tick {
+      stroke: rgba(245, 246, 243, 0.3);
+      stroke-width: 1.5;
+    }
+  }
+
+  &__copy {
+    max-width: 380px;
+    z-index: 1;
+  }
+
+  &__headline {
+    font-family: var(--font-display);
+    font-size: 1.85rem;
+    line-height: 1.25;
+    margin-bottom: var(--space-3);
+  }
+
+  &__sub {
+    font-size: 0.9375rem;
+    line-height: 1.6;
+    color: rgba(245, 246, 243, 0.75);
+  }
+
+  &__foot {
+    z-index: 1;
+    color: rgba(245, 246, 243, 0.55);
+  }
+
+  &__panel {
+    display: flex;
+    flex-direction: column;
+    background: var(--bg);
+  }
+
+  &__panel-top {
+    display: flex;
+    justify-content: flex-end;
+    padding: var(--space-5);
+  }
+
+  &__form-wrap {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    max-width: 380px;
+    width: 100%;
+    margin: 0 auto;
+    padding: 0 var(--space-5) var(--space-7);
+
+    h1 {
+      font-size: 1.6rem;
+      margin: 0.4rem 0 var(--space-5);
+    }
+  }
+}
+
+@media (max-width: 860px) {
+  .auth-layout {
+    grid-template-columns: 1fr;
+
+    &__brand {
+      display: none;
+    }
+  }
+}

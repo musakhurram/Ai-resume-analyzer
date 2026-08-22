@@ -1,7 +1,6 @@
-import { createContext, useState, useEffect } from "react";
+import { useState, useEffect } from "react";
 import { getMe } from "./services/auth.api";
-
-export const AuthContext = createContext();
+import { AuthContext } from "./auth.context.definition";
 
 export const AuthProvider = ({ children }) => {
     const [user, setUser] = useState(null);
@@ -16,7 +15,7 @@ export const AuthProvider = ({ children }) => {
                 } else {
                     setUser(null);
                 }
-            } catch (err) {
+            } catch {
                 setUser(null);
             } finally {
                 setLoading(false);

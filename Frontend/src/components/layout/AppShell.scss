@@ -1,0 +1,39 @@
+.app-shell {
+  display: flex;
+  min-height: 100vh;
+  background: var(--bg);
+
+  &__main {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+  }
+
+  &__content {
+    flex: 1;
+    padding: var(--space-6);
+    max-width: 1120px;
+    width: 100%;
+    margin: 0 auto;
+  }
+
+  &__scrim {
+    display: none;
+  }
+}
+
+@media (max-width: 900px) {
+  .app-shell__content {
+    padding: var(--space-4);
+  }
+
+  .app-shell__scrim {
+    display: block;
+    position: fixed;
+    inset: 0;
+    background: rgba(10, 14, 12, 0.45);
+    border: none;
+    z-index: 30;
+  }
+}

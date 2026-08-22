@@ -1,0 +1,67 @@
+.theme-toggle {
+  flex-shrink: 0;
+  padding: 0;
+  border-radius: 999px;
+
+  &__track {
+    position: relative;
+    display: flex;
+    align-items: center;
+    width: 52px;
+    height: 28px;
+    padding: 0 6px;
+    border: 1px solid var(--border-strong);
+    border-radius: 999px;
+    background: var(--surface-2);
+    transition: background-color var(--duration-med) var(--ease),
+      border-color var(--duration-med) var(--ease);
+  }
+
+  &__icon {
+    position: relative;
+    z-index: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 16px;
+    height: 16px;
+    color: var(--ink-faint);
+
+    svg {
+      width: 100%;
+      height: 100%;
+    }
+
+    &--sun {
+      margin-right: auto;
+    }
+
+    &--moon {
+      margin-left: auto;
+    }
+  }
+
+  &__knob {
+    position: absolute;
+    top: 2px;
+    left: 2px;
+    width: 22px;
+    height: 22px;
+    border-radius: 50%;
+    background: var(--accent);
+    box-shadow: var(--shadow-sm);
+    transition: transform var(--duration-med) var(--ease), background-color var(--duration-med) var(--ease);
+  }
+
+  &[aria-checked="true"] .theme-toggle__knob {
+    transform: translateX(24px);
+  }
+
+  &[aria-checked="true"] .theme-toggle__icon--moon {
+    color: var(--on-accent);
+  }
+
+  &:hover .theme-toggle__track {
+    border-color: var(--accent);
+  }
+}
