@@ -1,6 +1,5 @@
 ﻿const { GoogleGenAI } = require("@google/genai")
 const { z } = require("zod")
-const { zodToJsonSchema } = require("zod-to-json-schema")
 
 const ai = new GoogleGenAI({
     apiKey: process.env.GOOGLE_GENAI_API_KEY
@@ -29,6 +28,63 @@ const interviewReportSchema = z.object({
     })).describe("Step-by-step day-wise interview preparation roadmap")
 })
 
+// Clean JSON schema for Gemini's structured output (zodToJsonSchema output
+// includes $schema/additionalProperties that Gemini's parser sometimes rejects).
+const interviewReportJsonSchema = {
+    type: "object",
+    properties: {
+        matchScore: { type: "number", description: "A score between 0 and 100 indicating how well the candidate matches the job description" },
+        technicalQuestions: {
+            type: "array",
+            items: {
+                type: "object",
+                properties: {
+                    question: { type: "string" },
+                    intention: { type: "string" },
+                    answer: { type: "string" }
+                },
+                required: ["question", "intention", "answer"]
+            }
+        },
+        behavioralQuestions: {
+            type: "array",
+            items: {
+                type: "object",
+                properties: {
+                    question: { type: "string" },
+                    intention: { type: "string" },
+                    answer: { type: "string" }
+                },
+                required: ["question", "intention", "answer"]
+            }
+        },
+        skillGaps: {
+            type: "array",
+            items: {
+                type: "object",
+                properties: {
+                    skill: { type: "string" },
+                    severity: { type: "string", enum: ["low", "medium", "high"] }
+                },
+                required: ["skill", "severity"]
+            }
+        },
+        preparationPlan: {
+            type: "array",
+            items: {
+                type: "object",
+                properties: {
+                    day: { type: "number" },
+                    focus: { type: "string" },
+                    tasks: { type: "string" }
+                },
+                required: ["day", "focus", "tasks"]
+            }
+        }
+    },
+    required: ["matchScore", "technicalQuestions", "behavioralQuestions", "skillGaps", "preparationPlan"]
+}
+
 async function generateInterviewReport({ resume, selfDescription, jobDescription }) {
     const prompt = `
 You are an expert technical interviewer and hiring manager.
@@ -55,17 +111,29 @@ Provide a structured assessment including:
 5. A day-wise preparation plan to help the candidate succeed in the interview
 `;
 
-    const response = await ai.models.generateContent({
-        model: "gemini-3.6-flash",
-        contents: prompt,
-        config: {
-            responseMimeType: "application/json",
-            responseSchema: zodToJsonSchema(interviewReportSchema)
-        }
-    })
-
-     
-    return JSON.parse(response.text)
+    // Try structured output first; if Gemini's schema validation fails,
+    // retry once without the schema and parse the JSON from the text.
+    try {
+        const response = await ai.models.generateContent({
+            model: "gemini-3.6-flash",
+            contents: prompt,
+            config: {
+                responseMimeType: "application/json",
+                responseSchema: interviewReportJsonSchema
+            }
+        })
+        return JSON.parse(response.text)
+    } catch (err) {
+        console.warn("Structured output failed, retrying without schema:", err.message)
+        const response = await ai.models.generateContent({
+            model: "gemini-3.6-flash",
+            contents: prompt,
+            config: {
+                responseMimeType: "application/json"
+            }
+        })
+        return JSON.parse(response.text)
+    }
 }
 
 module.exports = {
