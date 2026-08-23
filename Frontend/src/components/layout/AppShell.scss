@@ -32,7 +32,8 @@
     display: block;
     position: fixed;
     inset: 0;
-    background: rgba(10, 14, 12, 0.45);
+    background: rgba(3, 4, 10, 0.6);
+    backdrop-filter: blur(2px);
     border: none;
     z-index: 30;
   }

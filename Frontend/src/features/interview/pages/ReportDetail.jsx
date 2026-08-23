@@ -1,12 +1,13 @@
 import { useEffect, useState } from "react";
 import { Link, useParams } from "react-router";
-import { getReportById } from "../services/interview.api";
+import { getReportById, downloadReportPdf } from "../services/interview.api";
 import ScoreDial from "../../../shared/components/ScoreDial";
 import SkillGapList from "../components/SkillGapList";
 import QuestionAccordion from "../components/QuestionAccordion";
 import PrepTimeline from "../components/PrepTimeline";
 import PageLoader from "../../../shared/components/PageLoader";
 import Callout from "../../../shared/components/Callout";
+import Button from "../../../shared/components/Button";
 import { parseJobMeta, stripMarkdown } from "../../../shared/utils/jobText";
 import { recallResumeName } from "../../../shared/utils/resumeLabel";
 import "./ReportDetail.scss";
@@ -24,6 +25,8 @@ const ReportDetail = () => {
   const { id } = useParams();
   const [report, setReport] = useState(null);
   const [error, setError] = useState("");
+  const [downloading, setDownloading] = useState(false);
+  const [downloadError, setDownloadError] = useState("");
 
   useEffect(() => {
     let cancelled = false;
@@ -64,11 +67,30 @@ const ReportDetail = () => {
   const { title, company } = parseJobMeta(report.jobDescription);
   const resumeName = recallResumeName(report._id);
 
+  const handleDownloadPdf = async () => {
+    setDownloadError("");
+    setDownloading(true);
+    try {
+      await downloadReportPdf(report._id);
+    } catch (err) {
+      setDownloadError(err.response?.data?.message || err.message || "Couldn't generate the PDF.");
+    } finally {
+      setDownloading(false);
+    }
+  };
+
   return (
     <div className="report-detail">
-      <Link to="/reports" className="report-detail__back">
-        ← Back to reports
-      </Link>
+      <div className="report-detail__toprow">
+        <Link to="/reports" className="report-detail__back">
+          ← Back to reports
+        </Link>
+        <Button variant="secondary" size="sm" loading={downloading} onClick={handleDownloadPdf}>
+          Download PDF
+        </Button>
+      </div>
+
+      {downloadError && <Callout tone="error">{downloadError}</Callout>}
 
       <header className="report-detail__header">
         <ScoreDial score={report.matchScore} />

@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { Link, useNavigate } from "react-router";
 import AuthLayout from "../components/AuthLayout";
+import GoogleSignInButton from "../components/GoogleSignInButton";
 import { Field, TextInput } from "../../../shared/components/Field";
 import Button from "../../../shared/components/Button";
 import Callout from "../../../shared/components/Callout";
@@ -10,7 +11,7 @@ import "../auth.form.scss";
 
 const Login = () => {
   const navigate = useNavigate();
-  const { loading, handleLogin } = useAuth();
+  const { loading, handleLogin, handleGoogleAuth } = useAuth();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
@@ -30,15 +31,31 @@ const Login = () => {
     }
   };
 
+  const handleGoogle = async (credential) => {
+    setError("");
+    try {
+      await handleGoogleAuth(credential);
+      navigate("/");
+    } catch (err) {
+      setError(err.response?.data?.message || err.message || "Google sign-in failed");
+    }
+  };
+
   if (loading) {
     return <PageLoader label="Checking your session" />;
   }
 
   return (
     <AuthLayout eyebrow="Welcome back" title="Sign in">
-      <form className="auth-form" onSubmit={handleSubmit}>
-        {error && <Callout tone="error">{error}</Callout>}
+      {error && <Callout tone="error">{error}</Callout>}
 
+      <GoogleSignInButton onCredential={handleGoogle} disabled={submitting} />
+
+      <div className="auth-form__divider">
+        <span>or continue with email</span>
+      </div>
+
+      <form className="auth-form" onSubmit={handleSubmit}>
         <Field label="Email" htmlFor="email">
           <TextInput
             id="email"

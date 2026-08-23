@@ -8,6 +8,29 @@
     width: 100%;
     margin-top: var(--space-1);
   }
+
+  &__divider {
+    display: flex;
+    align-items: center;
+    gap: var(--space-3);
+    margin: var(--space-5) 0;
+    color: var(--ink-faint);
+    font-size: 0.75rem;
+
+    &::before,
+    &::after {
+      content: "";
+      flex: 1;
+      height: 1px;
+      background: var(--border);
+    }
+  }
+}
+
+.google-signin-btn {
+  display: flex;
+  justify-content: center;
+  min-height: 44px;
 }
 
 .auth-form__switch {

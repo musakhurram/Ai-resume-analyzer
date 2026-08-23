@@ -1,5 +1,6 @@
 const { PDFParse } = require("pdf-parse");
 const { generateInterviewReport } = require("../services/ai.service");
+const { renderInterviewReportPdf } = require("../services/pdf.service");
 const interviewReportModel = require("../models/interviewReport.model");
 
 /**
@@ -7,11 +8,11 @@ const interviewReportModel = require("../models/interviewReport.model");
  * @description generate interview report from resume PDF, self description, and job description
  * @access Private
  */
-async function generateInterviewReportController(req, res) {
+async function generateInterviewReportController(req, res, next) {
   try {
     const { selfDescription = "", jobDescription } = req.body;
 
-    if (!jobDescription) {
+    if (!jobDescription || !jobDescription.trim()) {
       return res.status(400).json({
         message: "Job description is required",
       });
@@ -28,6 +29,12 @@ async function generateInterviewReportController(req, res) {
       }
     } else if (req.body.resume) {
       resumeContent = req.body.resume;
+    }
+
+    if (!resumeContent.trim()) {
+      return res.status(400).json({
+        message: "Please upload a resume PDF or paste your resume text",
+      });
     }
 
     const interViewReportByAI = await generateInterviewReport({
@@ -53,11 +60,7 @@ async function generateInterviewReportController(req, res) {
       interviewReport,
     });
   } catch (error) {
-    console.error("Error generating interview report:", error);
-    return res.status(500).json({
-      message: "Failed to generate interview report",
-      error: error.message,
-    });
+    next(error);
   }
 }
 
@@ -66,10 +69,11 @@ async function generateInterviewReportController(req, res) {
  * @description get all interview reports for the logged in user
  * @access Private
  */
-async function getAllInterviewReportsController(req, res) {
+async function getAllInterviewReportsController(req, res, next) {
   try {
     const reports = await interviewReportModel
       .find({ user: req.user.id })
+      .select("-resume -selfDescription -preparationPlan")
       .sort({ createdAt: -1 });
 
     return res.status(200).json({
@@ -77,11 +81,7 @@ async function getAllInterviewReportsController(req, res) {
       reports,
     });
   } catch (error) {
-    console.error("Error fetching reports:", error);
-    return res.status(500).json({
-      message: "Failed to fetch interview reports",
-      error: error.message,
-    });
+    next(error);
   }
 }
 
@@ -90,7 +90,7 @@ async function getAllInterviewReportsController(req, res) {
  * @description get interview report details by report id
  * @access Private
  */
-async function getInterviewReportByIdController(req, res) {
+async function getInterviewReportByIdController(req, res, next) {
   try {
     const { id } = req.params;
     const interviewReport = await interviewReportModel.findOne({
@@ -109,11 +109,38 @@ async function getInterviewReportByIdController(req, res) {
       interviewReport,
     });
   } catch (error) {
-    console.error("Error fetching report:", error);
-    return res.status(500).json({
-      message: "Failed to fetch interview report",
-      error: error.message,
+    next(error);
+  }
+}
+
+/**
+ * @name downloadInterviewReportPdfController
+ * @description stream a PDF export of an interview report
+ * @access Private
+ */
+async function downloadInterviewReportPdfController(req, res, next) {
+  try {
+    const { id } = req.params;
+    const interviewReport = await interviewReportModel.findOne({
+      _id: id,
+      user: req.user.id,
     });
+
+    if (!interviewReport) {
+      return res.status(404).json({
+        message: "Interview report not found",
+      });
+    }
+
+    res.setHeader("Content-Type", "application/pdf");
+    res.setHeader(
+      "Content-Disposition",
+      `attachment; filename="interview-report-${interviewReport._id}.pdf"`,
+    );
+
+    renderInterviewReportPdf(interviewReport, res);
+  } catch (error) {
+    next(error);
   }
 }
 
@@ -121,4 +148,5 @@ module.exports = {
   generateInterviewReportController,
   getAllInterviewReportsController,
   getInterviewReportByIdController,
+  downloadInterviewReportPdfController,
 };

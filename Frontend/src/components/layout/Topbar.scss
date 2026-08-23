@@ -4,7 +4,9 @@
   gap: var(--space-3);
   padding: var(--space-3) var(--space-6);
   border-bottom: 1px solid var(--border);
-  background: var(--bg-raised);
+  background: var(--surface);
+  backdrop-filter: var(--surface-blur);
+  -webkit-backdrop-filter: var(--surface-blur);
   position: sticky;
   top: 0;
   z-index: 20;
@@ -44,15 +46,22 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    width: 30px;
-    height: 30px;
+    width: 32px;
+    height: 32px;
     border-radius: 50%;
-    background: var(--accent-soft);
-    color: var(--accent);
+    background: var(--gradient-signal);
+    color: #fff;
     font-family: var(--font-mono);
     font-size: 0.6875rem;
-    font-weight: 500;
+    font-weight: 600;
     flex-shrink: 0;
+    overflow: hidden;
+
+    img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
   }
 
   &__username {
@@ -67,7 +76,7 @@
   &__logout {
     font-size: 0.8125rem;
     color: var(--ink-muted);
-    padding: 0.35rem 0.6rem;
+    padding: 0.4rem 0.7rem;
     border-radius: var(--radius-sm);
     border: 1px solid var(--border-strong);
 

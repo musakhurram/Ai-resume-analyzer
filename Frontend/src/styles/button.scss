@@ -1,20 +1,119 @@
-.button{
-    border:none;
-    outline: none;
-    padding-inline: 1.5rem;
-    padding-block: 0.75rem;
-    border-radius:1rem;
-    cursor:pointer;
+.btn {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  font-family: var(--font-body);
+  font-weight: 600;
+  letter-spacing: 0.01em;
+  border-radius: var(--radius-sm);
+  border: 1px solid transparent;
+  transition: background-color var(--duration-fast) var(--ease),
+    border-color var(--duration-fast) var(--ease),
+    color var(--duration-fast) var(--ease),
+    box-shadow var(--duration-fast) var(--ease),
+    transform var(--duration-fast) var(--ease);
+  white-space: nowrap;
 
-    transition:all 0.3s ease-in-out;
+  &:active:not(:disabled) {
+    transform: translateY(1px) scale(0.99);
+  }
 
-&.primary-button{
-    background-color: rgb(83, 3, 196);
-    color: white;
+  &:disabled {
+    cursor: not-allowed;
+    opacity: 0.5;
+  }
+
+  &--md {
+    padding: 0.65rem 1.25rem;
+    font-size: 0.875rem;
+  }
+
+  &--sm {
+    padding: 0.42rem 0.85rem;
+    font-size: 0.8125rem;
+  }
+
+  &--lg {
+    padding: 0.9rem 1.6rem;
+    font-size: 0.9375rem;
+  }
+
+  &--primary {
+    background: var(--gradient-signal);
+    color: var(--on-accent);
+    border-color: transparent;
+    box-shadow: 0 4px 18px rgba(124, 58, 237, 0.28);
+
+    &:hover:not(:disabled) {
+      box-shadow: 0 6px 26px rgba(124, 58, 237, 0.42), 0 0 0 1px rgba(255, 255, 255, 0.08) inset;
+      transform: translateY(-1px);
+    }
+  }
+
+  &--secondary {
+    background: var(--surface);
+    color: var(--ink);
+    border-color: var(--border-strong);
+    backdrop-filter: var(--surface-blur);
+
+    &:hover:not(:disabled) {
+      border-color: var(--accent);
+      color: var(--accent);
+    }
+  }
+
+  &--ghost {
+    background: transparent;
+    color: var(--ink-muted);
+
+    &:hover:not(:disabled) {
+      color: var(--ink);
+      background: var(--surface-2);
+    }
+  }
+
+  &--danger {
+    background: transparent;
+    color: var(--danger);
+    border-color: var(--danger);
+
+    &:hover:not(:disabled) {
+      background: var(--danger-soft);
+    }
+  }
+
+  // Used for the Google Sign-In button — neutral, high-contrast, follows
+  // Google's brand guidance of a plain surface rather than the app gradient.
+  &--google {
+    background: var(--bg-raised);
+    color: var(--ink);
+    border-color: var(--border-strong);
+
+    &:hover:not(:disabled) {
+      border-color: var(--ink-faint);
+      background: var(--surface-2);
+    }
+  }
+
+  &__spinner {
+    width: 14px;
+    height: 14px;
+    border-radius: 50%;
+    border: 2px solid currentColor;
+    border-right-color: transparent;
+    animation: btn-spin 0.6s linear infinite;
+    opacity: 0.85;
+  }
+
+  &.is-loading .btn__label {
+    opacity: 0.75;
+  }
 }
 
-&:active{
-    transform: scale(0.9);
+@keyframes btn-spin {
+  to {
+    transform: rotate(360deg);
+  }
 }
-}
-

@@ -1,19 +1,21 @@
 // =============================================================
 // Design tokens — Resume Analyzer
-// A clean, modern SaaS system: neutral slate surfaces, a single
-// confident indigo accent, and clear signal colors for scoring.
+// A futuristic, professional system: deep space surfaces, glass
+// panels, and a violet → cyan signal gradient as the single
+// accent thread running through the whole product.
 // =============================================================
 
 :root {
   // ---- Type ----
-  --font-display: "Space Grotesk", "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  --font-display: "Sora", "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
   --font-body: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
   --font-mono: "JetBrains Mono", ui-monospace, "SFMono-Regular", Menlo, monospace;
 
-  // ---- Radii (soft, modern) ----
-  --radius-sm: 8px;
-  --radius-md: 12px;
-  --radius-lg: 18px;
+  // ---- Radii ----
+  --radius-sm: 10px;
+  --radius-md: 16px;
+  --radius-lg: 24px;
+  --radius-full: 999px;
 
   // ---- Spacing scale ----
   --space-1: 0.25rem;
@@ -27,86 +29,100 @@
 
   // ---- Motion ----
   --ease: cubic-bezier(0.4, 0, 0.2, 1);
-  --duration-fast: 120ms;
-  --duration-med: 220ms;
+  --duration-fast: 140ms;
+  --duration-med: 260ms;
 
-  // ---- Shadow ----
-  --shadow-sm: 0 1px 2px rgba(15, 23, 42, 0.06);
-  --shadow-md: 0 8px 24px rgba(15, 23, 42, 0.08);
-  --shadow-stamp: 0 1px 0 rgba(15, 23, 42, 0.04);
+  // ---- Signal gradient — the app's single recurring accent motif ----
+  --gradient-signal: linear-gradient(135deg, #8b5cf6 0%, #6366f1 45%, #22d3ee 100%);
+  --gradient-signal-soft: linear-gradient(135deg, rgba(139, 92, 246, 0.16) 0%, rgba(34, 211, 238, 0.16) 100%);
+  --gradient-mesh: radial-gradient(circle at 12% 8%, rgba(124, 58, 237, 0.25), transparent 42%),
+    radial-gradient(circle at 88% 4%, rgba(34, 211, 238, 0.18), transparent 40%),
+    radial-gradient(circle at 50% 100%, rgba(99, 102, 241, 0.16), transparent 55%);
 }
 
 // =====================
-// Light theme (default)
+// Dark theme (default) — deep space / glass
 // =====================
 :root,
+[data-theme="dark"] {
+  --bg: #05070f;
+  --bg-raised: #0a0e1c;
+  --surface: rgba(255, 255, 255, 0.035);
+  --surface-2: rgba(255, 255, 255, 0.06);
+  --surface-tint: rgba(139, 92, 246, 0.12);
+  --surface-blur: blur(20px);
+
+  --ink: #eef1fb;
+  --ink-muted: #9aa3c4;
+  --ink-faint: #5c6488;
+
+  --border: rgba(255, 255, 255, 0.08);
+  --border-strong: rgba(255, 255, 255, 0.16);
+
+  --accent: #7c6bf6;
+  --accent-strong: #6d5ef0;
+  --accent-soft: rgba(124, 107, 246, 0.16);
+  --accent-cyan: #22d3ee;
+  --on-accent: #ffffff;
+
+  --gold: #f0b357;
+  --gold-soft: rgba(240, 179, 87, 0.14);
+
+  --danger: #fb7185;
+  --danger-soft: rgba(251, 113, 133, 0.14);
+
+  --focus-ring: #8b5cf6;
+
+  --severity-low: #34d399;
+  --severity-medium: #f0b357;
+  --severity-high: #fb7185;
+
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.3);
+  --shadow-md: 0 12px 32px rgba(3, 4, 12, 0.45);
+  --shadow-glow: 0 0 0 1px rgba(139, 92, 246, 0.25), 0 8px 30px rgba(124, 58, 237, 0.25);
+
+  color-scheme: dark;
+}
+
+// =====================
+// Light theme — soft, still glassy
+// =====================
 [data-theme="light"] {
-  --bg: #f7f8fb;
+  --bg: #f4f5fb;
   --bg-raised: #ffffff;
-  --surface: #ffffff;
-  --surface-2: #eef1f7;
-  --surface-tint: #eef2ff;
+  --surface: rgba(255, 255, 255, 0.7);
+  --surface-2: #edeefb;
+  --surface-tint: #ece9ff;
+  --surface-blur: blur(16px);
 
-  --ink: #0f172a;
-  --ink-muted: #5b6472;
-  --ink-faint: #94a0b3;
+  --ink: #12142b;
+  --ink-muted: #5c6180;
+  --ink-faint: #9195b3;
 
-  --border: #e4e8f0;
-  --border-strong: #cdd4e2;
+  --border: #e2e2f2;
+  --border-strong: #cfcfe8;
 
-  --accent: #4f46e5;
-  --accent-strong: #4338ca;
-  --accent-soft: #eef0ff;
+  --accent: #6d5ef0;
+  --accent-strong: #5b4be0;
+  --accent-soft: #ece9ff;
+  --accent-cyan: #0891b2;
   --on-accent: #ffffff;
 
   --gold: #b45309;
   --gold-soft: #fef3e2;
 
-  --danger: #dc2626;
-  --danger-soft: #fdecec;
+  --danger: #e11d48;
+  --danger-soft: #fdecef;
 
-  --focus-ring: #4f46e5;
+  --focus-ring: #6d5ef0;
 
   --severity-low: #15803d;
   --severity-medium: #b45309;
-  --severity-high: #dc2626;
+  --severity-high: #e11d48;
+
+  --shadow-sm: 0 1px 2px rgba(18, 20, 43, 0.06);
+  --shadow-md: 0 12px 28px rgba(18, 20, 43, 0.08);
+  --shadow-glow: 0 0 0 1px rgba(109, 94, 240, 0.14), 0 10px 26px rgba(109, 94, 240, 0.14);
 
   color-scheme: light;
-}
-
-// =====================
-// Dark theme
-// =====================
-[data-theme="dark"] {
-  --bg: #0b0f1a;
-  --bg-raised: #111624;
-  --surface: #111624;
-  --surface-2: #1a2133;
-  --surface-tint: #171d33;
-
-  --ink: #eef1f8;
-  --ink-muted: #9aa5b8;
-  --ink-faint: #666f83;
-
-  --border: #232a3d;
-  --border-strong: #333c54;
-
-  --accent: #818cf8;
-  --accent-strong: #a5b4fc;
-  --accent-soft: #1e2242;
-  --on-accent: #0b0f1a;
-
-  --gold: #f0b357;
-  --gold-soft: #2a2110;
-
-  --danger: #f37272;
-  --danger-soft: #301818;
-
-  --focus-ring: #818cf8;
-
-  color-scheme: dark;
-
-  --severity-low: #4ade80;
-  --severity-medium: #f0b357;
-  --severity-high: #f37272;
 }

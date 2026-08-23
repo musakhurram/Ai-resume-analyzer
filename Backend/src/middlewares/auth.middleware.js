@@ -1,5 +1,6 @@
-﻿const jwt = require("jsonwebtoken");
+const jwt = require("jsonwebtoken");
 const tokenBlackListModel = require("../models/blacklist.model");
+const env = require("../config/env");
 
 async function authUser(req, res, next) {
   let token = req.cookies?.token;
@@ -26,7 +27,7 @@ async function authUser(req, res, next) {
   }
 
   try {
-    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    const decoded = jwt.verify(token, env.JWT_SECRET);
     req.user = decoded;
     next();
   } catch (err) {

@@ -26,7 +26,7 @@ const Topbar = ({ theme, onToggleTheme, user, onLogout, onMenuClick }) => {
 
       <div className="topbar__account">
         <span className="topbar__avatar" aria-hidden="true">
-          {initialsFor(user?.username)}
+          {user?.avatarUrl ? <img src={user.avatarUrl} alt="" /> : initialsFor(user?.username)}
         </span>
         <span className="topbar__username">{user?.username}</span>
         <button type="button" className="topbar__logout" onClick={onLogout}>

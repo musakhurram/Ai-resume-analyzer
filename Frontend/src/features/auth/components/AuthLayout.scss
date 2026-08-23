@@ -9,7 +9,9 @@
     flex-direction: column;
     justify-content: space-between;
     padding: var(--space-7) var(--space-7);
-    background: var(--accent-strong);
+    background: #0a0a1a;
+    background-image: var(--gradient-signal), var(--gradient-mesh);
+    background-blend-mode: normal, screen;
     color: #ffffff;
     overflow: hidden;
   }

@@ -1,6 +1,6 @@
 import { useContext } from "react";
 import { AuthContext } from "../auth.context.definition";
-import { login, register, logout } from "../services/auth.api";
+import { login, register, logout, googleAuth } from "../services/auth.api";
 
 export const useAuth = () => {
     const context = useContext(AuthContext);
@@ -21,6 +21,22 @@ export const useAuth = () => {
             return data;
         } catch (err) {
             console.error("Login failed:", err);
+            throw err;
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const handleGoogleAuth = async (credential) => {
+        setLoading(true);
+        try {
+            const data = await googleAuth({ credential });
+            if (data?.user) {
+                setUser(data.user);
+            }
+            return data;
+        } catch (err) {
+            console.error("Google sign-in failed:", err);
             throw err;
         } finally {
             setLoading(false);
@@ -55,5 +71,5 @@ export const useAuth = () => {
             setLoading(false);
         }
     };
-    return { user, loading, handleRegister, handleLogin, handleLogout };
+    return { user, loading, handleRegister, handleLogin, handleGoogleAuth, handleLogout };
 };

@@ -35,18 +35,22 @@
     stroke-width: 10;
     stroke-linecap: round;
     transition: stroke-dashoffset 900ms var(--ease);
+    filter: drop-shadow(0 0 6px currentColor);
   }
 
   &--strong &__progress {
     stroke: var(--severity-low);
+    color: var(--severity-low);
   }
 
   &--moderate &__progress {
     stroke: var(--severity-medium);
+    color: var(--severity-medium);
   }
 
   &--weak &__progress {
     stroke: var(--severity-high);
+    color: var(--severity-high);
   }
 
   &__readout {
