@@ -33,15 +33,11 @@ const GoogleSignInButton = ({ onCredential, disabled }) => {
       containerRef.current.innerHTML = "";
       window.google.accounts.id.renderButton(containerRef.current, {
         type: "standard",
-        // "outline" is a light-mode style (white/light-gray button) that
-        // clashes with this app's dark theme. "filled_black" is Google's
-        // dark-mode-appropriate variant.
         theme: "outline",
         size: "large",
         shape: "pill",
         width: 340,
         text: "continue_with",
-        auto_select: "false"
       });
     }
 
