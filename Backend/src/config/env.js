@@ -1,6 +1,13 @@
 // Validates required environment variables once at boot so the app fails
 // fast with a clear error instead of crashing unpredictably later (e.g. a
 // jwt.sign() call throwing deep inside a request with an undefined secret).
+//
+// This throws rather than calling process.exit(): on a long-running server
+// (Render/Railway/local) an uncaught throw at require-time still crashes
+// the process the same way, but on Vercel's serverless runtime,
+// process.exit() inside a function invocation can kill the whole
+// container abruptly instead of returning a clean error response — so
+// throwing is the version that behaves correctly on both.
 
 const REQUIRED_IN_ALL_ENVS = ["MONGO_URI", "JWT_SECRET", "GOOGLE_GENAI_API_KEY"];
 
@@ -12,11 +19,10 @@ function loadEnv() {
   const missing = REQUIRED_IN_ALL_ENVS.filter((key) => !process.env[key]);
 
   if (missing.length > 0) {
-    console.error(
+    throw new Error(
       `Missing required environment variable(s): ${missing.join(", ")}.\n` +
-        "Copy .env.example to .env and fill in real values before starting the server.",
+        "Set these in your platform's environment variable settings (or .env locally) before starting the server.",
     );
-    process.exit(1);
   }
 
   const missingRecommended = RECOMMENDED.filter((key) => !process.env[key]);
@@ -27,10 +33,9 @@ function loadEnv() {
   }
 
   if (process.env.NODE_ENV === "production" && process.env.JWT_SECRET.length < 32) {
-    console.error(
+    throw new Error(
       "JWT_SECRET is too short for production use. Use at least 32 random characters.",
     );
-    process.exit(1);
   }
 
   return {
