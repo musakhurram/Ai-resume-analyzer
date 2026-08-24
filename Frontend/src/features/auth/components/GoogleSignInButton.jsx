@@ -1,90 +1,74 @@
-import { useEffect, useRef, useState } from "react";
-import "./GoogleSignInButton.scss";
+import { useEffect, useRef } from "react";
 
 const GOOGLE_CLIENT_ID = import.meta.env.VITE_GOOGLE_CLIENT_ID;
 
+/**
+ * Renders Google's own "Continue with Google" button via the Google
+ * Identity Services script (loaded in index.html) and forwards the signed
+ * credential (an ID token) to onCredential for the backend to verify.
+ *
+ * Renders nothing if VITE_GOOGLE_CLIENT_ID isn't configured, so the rest of
+ * the auth form still works without it.
+ */
 const GoogleSignInButton = ({ onCredential, disabled }) => {
-  const googleContainerRef = useRef(null);
-  const [ready, setReady] = useState(false);
+  const containerRef = useRef(null);
 
   useEffect(() => {
     if (!GOOGLE_CLIENT_ID || disabled) return;
 
     let cancelled = false;
-    let interval;
 
-    const renderGoogleButton = () => {
-      if (
-        cancelled ||
-        !window.google?.accounts?.id ||
-        !googleContainerRef.current
-      ) {
-        return;
-      }
+    function render() {
+      if (cancelled || !window.google?.accounts?.id || !containerRef.current) return;
 
       window.google.accounts.id.initialize({
         client_id: GOOGLE_CLIENT_ID,
-        callback: (response) => {
-          if (response?.credential) {
-            onCredential(response.credential);
-          }
-        },
+        callback: (response) => onCredential(response.credential),
+        // Without this, Google auto-detects an active browser session and
+        // renders a personalized "Continue as [Name]" chip on a fixed
+        // white background instead of the plain themed button.
+        auto_select: false,
       });
 
-      googleContainerRef.current.innerHTML = "";
-
-     window.google.accounts.id.renderButton(
-  googleContainerRef.current,
-  {
-    type: "standard",
-    theme: "outline",
-    size: "large",
-    text: "continue_with",
-    shape: "pill",
-    logo_alignment: "left",
-    width: 340,
-  }
-);
-
-      setReady(true);
-    };
+      containerRef.current.innerHTML = "";
+      window.google.accounts.id.renderButton(containerRef.current, {
+        type: "standard",
+        // "outline" is a light-mode style (white/light-gray button) that
+        // clashes with this app's dark theme. "filled_black" is Google's
+        // dark-mode-appropriate variant.
+        theme: "outline",
+        size: "large",
+        shape: "pill",
+        width: 340,
+        text: "continue_with",
+        auto_select: "false"
+      });
+    }
 
     if (window.google?.accounts?.id) {
-      renderGoogleButton();
+      render();
     } else {
-      interval = setInterval(() => {
+      // The GSI script loads async — poll briefly until it's ready.
+      const interval = setInterval(() => {
         if (window.google?.accounts?.id) {
           clearInterval(interval);
-          renderGoogleButton();
+          render();
         }
       }, 150);
+      return () => {
+        cancelled = true;
+        clearInterval(interval);
+      };
     }
 
     return () => {
       cancelled = true;
-
-      if (interval) {
-        clearInterval(interval);
-      }
     };
   }, [disabled, onCredential]);
 
-  if (!GOOGLE_CLIENT_ID) {
-    return null;
-  }
+  if (!GOOGLE_CLIENT_ID) return null;
 
-  return (
-    <div
-      className={`google-signin-btn ${
-        !ready ? "is-loading" : ""
-      } ${disabled ? "is-disabled" : ""}`}
-    >
-      <div
-        ref={googleContainerRef}
-        className="google-signin-btn__container"
-      />
-    </div>
-  );
+  return <div ref={containerRef} className="google-signin-btn" aria-live="polite" />;
 };
 
 export default GoogleSignInButton;
