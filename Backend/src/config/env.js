@@ -39,8 +39,8 @@ function loadEnv() {
     MONGO_URI: process.env.MONGO_URI,
     JWT_SECRET: process.env.JWT_SECRET,
     GOOGLE_GENAI_API_KEY: process.env.GOOGLE_GENAI_API_KEY,
-    GOOGLE_CLIENT_ID: process.env.GOOGLE_CLIENT_ID || null,
-    CLIENT_URL: process.env.CLIENT_URL || "http://localhost:5173",
+    GOOGLE_CLIENT_ID: process.env.GOOGLE_CLIENT_ID ,
+    CLIENT_URL: process.env.CLIENT_URL ,
     COOKIE_DOMAIN: process.env.COOKIE_DOMAIN || undefined,
   };
 }

@@ -1,7 +1,46 @@
+.question-accordion-wrapper {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+
+  &__toolbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding-bottom: var(--space-2);
+  }
+
+  &__count {
+    font-family: var(--font-mono);
+    font-size: 0.75rem;
+    color: var(--ink-muted);
+    font-weight: 600;
+  }
+
+  &__toggle-all-btn {
+    font-family: var(--font-mono);
+    font-size: 0.6875rem;
+    font-weight: 600;
+    color: var(--accent);
+    padding: 0.2rem 0.5rem;
+    border-radius: var(--radius-xs);
+    background: var(--surface-2);
+    border: 1px solid var(--border);
+    cursor: pointer;
+    transition: all var(--duration-fast) var(--ease);
+
+    &:hover {
+      background: var(--accent-soft);
+      border-color: var(--accent-border);
+      color: var(--ink);
+    }
+  }
+}
+
 .question-accordion {
   display: flex;
   flex-direction: column;
-  gap: 0.6rem;
+  gap: 0.75rem;
 
   &__empty {
     color: var(--ink-muted);
@@ -11,11 +50,13 @@
   &__item {
     border: 1px solid var(--border);
     border-radius: var(--radius-md);
-    background: var(--surface);
+    background: var(--surface-2);
     overflow: hidden;
+    transition: all var(--duration-fast) var(--ease);
 
     &[open] {
-      border-color: var(--border-strong);
+      border-color: var(--border-glow);
+      background: var(--surface-solid);
     }
 
     &[open] summary {
@@ -26,7 +67,7 @@
       display: flex;
       align-items: center;
       gap: 0.85rem;
-      padding: var(--space-3) var(--space-4);
+      padding: var(--space-4);
       cursor: pointer;
       list-style: none;
 
@@ -35,7 +76,7 @@
       }
 
       &:hover {
-        background: var(--surface-2);
+        background: var(--surface-hover);
       }
 
       &:focus-visible {
@@ -49,41 +90,99 @@
     flex-shrink: 0;
     font-family: var(--font-mono);
     font-size: 0.75rem;
-    color: var(--ink-faint);
+    font-weight: 700;
+    color: var(--accent);
+    padding: 0.15rem 0.4rem;
+    background: var(--accent-soft);
+    border-radius: var(--radius-xs);
   }
 
   &__question {
     flex: 1;
-    font-size: 0.9rem;
-    font-weight: 500;
+    font-size: 0.9375rem;
+    font-weight: 600;
+    color: var(--ink);
+    line-height: 1.45;
+  }
+
+  &__copy-btn {
+    width: 28px;
+    height: 28px;
+    border-radius: var(--radius-xs);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--ink-muted);
+    font-size: 0.75rem;
+    background: var(--surface-2);
+    border: 1px solid var(--border);
+    cursor: pointer;
+    flex-shrink: 0;
+    transition: all var(--duration-fast) var(--ease);
+
+    svg {
+      width: 14px;
+      height: 14px;
+    }
+
+    &:hover {
+      color: var(--ink);
+      border-color: var(--border-strong);
+      background: var(--surface-3);
+    }
   }
 
   &__caret {
     flex-shrink: 0;
-    width: 16px;
-    height: 16px;
+    width: 18px;
+    height: 18px;
     color: var(--ink-faint);
     transition: transform var(--duration-fast) var(--ease);
   }
 
   &__item[open] &__caret {
     transform: rotate(180deg);
+    color: var(--accent);
   }
 
   &__panel {
-    padding: var(--space-4);
-    padding-top: var(--space-3);
+    padding: var(--space-5);
     display: flex;
     flex-direction: column;
-    gap: var(--space-3);
+    gap: var(--space-4);
+    background: var(--surface-card);
   }
 
   &__block {
+    padding: var(--space-4);
+    border-radius: var(--radius-sm);
+    border: 1px solid var(--border);
+
+    &--intent {
+      background: var(--surface-2);
+      border-left: 3px solid var(--accent);
+
+      .eyebrow {
+        color: var(--accent);
+        margin-bottom: 0.35rem;
+      }
+    }
+
+    &--points {
+      background: var(--surface-2);
+      border-left: 3px solid var(--accent);
+
+      .eyebrow {
+        color: var(--accent-light, var(--accent));
+        margin-bottom: 0.35rem;
+      }
+    }
+
     p:last-child {
-      margin-top: 0.35rem;
       font-size: 0.875rem;
       line-height: 1.6;
-      color: var(--ink);
+      color: var(--ink-secondary);
     }
   }
 }
+

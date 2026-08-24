@@ -4,17 +4,18 @@
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  width: 176px;
+  user-select: none;
 
-  &__svg {
-    width: 100%;
-    height: auto;
-    overflow: visible;
+  &__ring-container {
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
   }
 
-  &__ticks line {
-    stroke: var(--border-strong);
-    stroke-width: 1.5;
+  &__svg {
+    display: block;
+    transform: rotate(0deg);
   }
 
   &__track {
@@ -23,80 +24,148 @@
     stroke-width: 10;
   }
 
-  &__inner-ring {
-    fill: none;
-    stroke: var(--border);
-    stroke-width: 1;
-    stroke-dasharray: 2 4;
-  }
-
   &__progress {
     fill: none;
     stroke-width: 10;
     stroke-linecap: round;
-    transition: stroke-dashoffset 900ms var(--ease);
-    filter: drop-shadow(0 0 6px currentColor);
+    transition: stroke-dashoffset 800ms cubic-bezier(0.16, 1, 0.3, 1);
   }
 
+  &--exceptional &__progress,
   &--strong &__progress {
     stroke: var(--severity-low);
-    color: var(--severity-low);
   }
 
   &--moderate &__progress {
     stroke: var(--severity-medium);
-    color: var(--severity-medium);
   }
 
   &--weak &__progress {
     stroke: var(--severity-high);
-    color: var(--severity-high);
   }
 
   &__readout {
     position: absolute;
     top: 50%;
     left: 50%;
-    transform: translate(-50%, -46%);
+    transform: translate(-50%, -50%);
     display: flex;
     align-items: baseline;
-    gap: 0.2rem;
-    font-family: var(--font-mono);
+    justify-content: center;
+    font-family: var(--font-display);
+    font-weight: 800;
+    color: var(--ink);
+    line-height: 1;
   }
 
   &__value {
-    font-size: 2.5rem;
-    font-weight: 500;
-    color: var(--ink);
+    letter-spacing: -0.04em;
   }
 
-  &__scale {
-    font-size: 0.8125rem;
-    color: var(--ink-faint);
+  &__percent {
+    font-size: 0.55em;
+    font-weight: 600;
+    color: var(--ink-muted);
+    margin-left: 1px;
   }
 
-  &__label {
-    margin-top: 0.65rem;
+  &__meta {
+    margin-top: 0.5rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  &__badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    font-size: 0.75rem;
+    font-weight: 600;
+    padding: 0.2rem 0.55rem;
+    border-radius: var(--radius-full);
+    white-space: nowrap;
+  }
+
+  &__badge-dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: currentColor;
+  }
+
+  &--exceptional &__badge,
+  &--strong &__badge {
+    background: var(--severity-low-soft);
+    color: var(--severity-low);
+  }
+
+  &--moderate &__badge {
+    background: var(--severity-medium-soft);
+    color: var(--severity-medium);
+  }
+
+  &--weak &__badge {
+    background: var(--severity-high-soft);
+    color: var(--severity-high);
+  }
+
+  // SIZES
+  &--lg {
+    width: 160px;
+
+    .score-dial__svg {
+      width: 160px;
+      height: 160px;
+    }
+
+    .score-dial__value {
+      font-size: 2.75rem;
+    }
+  }
+
+  &--md {
+    width: 110px;
+
+    .score-dial__svg {
+      width: 110px;
+      height: 110px;
+    }
+
+    .score-dial__track,
+    .score-dial__progress {
+      stroke-width: 12;
+    }
+
+    .score-dial__value {
+      font-size: 1.75rem;
+    }
+
+    .score-dial__badge {
+      font-size: 0.6875rem;
+    }
   }
 
   &--sm {
-    width: 96px;
+    width: 68px;
+
+    .score-dial__svg {
+      width: 68px;
+      height: 68px;
+    }
+
+    .score-dial__track,
+    .score-dial__progress {
+      stroke-width: 14;
+    }
 
     .score-dial__value {
-      font-size: 1.35rem;
+      font-size: 1.15rem;
+      font-weight: 700;
     }
 
-    .score-dial__scale {
-      font-size: 0.625rem;
-    }
-
-    .score-dial__label {
+    .score-dial__meta {
       display: none;
-    }
-
-    .score-dial__progress,
-    .score-dial__track {
-      stroke-width: 8;
     }
   }
 }

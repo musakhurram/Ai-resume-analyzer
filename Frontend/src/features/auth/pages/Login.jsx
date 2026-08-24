@@ -1,5 +1,5 @@
-import { useState } from "react";
-import { Link, useNavigate } from "react-router";
+import { useState, useEffect } from "react";
+import { Link, useNavigate, Navigate } from "react-router";
 import AuthLayout from "../components/AuthLayout";
 import GoogleSignInButton from "../components/GoogleSignInButton";
 import { Field, TextInput } from "../../../shared/components/Field";
@@ -9,23 +9,67 @@ import PageLoader from "../../../shared/components/PageLoader";
 import { useAuth } from "../hooks/useAuth";
 import "../auth.form.scss";
 
+const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
 const Login = () => {
   const navigate = useNavigate();
-  const { loading, handleLogin, handleGoogleAuth } = useAuth();
-  const [email, setEmail] = useState("");
+  const { user, loading, handleLogin, handleGoogleAuth } = useAuth();
+  const [email, setEmail] = useState(() => localStorage.getItem("ra_saved_email") || "");
   const [password, setPassword] = useState("");
+  const [rememberMe, setRememberMe] = useState(() => Boolean(localStorage.getItem("ra_saved_email")));
   const [error, setError] = useState("");
+  const [emailError, setEmailError] = useState("");
   const [submitting, setSubmitting] = useState(false);
+
+  // If user is already authenticated, redirect immediately to app
+  if (!loading && user) {
+    return <Navigate to="/new" replace />;
+  }
+
+  const validateEmail = (val) => {
+    if (!val) return "Email is required";
+    if (!EMAIL_REGEX.test(val)) return "Please enter a valid email address";
+    return "";
+  };
+
+  const handleEmailChange = (e) => {
+    setEmail(e.target.value);
+    if (error) setError("");
+    if (emailError) setEmailError("");
+  };
+
+  const handlePasswordChange = (e) => {
+    setPassword(e.target.value);
+    if (error) setError("");
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError("");
+
+    const mailErr = validateEmail(email.trim());
+    if (mailErr) {
+      setEmailError(mailErr);
+      return;
+    }
+
+    if (!password) {
+      setError("Please enter your password");
+      return;
+    }
+
     setSubmitting(true);
     try {
-      await handleLogin({ email, password });
-      navigate("/");
+      if (rememberMe) {
+        localStorage.setItem("ra_saved_email", email.trim());
+      } else {
+        localStorage.removeItem("ra_saved_email");
+      }
+
+      await handleLogin({ email: email.trim(), password });
+      navigate("/new");
     } catch (err) {
-      setError(err.response?.data?.message || err.message || "Login failed");
+      setError(err.response?.data?.message || err.message || "Invalid credentials. Please verify your email and password.");
     } finally {
       setSubmitting(false);
     }
@@ -35,41 +79,50 @@ const Login = () => {
     setError("");
     try {
       await handleGoogleAuth(credential);
-      navigate("/");
+      navigate("/new");
     } catch (err) {
-      setError(err.response?.data?.message || err.message || "Google sign-in failed");
+      setError(err.response?.data?.message || err.message || "Google sign-in failed. Please try again.");
     }
   };
 
   if (loading) {
-    return <PageLoader label="Checking your session" />;
+    return <PageLoader label="Verifying session credentials" />;
   }
 
   return (
-    <AuthLayout eyebrow="Welcome back" title="Sign in">
-      {error && <Callout tone="error">{error}</Callout>}
+    <AuthLayout eyebrow="Welcome back" title="Sign in to your account">
+      {error && (
+        <Callout tone="error">
+          <div className="auth-form__callout-content">
+            <span>{error}</span>
+          </div>
+        </Callout>
+      )}
 
       <GoogleSignInButton onCredential={handleGoogle} disabled={submitting} />
 
       <div className="auth-form__divider">
-        <span>or continue with email</span>
+        <span>or sign in with email</span>
       </div>
 
-      <form className="auth-form" onSubmit={handleSubmit}>
-        <Field label="Email" htmlFor="email">
+      <form className="auth-form" onSubmit={handleSubmit} noValidate>
+        <Field label="Email address" htmlFor="email" error={emailError} required>
           <TextInput
             id="email"
             name="email"
             type="email"
             autoComplete="email"
-            placeholder="you@example.com"
+            autoFocus
+            placeholder="name@domain.com"
             value={email}
-            onChange={(e) => setEmail(e.target.value)}
+            onChange={handleEmailChange}
+            onBlur={() => setEmailError(validateEmail(email.trim()))}
             required
+            disabled={submitting}
           />
         </Field>
 
-        <Field label="Password" htmlFor="password">
+        <Field label="Password" htmlFor="password" required>
           <TextInput
             id="password"
             name="password"
@@ -77,21 +130,42 @@ const Login = () => {
             autoComplete="current-password"
             placeholder="Enter your password"
             value={password}
-            onChange={(e) => setPassword(e.target.value)}
+            onChange={handlePasswordChange}
             required
+            disabled={submitting}
           />
         </Field>
 
-        <Button type="submit" size="lg" loading={submitting} className="auth-form__submit">
-          Sign in
+        <div className="auth-form__options">
+          <label className="auth-form__checkbox-label">
+            <input
+              type="checkbox"
+              className="auth-form__checkbox"
+              checked={rememberMe}
+              onChange={(e) => setRememberMe(e.target.checked)}
+            />
+            <span>Remember email</span>
+          </label>
+        </div>
+
+        <Button
+          type="submit"
+          size="lg"
+          variant="primary"
+          loading={submitting}
+          disabled={submitting || !email.trim() || !password}
+          className="auth-form__submit"
+        >
+          {submitting ? "Authenticating…" : "Sign in to Studio"}
         </Button>
       </form>
 
       <p className="auth-form__switch">
-        Don't have an account? <Link to="/register">Create one</Link>
+        Don't have an account yet? <Link to="/register">Create an account</Link>
       </p>
     </AuthLayout>
   );
 };
 
 export default Login;
+

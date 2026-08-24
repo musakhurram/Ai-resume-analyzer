@@ -13,7 +13,11 @@ const AppShell = () => {
 
   return (
     <div className="app-shell">
-      <Sidebar open={navOpen} onNavigate={() => setNavOpen(false)} />
+      <Sidebar
+        open={navOpen}
+        onNavigate={() => setNavOpen(false)}
+        onClose={() => setNavOpen(false)}
+      />
       {navOpen && (
         <button
           type="button"
@@ -39,3 +43,4 @@ const AppShell = () => {
 };
 
 export default AppShell;
+

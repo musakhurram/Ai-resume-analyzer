@@ -1,101 +1,246 @@
 .auth-layout {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  grid-template-columns: 1.05fr 1fr;
   min-height: 100vh;
+  background: var(--bg);
+  position: relative;
 
+  // Left Brand Column
   &__brand {
     position: relative;
     display: flex;
     flex-direction: column;
     justify-content: space-between;
-    padding: var(--space-7) var(--space-7);
-    background: #0a0a1a;
-    background-image: var(--gradient-signal), var(--gradient-mesh);
-    background-blend-mode: normal, screen;
-    color: #ffffff;
+    gap: var(--space-6);
+    padding: var(--space-7) var(--space-8);
+    background: var(--bg-canvas);
+    border-right: 1px solid var(--border);
     overflow: hidden;
   }
 
   &__brand-top {
     display: flex;
     align-items: center;
-    gap: 0.6rem;
-    z-index: 1;
+    z-index: 2;
+    position: relative;
+  }
+
+  &__brand-logo {
+    display: flex;
+    align-items: center;
+    gap: 0.65rem;
   }
 
   &__mark {
-    width: 28px;
-    height: 28px;
-    flex-shrink: 0;
+    width: 36px;
+    height: 36px;
+    border-radius: var(--radius-sm);
+    background: var(--surface-solid);
+    color: var(--accent);
+    border: 1px solid var(--border-strong);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    &--sm {
+      width: 30px;
+      height: 30px;
+    }
+  }
+
+  &__mark-svg {
+    width: 19px;
+    height: 19px;
   }
 
   &__wordmark {
     font-family: var(--font-display);
     font-size: 1.05rem;
-    font-weight: 600;
-    letter-spacing: -0.01em;
+    font-weight: 700;
+    letter-spacing: -0.02em;
+    color: var(--ink);
   }
 
-  &__gauge {
-    position: absolute;
-    right: -70px;
-    top: 50%;
-    transform: translateY(-50%);
-    width: 420px;
-    opacity: 0.55;
-
-    &-track {
-      fill: none;
-      stroke: rgba(255, 255, 255, 0.14);
-      stroke-width: 1;
-    }
-
-    &-arc {
-      fill: none;
-      stroke: rgba(255, 255, 255, 0.65);
-      stroke-width: 1.5;
-      stroke-dasharray: 340 490;
-    }
-
-    &-tick {
-      stroke: rgba(255, 255, 255, 0.3);
-      stroke-width: 1.5;
-    }
-  }
-
-  &__copy {
-    max-width: 380px;
+  // Abstract document composition — the visual centerpiece of the brand column
+  &__composition {
+    position: relative;
+    flex: 1;
+    min-height: 260px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
     z-index: 1;
   }
 
-  &__headline {
+  &__ghost-word {
+    position: absolute;
+    top: -2.5rem;
+    right: -1.5rem;
     font-family: var(--font-display);
-    font-size: 1.85rem;
+    font-weight: 700;
+    font-size: 11rem;
+    line-height: 1;
+    letter-spacing: -0.04em;
+    color: var(--ink);
+    opacity: 0.04;
+    white-space: nowrap;
+    transform: rotate(-4deg);
+    pointer-events: none;
+    user-select: none;
+  }
+
+  &__stack {
+    position: relative;
+    width: 260px;
+    height: 200px;
+  }
+
+  &__sheet {
+    position: absolute;
+    inset: 0;
+    border-radius: var(--radius-md);
+    border: 1px solid var(--border-strong);
+    background: var(--bg-raised);
+
+    &--back {
+      transform: rotate(-6deg) translate(-6px, 6px);
+      opacity: 0.5;
+    }
+
+    &--mid {
+      transform: rotate(3deg) translate(4px, -4px);
+      opacity: 0.75;
+    }
+
+    &--front {
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+      padding: var(--space-5);
+      box-shadow: var(--shadow-md);
+    }
+  }
+
+  &__doc-line {
+    height: 6px;
+    border-radius: var(--radius-full);
+    background: var(--border-strong);
+    opacity: 0.7;
+
+    &--name {
+      width: 55%;
+      height: 9px;
+      background: var(--ink-faint);
+      opacity: 0.9;
+      margin-bottom: 0.15rem;
+    }
+
+    &--role {
+      width: 38%;
+      margin-bottom: 0.35rem;
+    }
+
+    &--w1 {
+      width: 88%;
+    }
+
+    &--w2 {
+      width: 68%;
+    }
+
+    &--w3 {
+      width: 46%;
+    }
+
+    &--accent {
+      background: var(--accent);
+      opacity: 0.85;
+    }
+  }
+
+  &__doc-rule {
+    height: 1px;
+    background: var(--border);
+    margin: 0.3rem 0;
+  }
+
+  &__hero {
+    max-width: 460px;
+    z-index: 2;
+    position: relative;
+  }
+
+  &__headline {
+    font-size: 1.9rem;
+    font-weight: 700;
     line-height: 1.25;
+    letter-spacing: -0.03em;
+    color: var(--ink);
     margin-bottom: var(--space-3);
   }
 
   &__sub {
     font-size: 0.9375rem;
-    line-height: 1.6;
-    color: rgba(255, 255, 255, 0.75);
+    line-height: 1.65;
+    color: var(--ink-muted);
   }
 
-  &__foot {
-    z-index: 1;
-    color: rgba(255, 255, 255, 0.55);
+  // Quiet, non-numeric value statements
+  &__points {
+    display: flex;
+    flex-direction: column;
+    gap: 0.6rem;
+    list-style: none;
+    z-index: 2;
+    position: relative;
+    padding-top: var(--space-5);
+    border-top: 1px solid var(--border);
   }
 
+  &__point {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.65rem;
+    font-size: 0.8125rem;
+    line-height: 1.5;
+    color: var(--ink-secondary);
+  }
+
+  &__point-mark {
+    flex-shrink: 0;
+    width: 6px;
+    height: 6px;
+    margin-top: 0.4rem;
+    border-radius: 50%;
+    background: var(--accent);
+  }
+
+  // Right Column: Form Panel
   &__panel {
     display: flex;
     flex-direction: column;
     background: var(--bg);
+    min-height: 100vh;
+    position: relative;
   }
 
   &__panel-top {
     display: flex;
-    justify-content: flex-end;
-    padding: var(--space-5);
+    align-items: center;
+    justify-content: space-between;
+    padding: var(--space-5) var(--space-7);
+  }
+
+  &__panel-actions {
+    display: flex;
+    align-items: center;
+    gap: var(--space-3);
+  }
+
+  &__mobile-brand {
+    display: none;
+    align-items: center;
+    gap: 0.6rem;
   }
 
   &__form-wrap {
@@ -103,24 +248,131 @@
     display: flex;
     flex-direction: column;
     justify-content: center;
-    max-width: 380px;
+    max-width: 440px;
     width: 100%;
     margin: 0 auto;
     padding: 0 var(--space-5) var(--space-7);
+  }
 
-    h1 {
-      font-size: 1.6rem;
-      margin: 0.4rem 0 var(--space-5);
-    }
+  &__form-header {
+    margin-bottom: var(--space-5);
+    text-align: left;
+  }
+
+  &__eyebrow {
+    color: var(--accent);
+    margin-bottom: 0.35rem;
+    display: inline-block;
+  }
+
+  &__title {
+    font-size: 1.75rem;
+    font-weight: 700;
+    letter-spacing: -0.03em;
+    color: var(--ink);
+    margin-bottom: 0.35rem;
+  }
+
+  &__form-desc {
+    color: var(--ink-muted);
+    font-size: 0.875rem;
+  }
+
+  &__form-card {
+    padding: var(--space-6);
+    background: var(--surface-solid);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-card);
+  }
+
+  &__secure-note {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.45rem;
+    margin-top: var(--space-4);
+    font-size: 0.75rem;
+    color: var(--ink-faint);
+    text-align: center;
+  }
+
+  &__secure-icon {
+    width: 14px;
+    height: 14px;
+    color: var(--ink-faint);
+    flex-shrink: 0;
   }
 }
 
-@media (max-width: 860px) {
+@media (max-width: 1100px) {
+  .auth-layout__ghost-word {
+    font-size: 8.5rem;
+  }
+}
+
+// Below 960px: collapse the brand column into a compact header band
+// instead of dropping it entirely, so the page still feels branded.
+@media (max-width: 960px) {
   .auth-layout {
     grid-template-columns: 1fr;
 
     &__brand {
+      flex-direction: row;
+      align-items: center;
+      justify-content: space-between;
+      gap: var(--space-4);
+      padding: var(--space-4) var(--space-5);
+      border-right: none;
+      border-bottom: 1px solid var(--border);
+      min-height: unset;
+    }
+
+    &__composition,
+    &__hero,
+    &__points {
       display: none;
     }
+
+    &__panel-top {
+      padding: var(--space-4) var(--space-5);
+    }
+
+    &__form-wrap {
+      padding: var(--space-5) var(--space-4) var(--space-7);
+    }
+  }
+
+  // The compact top band carries the brand + one line of atmosphere
+  .auth-layout__brand::after {
+    content: "Make your resume stronger before it reaches a recruiter.";
+    display: block;
+    font-size: 0.8125rem;
+    color: var(--ink-muted);
+    max-width: 55%;
+    text-align: right;
+    line-height: 1.4;
+  }
+}
+
+@media (max-width: 640px) {
+  .auth-layout__brand {
+    display: none;
+  }
+
+  .auth-layout__mobile-brand {
+    display: flex;
+  }
+
+  .auth-layout__panel-top {
+    padding: var(--space-4);
+  }
+
+  .auth-layout__form-wrap {
+    padding: var(--space-4) var(--space-4) var(--space-6);
+  }
+
+  .auth-layout__form-card {
+    padding: var(--space-5);
   }
 }

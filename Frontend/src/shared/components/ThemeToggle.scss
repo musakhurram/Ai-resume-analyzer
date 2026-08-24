@@ -1,20 +1,25 @@
 .theme-toggle {
   flex-shrink: 0;
   padding: 0;
-  border-radius: 999px;
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  border-radius: var(--radius-full);
+  display: inline-flex;
+  align-items: center;
 
   &__track {
     position: relative;
     display: flex;
     align-items: center;
-    width: 52px;
-    height: 28px;
+    justify-content: space-between;
+    width: 56px;
+    height: 30px;
     padding: 0 6px;
     border: 1px solid var(--border-strong);
-    border-radius: 999px;
+    border-radius: var(--radius-full);
     background: var(--surface-2);
-    transition: background-color var(--duration-med) var(--ease),
-      border-color var(--duration-med) var(--ease);
+    transition: all var(--duration-med) var(--ease);
   }
 
   &__icon {
@@ -26,42 +31,56 @@
     width: 16px;
     height: 16px;
     color: var(--ink-faint);
+    transition: color var(--duration-fast) var(--ease);
 
     svg {
       width: 100%;
       height: 100%;
     }
-
-    &--sun {
-      margin-right: auto;
-    }
-
-    &--moon {
-      margin-left: auto;
-    }
   }
 
-  &__knob {
+  &__thumb {
     position: absolute;
-    top: 2px;
-    left: 2px;
+    top: 3px;
+    left: 3px;
     width: 22px;
     height: 22px;
     border-radius: 50%;
-    background: var(--accent);
+    background: var(--bg-raised);
+    border: 1px solid var(--border);
     box-shadow: var(--shadow-sm);
-    transition: transform var(--duration-med) var(--ease), background-color var(--duration-med) var(--ease);
+    transition: transform var(--duration-med) cubic-bezier(0.16, 1, 0.3, 1),
+      background-color var(--duration-med) var(--ease);
   }
 
-  &[aria-checked="true"] .theme-toggle__knob {
-    transform: translateX(24px);
+  &[aria-checked="true"] {
+    .theme-toggle__thumb {
+      transform: translateX(26px);
+      background: var(--accent);
+      border-color: rgba(255, 255, 255, 0.15);
+    }
+
+    .theme-toggle__icon--moon {
+      color: #ffffff;
+    }
+
+    .theme-toggle__icon--sun {
+      color: var(--ink-faint);
+    }
   }
 
-  &[aria-checked="true"] .theme-toggle__icon--moon {
-    color: var(--on-accent);
+  &[aria-checked="false"] {
+    .theme-toggle__icon--sun {
+      color: var(--gold);
+    }
+
+    .theme-toggle__icon--moon {
+      color: var(--ink-faint);
+    }
   }
 
   &:hover .theme-toggle__track {
-    border-color: var(--accent);
+    border-color: var(--ink-muted);
+    background: var(--surface-3);
   }
 }

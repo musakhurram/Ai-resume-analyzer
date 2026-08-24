@@ -1,128 +1,217 @@
 // =============================================================
 // Design tokens — Resume Analyzer
-// A futuristic, professional system: deep space surfaces, glass
-// panels, and a violet → cyan signal gradient as the single
-// accent thread running through the whole product.
+// Deep graphite canvases, ivory type, a single electric-mint
+// accent used sparingly. Precision over ornament.
 // =============================================================
 
 :root {
-  // ---- Type ----
-  --font-display: "Sora", "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  // ---- Typography Stack (one family, used with discipline) ----
+  --font-display: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
   --font-body: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
   --font-mono: "JetBrains Mono", ui-monospace, "SFMono-Regular", Menlo, monospace;
 
   // ---- Radii ----
-  --radius-sm: 10px;
-  --radius-md: 16px;
-  --radius-lg: 24px;
-  --radius-full: 999px;
+  --radius-xs: 5px;
+  --radius-sm: 8px;
+  --radius-md: 12px;
+  --radius-lg: 16px;
+  --radius-xl: 22px;
+  --radius-full: 9999px;
 
-  // ---- Spacing scale ----
+  // ---- Spacing ----
   --space-1: 0.25rem;
   --space-2: 0.5rem;
   --space-3: 0.75rem;
   --space-4: 1rem;
-  --space-5: 1.5rem;
-  --space-6: 2rem;
-  --space-7: 3rem;
-  --space-8: 4rem;
+  --space-5: 1.25rem;
+  --space-6: 1.75rem;
+  --space-7: 2.5rem;
+  --space-8: 3.5rem;
+  --space-9: 5.5rem;
+  --space-10: 7.5rem;
 
   // ---- Motion ----
-  --ease: cubic-bezier(0.4, 0, 0.2, 1);
-  --duration-fast: 140ms;
-  --duration-med: 260ms;
-
-  // ---- Signal gradient — the app's single recurring accent motif ----
-  --gradient-signal: linear-gradient(135deg, #8b5cf6 0%, #6366f1 45%, #22d3ee 100%);
-  --gradient-signal-soft: linear-gradient(135deg, rgba(139, 92, 246, 0.16) 0%, rgba(34, 211, 238, 0.16) 100%);
-  --gradient-mesh: radial-gradient(circle at 12% 8%, rgba(124, 58, 237, 0.25), transparent 42%),
-    radial-gradient(circle at 88% 4%, rgba(34, 211, 238, 0.18), transparent 40%),
-    radial-gradient(circle at 50% 100%, rgba(99, 102, 241, 0.16), transparent 55%);
+  --ease: cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-in-out: cubic-bezier(0.4, 0, 0.2, 1);
+  --ease-spring: cubic-bezier(0.175, 0.885, 0.32, 1.275);
+  --duration-fast: 150ms;
+  --duration-med: 220ms;
+  --duration-slow: 380ms;
 }
 
-// =====================
-// Dark theme (default) — deep space / glass
-// =====================
+// =============================================================
+// Dark Theme (Default) — Deep Graphite & Electric Mint
+// =============================================================
 :root,
 [data-theme="dark"] {
-  --bg: #05070f;
-  --bg-raised: #0a0e1c;
-  --surface: rgba(255, 255, 255, 0.035);
-  --surface-2: rgba(255, 255, 255, 0.06);
-  --surface-tint: rgba(139, 92, 246, 0.12);
-  --surface-blur: blur(20px);
+  // Base background layers
+  --bg: #0b0d0f;
+  --bg-subtle: #0b0d0f;
+  --bg-raised: #12161a;
+  --bg-float: #181d22;
+  --bg-canvas: #08090b;
 
-  --ink: #eef1fb;
-  --ink-muted: #9aa3c4;
-  --ink-faint: #5c6488;
+  // Surface materials (flat, not glass)
+  --surface: #12161a;
+  --surface-solid: #12161a;
+  --surface-2: #12161a;
+  --surface-3: #181d22;
+  --surface-hover: #181d22;
+  --surface-active: #1d2226;
+  --surface-blur: blur(14px);
+  --surface-glass: rgba(18, 22, 26, 0.94);
+  --surface-card: #12161a;
 
-  --border: rgba(255, 255, 255, 0.08);
-  --border-strong: rgba(255, 255, 255, 0.16);
+  // Inks & Typography
+  --ink: #f1f3ee;
+  --ink-secondary: #c4cbcd;
+  --ink-muted: #9aa3a8;
+  --ink-faint: #667078;
+  --ink-inverted: #0b0d0f;
 
-  --accent: #7c6bf6;
-  --accent-strong: #6d5ef0;
-  --accent-soft: rgba(124, 107, 246, 0.16);
-  --accent-cyan: #22d3ee;
-  --on-accent: #ffffff;
+  // Borders & Dividers
+  --border: #252b30;
+  --border-subtle: #1a1f23;
+  --border-strong: #343c42;
+  --border-glow: rgba(168, 240, 107, 0.3);
+  --border-focus: rgba(168, 240, 107, 0.55);
 
-  --gold: #f0b357;
-  --gold-soft: rgba(240, 179, 87, 0.14);
+  // Primary Brand — Electric Mint
+  --accent: #a8f06b;
+  --accent-light: #bdf58a;
+  --accent-hover: #bdf58a;
+  --accent-strong: #8fd956;
+  --accent-soft: #1d2a18;
+  --accent-border: rgba(168, 240, 107, 0.32);
+  --on-accent: #0b0d0f;
 
-  --danger: #fb7185;
-  --danger-soft: rgba(251, 113, 133, 0.14);
+  // Secondary / Info (muted teal, used only for informational badges)
+  --cyan: #6cc9d9;
+  --cyan-light: #8ad7e3;
+  --cyan-soft: rgba(108, 201, 217, 0.12);
+  --cyan-border: rgba(108, 201, 217, 0.26);
 
-  --focus-ring: #8b5cf6;
+  // Restrained gradient/text signatures (kept minimal — used once, not everywhere)
+  --gradient-accent: linear-gradient(135deg, #a8f06b 0%, #8fd956 100%);
+  --gradient-subtle: linear-gradient(180deg, rgba(168, 240, 107, 0.06) 0%, rgba(168, 240, 107, 0) 100%);
+  --gradient-text: linear-gradient(135deg, #f1f3ee 40%, #a8f06b 130%);
 
-  --severity-low: #34d399;
-  --severity-medium: #f0b357;
-  --severity-high: #fb7185;
+  // Elevation / focus glow (subtle, not neon)
+  --glow-accent: 0 0 0 1px rgba(168, 240, 107, 0.18);
+  --glow-pill: none;
 
-  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.3);
-  --shadow-md: 0 12px 32px rgba(3, 4, 12, 0.45);
-  --shadow-glow: 0 0 0 1px rgba(139, 92, 246, 0.25), 0 8px 30px rgba(124, 58, 237, 0.25);
+  // Status & Severity
+  --severity-low: #8fd956;
+  --severity-low-soft: rgba(143, 217, 86, 0.12);
+  --severity-low-border: rgba(143, 217, 86, 0.28);
+
+  --severity-medium: #f4b860;
+  --severity-medium-soft: rgba(244, 184, 96, 0.12);
+  --severity-medium-border: rgba(244, 184, 96, 0.28);
+
+  --severity-high: #ff6b61;
+  --severity-high-soft: rgba(255, 107, 97, 0.12);
+  --severity-high-border: rgba(255, 107, 97, 0.28);
+
+  --gold: #f4b860;
+  --gold-soft: rgba(244, 184, 96, 0.12);
+
+  --danger: #ff6b61;
+  --danger-soft: rgba(255, 107, 97, 0.12);
+  --warning: #f4b860;
+  --info: #6cc9d9;
+
+  --focus-ring: #a8f06b;
+
+  // Elevation Hierarchy
+  --shadow-xs: 0 1px 2px rgba(0, 0, 0, 0.35);
+  --shadow-sm: 0 2px 6px rgba(0, 0, 0, 0.28), 0 1px 2px rgba(0, 0, 0, 0.22);
+  --shadow-md: 0 10px 26px -8px rgba(0, 0, 0, 0.5), 0 4px 10px -4px rgba(0, 0, 0, 0.35);
+  --shadow-lg: 0 24px 48px -16px rgba(0, 0, 0, 0.6), 0 8px 20px -8px rgba(0, 0, 0, 0.4);
+  --shadow-card: 0 2px 16px -4px rgba(0, 0, 0, 0.4);
 
   color-scheme: dark;
 }
 
-// =====================
-// Light theme — soft, still glassy
-// =====================
+// =============================================================
+// Light Theme — Ivory & Graphite
+// =============================================================
 [data-theme="light"] {
-  --bg: #f4f5fb;
+  --bg: #f7f7f3;
+  --bg-subtle: #f1f1ec;
   --bg-raised: #ffffff;
-  --surface: rgba(255, 255, 255, 0.7);
-  --surface-2: #edeefb;
-  --surface-tint: #ece9ff;
-  --surface-blur: blur(16px);
+  --bg-float: #ffffff;
+  --bg-canvas: #f1f1ec;
 
-  --ink: #12142b;
-  --ink-muted: #5c6180;
-  --ink-faint: #9195b3;
+  --surface: #ffffff;
+  --surface-solid: #ffffff;
+  --surface-2: #f1f1ec;
+  --surface-3: #e8e8e1;
+  --surface-hover: #f1f1ec;
+  --surface-active: #e8e8e1;
+  --surface-blur: blur(14px);
+  --surface-glass: rgba(255, 255, 255, 0.96);
+  --surface-card: #ffffff;
 
-  --border: #e2e2f2;
-  --border-strong: #cfcfe8;
+  --ink: #12161a;
+  --ink-secondary: #3c4448;
+  --ink-muted: #666f74;
+  --ink-faint: #93999c;
+  --ink-inverted: #ffffff;
 
-  --accent: #6d5ef0;
-  --accent-strong: #5b4be0;
-  --accent-soft: #ece9ff;
-  --accent-cyan: #0891b2;
+  --border: #e4e4dd;
+  --border-subtle: #ececE6;
+  --border-strong: #cfcfc6;
+  --border-glow: rgba(90, 168, 47, 0.3);
+  --border-focus: rgba(90, 168, 47, 0.5);
+
+  --accent: #5a9c2f;
+  --accent-light: #6fb83c;
+  --accent-hover: #4c8627;
+  --accent-strong: #3f7020;
+  --accent-soft: #eaf5df;
+  --accent-border: rgba(90, 156, 47, 0.28);
   --on-accent: #ffffff;
 
-  --gold: #b45309;
-  --gold-soft: #fef3e2;
+  --cyan: #1c8fa3;
+  --cyan-light: #2aa4b9;
+  --cyan-soft: rgba(28, 143, 163, 0.08);
+  --cyan-border: rgba(28, 143, 163, 0.22);
 
-  --danger: #e11d48;
-  --danger-soft: #fdecef;
+  --gradient-accent: linear-gradient(135deg, #5a9c2f 0%, #3f7020 100%);
+  --gradient-subtle: linear-gradient(180deg, rgba(90, 156, 47, 0.05) 0%, rgba(90, 156, 47, 0) 100%);
+  --gradient-text: linear-gradient(135deg, #12161a 40%, #4c8627 130%);
 
-  --focus-ring: #6d5ef0;
+  --glow-accent: 0 0 0 1px rgba(90, 156, 47, 0.16);
+  --glow-pill: none;
 
-  --severity-low: #15803d;
-  --severity-medium: #b45309;
-  --severity-high: #e11d48;
+  --severity-low: #3f8f22;
+  --severity-low-soft: #eaf6e2;
+  --severity-low-border: #c9e8b9;
 
-  --shadow-sm: 0 1px 2px rgba(18, 20, 43, 0.06);
-  --shadow-md: 0 12px 28px rgba(18, 20, 43, 0.08);
-  --shadow-glow: 0 0 0 1px rgba(109, 94, 240, 0.14), 0 10px 26px rgba(109, 94, 240, 0.14);
+  --severity-medium: #b4720f;
+  --severity-medium-soft: #fdf3e2;
+  --severity-medium-border: #f2d9a8;
+
+  --severity-high: #c53a2e;
+  --severity-high-soft: #fbeae8;
+  --severity-high-border: #f0c4bf;
+
+  --gold: #b4720f;
+  --gold-soft: #fdf3e2;
+
+  --danger: #c53a2e;
+  --danger-soft: #fbeae8;
+  --warning: #b4720f;
+  --info: #1c8fa3;
+
+  --focus-ring: #4c8627;
+
+  --shadow-xs: 0 1px 2px rgba(15, 23, 20, 0.05);
+  --shadow-sm: 0 1px 3px rgba(15, 23, 20, 0.07), 0 1px 2px rgba(15, 23, 20, 0.04);
+  --shadow-md: 0 8px 20px -4px rgba(15, 23, 20, 0.08), 0 3px 8px -2px rgba(15, 23, 20, 0.04);
+  --shadow-lg: 0 20px 40px -10px rgba(15, 23, 20, 0.1), 0 8px 16px -4px rgba(15, 23, 20, 0.05);
+  --shadow-card: 0 2px 10px rgba(15, 23, 20, 0.05);
 
   color-scheme: light;
 }

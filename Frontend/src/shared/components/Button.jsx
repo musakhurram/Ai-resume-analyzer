@@ -6,6 +6,8 @@ const Button = ({
   size = "md",
   loading = false,
   disabled = false,
+  iconLeft,
+  iconRight,
   children,
   className = "",
   ...rest
@@ -17,10 +19,22 @@ const Button = ({
       aria-busy={loading || undefined}
       {...rest}
     >
-      {loading && <span className="btn__spinner" aria-hidden="true" />}
+      {loading ? (
+        <span className="btn__spinner" aria-hidden="true" />
+      ) : iconLeft ? (
+        <span className="btn__icon btn__icon--left" aria-hidden="true">
+          {iconLeft}
+        </span>
+      ) : null}
       <span className="btn__label">{children}</span>
+      {!loading && iconRight && (
+        <span className="btn__icon btn__icon--right" aria-hidden="true">
+          {iconRight}
+        </span>
+      )}
     </Component>
   );
 };
 
 export default Button;
+
