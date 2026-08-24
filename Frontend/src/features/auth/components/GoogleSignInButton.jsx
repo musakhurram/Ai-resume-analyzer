@@ -24,16 +24,24 @@ const GoogleSignInButton = ({ onCredential, disabled }) => {
       window.google.accounts.id.initialize({
         client_id: GOOGLE_CLIENT_ID,
         callback: (response) => onCredential(response.credential),
+        // Without this, Google auto-detects an active browser session and
+        // renders a personalized "Continue as [Name]" chip on a fixed
+        // white background instead of the plain themed button.
+        auto_select: false,
       });
 
       containerRef.current.innerHTML = "";
       window.google.accounts.id.renderButton(containerRef.current, {
         type: "standard",
+        // "outline" is a light-mode style (white/light-gray button) that
+        // clashes with this app's dark theme. "filled_black" is Google's
+        // dark-mode-appropriate variant.
         theme: "outline",
         size: "large",
         shape: "pill",
         width: 340,
         text: "continue_with",
+        auto_select: "false"
       });
     }
 
