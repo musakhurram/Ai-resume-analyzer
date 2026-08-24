@@ -156,7 +156,7 @@ const Login = () => {
           disabled={submitting || !email.trim() || !password}
           className="auth-form__submit"
         >
-          {submitting ? "Authenticating…" : "Sign in to Studio"}
+          {submitting ? "Authenticating…" : "Sign in"}
         </Button>
       </form>
 
