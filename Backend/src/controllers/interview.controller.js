@@ -1,4 +1,12 @@
+// pdf-parse spins up an internal pdf.js worker; on serverless platforms
+// (Vercel/Lambda/Netlify) the automatic "fake worker" path resolution
+// fails because the worker file isn't reachable the way it expects,
+// throwing "Setting up fake worker failed: ...". Pointing it at the
+// worker module explicitly (per pdf-parse's own troubleshooting docs)
+// avoids that lookup entirely.
+const { getData } = require("pdf-parse/worker");
 const { PDFParse } = require("pdf-parse");
+PDFParse.setWorker(getData());
 const { generateInterviewReport } = require("../services/ai.service");
 const { renderInterviewReportPdf } = require("../services/pdf.service");
 const interviewReportModel = require("../models/interviewReport.model");
