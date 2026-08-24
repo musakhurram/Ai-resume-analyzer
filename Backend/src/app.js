@@ -1,3 +1,16 @@
+// MUST run before any other require in this chain. The interview routes
+// pull in the "pdf-parse" package (for resume text extraction), which
+// internally uses pdfjs-dist — and pdfjs-dist references the browser's
+// DOMMatrix API even for plain text extraction with no rendering
+// involved. Node has no such global, so without this polyfill, simply
+// requiring pdf-parse throws "DOMMatrix is not defined" and crashes the
+// whole app at startup (this is what caused the serverless function to
+// crash with empty logs on Vercel — the throw happened during module
+// loading, before any request was even handled).
+if (typeof globalThis.DOMMatrix === "undefined") {
+  globalThis.DOMMatrix = require("dommatrix");
+}
+
 const express = require("express");
 const cookieParser = require("cookie-parser");
 const cors = require("cors");
