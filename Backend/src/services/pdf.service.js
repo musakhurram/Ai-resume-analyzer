@@ -158,25 +158,36 @@ function getFitInfo(score = 0) {
   };
 }
 
+const MONTH_NAMES = [
+  "January", "February", "March", "April", "May", "June",
+  "July", "August", "September", "October", "November", "December",
+];
+
 /**
- * Format timestamp into display date
+ * Format timestamp into display date.
+ * Implemented manually (not via toLocaleDateString) because that API's
+ * output depends on the Node build's ICU data — on small-icu builds
+ * (common in slim Docker images) it silently falls back to a different
+ * or malformed format instead of throwing, which is worse.
  */
 function formatDate(val) {
   const d = val ? new Date(val) : new Date();
-  return d.toLocaleDateString("en-US", {
-    month: "long",
-    day: "numeric",
-    year: "numeric",
-  });
+  if (Number.isNaN(d.getTime())) return formatDate(); // guard bad/unparseable input
+  return `${MONTH_NAMES[d.getMonth()]} ${d.getDate()}, ${d.getFullYear()}`;
 }
 
+// Standard top offset for content on any page after the first (below the
+// running header's rule at y=34, drawn in the post-pass at the end).
+const SUBSEQUENT_PAGE_TOP = 46;
+
 /**
- * Check if the upcoming block fits on the current page; otherwise trigger a new page
+ * Check if the upcoming block fits on the current page; otherwise trigger a new page.
+ * Returns true if a page break occurred.
  */
 function ensureSpace(doc, neededHeight) {
   if (doc.y + neededHeight > USABLE_BOTTOM) {
     doc.addPage();
-    doc.y = 52; // standard top offset on subsequent pages
+    doc.y = SUBSEQUENT_PAGE_TOP;
     return true;
   }
   return false;
@@ -213,9 +224,34 @@ function drawBadge(
       .stroke();
   }
   doc.font(font).fontSize(fontSize).fillColor(textColor);
-  const textH = doc.heightOfString(text, { width });
+
+  // Pills must stay single-line: shrink the font instead of letting long
+  // labels wrap and break the rounded shape, and fall back to a truncated
+  // label with an ellipsis if it still can't fit at the minimum size.
+  const innerWidth = width - 8;
+  let renderText = text;
+  let size = fontSize;
+  const MIN_SIZE = 5.5;
+  while (
+    doc.font(font).fontSize(size).widthOfString(renderText) > innerWidth &&
+    size > MIN_SIZE
+  ) {
+    size -= 0.5;
+  }
+  doc.fontSize(size);
+  if (doc.widthOfString(renderText) > innerWidth) {
+    while (
+      renderText.length > 1 &&
+      doc.widthOfString(`${renderText}…`) > innerWidth
+    ) {
+      renderText = renderText.slice(0, -1);
+    }
+    renderText = `${renderText}…`;
+  }
+
+  const textH = doc.heightOfString(renderText, { width, lineBreak: false });
   const textY = y + (height - textH) / 2 + 0.5;
-  doc.text(text, x, textY, { width, align: "center" });
+  doc.text(renderText, x, textY, { width, align: "center", lineBreak: false });
   doc.restore();
 }
 
@@ -394,9 +430,9 @@ function drawExecutiveSummary(doc, report, fit) {
     const cy = startY + 28 + row * cellH;
 
     doc.font("Helvetica").fontSize(7.5).fillColor(PALETTE.textMuted);
-    doc.text(kpi.label, cx, cy);
+    doc.text(kpi.label, cx, cy, { width: cellW - 6, lineBreak: false });
     doc.font("Helvetica-Bold").fontSize(10).fillColor(kpi.color);
-    doc.text(kpi.val, cx, cy + 11);
+    doc.text(kpi.val, cx, cy + 11, { width: cellW - 6, lineBreak: false });
   });
 
   doc.restore();
@@ -456,10 +492,15 @@ function drawStrategicContext(doc, report) {
  * Draws a stylized section header
  */
 function drawSectionHeader(doc, { number, title, subtitle, countBadge }) {
-  ensureSpace(doc, 52);
+  const w = CONTENT_WIDTH;
+  let estSubtitleH = 0;
+  if (subtitle) {
+    doc.font("Helvetica").fontSize(8.5);
+    estSubtitleH = doc.heightOfString(subtitle, { width: w, lineGap: 1 });
+  }
+  ensureSpace(doc, 30 + (subtitle ? estSubtitleH + 6 : 0));
   const startY = doc.y;
   const x = PAGE_CONFIG.marginLeft;
-  const w = CONTENT_WIDTH;
 
   doc.save();
   // Number Badge
@@ -492,14 +533,17 @@ function drawSectionHeader(doc, { number, title, subtitle, countBadge }) {
     });
   }
 
-  // Subtitle
+  // Subtitle (height measured so multi-line subtitles don't collide with
+  // the divider rule below them)
+  let subtitleH = 0;
   if (subtitle) {
     doc.font("Helvetica").fontSize(8.5).fillColor(PALETTE.textMuted);
-    doc.text(subtitle, x, startY + 18, { width: w });
+    subtitleH = doc.heightOfString(subtitle, { width: w, lineGap: 1 });
+    doc.text(subtitle, x, startY + 18, { width: w, lineGap: 1 });
   }
 
   // Subtle divider rule
-  const lineY = startY + (subtitle ? 32 : 22);
+  const lineY = startY + (subtitle ? 18 + subtitleH + 6 : 22);
   doc
     .moveTo(x, lineY)
     .lineTo(x + w, lineY)
@@ -575,9 +619,17 @@ function drawSkillGaps(doc, skillGaps = []) {
     return (order[a.severity] ?? 3) - (order[b.severity] ?? 3);
   });
 
+  const nameColW = cardW - 140;
+
   sorted.forEach((gap, i) => {
     const sev = SEV_CONFIG[gap.severity] || SEV_CONFIG.medium;
-    const rowH = 34;
+    const label = `${i + 1}.  ${gap.skill || ""}`;
+
+    doc.font("Helvetica-Bold").fontSize(9.5);
+    const nameH = doc.heightOfString(label, { width: nameColW, lineGap: 1.5 });
+    // Row grows to fit a wrapped skill name instead of clipping/overflowing
+    // a fixed 34pt box; still respects the badge's own vertical space.
+    const rowH = Math.max(34, nameH + 20);
 
     ensureSpace(doc, rowH + 6);
     const startY = doc.y;
@@ -594,16 +646,17 @@ function drawSkillGaps(doc, skillGaps = []) {
       .lineWidth(0.8)
       .stroke();
 
-    // Skill Name
+    // Skill Name (vertically centered within the row)
     doc.font("Helvetica-Bold").fontSize(9.5).fillColor(PALETTE.textHeading);
-    doc.text(`${i + 1}.  ${gap.skill}`, cardX + 12, startY + 10, {
-      width: cardW - 140,
+    doc.text(label, cardX + 12, startY + (rowH - nameH) / 2, {
+      width: nameColW,
+      lineGap: 1.5,
     });
 
-    // Severity Pill on Right
+    // Severity Pill on Right (vertically centered within the row)
     drawBadge(doc, {
       x: cardX + cardW - 105,
-      y: startY + 8,
+      y: startY + (rowH - 18) / 2,
       width: 95,
       height: 18,
       text: sev.label,
@@ -670,8 +723,16 @@ function drawQuestionCard(doc, item, index, type = "technical") {
     (answerBoxH ? answerBoxH + 8 : 0) +
     12;
 
-  // Space check: If entire card doesn't fit on this page, move to next page
-  ensureSpace(doc, Math.min(totalCardH, 200));
+  // Space check: reserve the card's real height so long questions/answers
+  // trigger a page break instead of overflowing past the page bottom.
+  // (Previously this was capped at `Math.min(totalCardH, 200)`, which meant
+  // any card taller than 200pt was checked against too small a number and
+  // could render straight through the footer.) If a card is taller than a
+  // full fresh page can hold, PDFKit will still overflow — but that's a
+  // content problem (absurdly long text), not a layout bug, so we only
+  // clamp for that extreme case rather than the common one.
+  const maxPageHeight = USABLE_BOTTOM - SUBSEQUENT_PAGE_TOP;
+  ensureSpace(doc, Math.min(totalCardH, maxPageHeight));
 
   const startY = doc.y;
 
@@ -987,4 +1048,3 @@ function renderInterviewReportPdf(report, stream) {
 }
 
 module.exports = { renderInterviewReportPdf };
-

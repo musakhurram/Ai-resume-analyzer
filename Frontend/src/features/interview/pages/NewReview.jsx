@@ -311,9 +311,6 @@ const NewReview = () => {
             className="new-review__submit-btn"
           >
             {submitting ? "Analyzing…" : "Run review"}
-            <svg viewBox="0 0 16 16" fill="none" className="new-review__btn-arrow">
-              <path d="M6 3.5 11 8l-5 4.5" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
-            </svg>
           </Button>
         </div>
       </form>

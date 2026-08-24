@@ -229,6 +229,15 @@
     color: var(--ink-secondary);
   }
 }
+.report-detail__pdf-btn-content {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.report-detail__pdf-icon {
+  flex-shrink: 0;
+}
 
 @media (max-width: 900px) {
   .report-detail {

@@ -126,11 +126,25 @@ ${report.preparationPlan?.map((p) => `Day ${p.day}: ${p.focus} - ${p.tasks}`).jo
             {copied ? "Copied" : "Copy summary"}
           </Button>
           <Button variant="primary" size="sm" loading={downloading} onClick={handleDownloadPdf}>
-            <svg viewBox="0 0 16 16" fill="none" className="report-detail__pdf-icon">
-              <path d="M8 2v8m0 0 3-3m-3 3-3-3M3 12v1a1 1 0 0 0 1 1h8a1 1 0 0 0 1-1v-1" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round" />
-            </svg>
-            Download PDF
-          </Button>
+    <span className="report-detail__pdf-btn-content">
+      Download PDF
+      <svg
+        viewBox="0 0 16 16"
+        fill="none"
+        className="report-detail__pdf-icon"
+        width={16}
+        height={16}
+      >
+        <path
+          d="M8 2v8m0 0 3-3m-3 3-3-3M3 12v1a1 1 0 0 0 1 1h8a1 1 0 0 0 1-1v-1"
+          stroke="currentColor"
+          strokeWidth="1.4"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        />
+      </svg>
+    </span>
+  </Button>
         </div>
       </div>
 
