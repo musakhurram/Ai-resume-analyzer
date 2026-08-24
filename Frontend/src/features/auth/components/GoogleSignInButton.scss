@@ -1,0 +1,34 @@
+// Wrapper that stacks our own themed button beneath Google's real
+// (but invisible) button, so real clicks drive the actual sign-in flow
+// while the user only ever sees our design — never Google's personalized
+// "Continue as [Name]" chip.
+.google-signin-btn {
+  position: relative;
+  display: block;
+  width: 100%;
+  max-width: 340px;
+
+  &__visual {
+    position: relative;
+    z-index: 1;
+    width: 100%;
+    pointer-events: none;
+  }
+
+  &__real {
+    position: absolute;
+    inset: 0;
+    z-index: 2;
+    opacity: 0;
+    overflow: hidden;
+    border-radius: var(--radius-full);
+
+    &.is-disabled {
+      pointer-events: none;
+    }
+
+    iframe {
+      width: 100% !important;
+    }
+  }
+}
