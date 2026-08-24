@@ -4,71 +4,55 @@
   justify-content: center;
   align-items: center;
 
-  margin: 0 auto 1.25rem;
+  margin: 0 0 1.25rem;
 
-  min-height: 48px;
-
-  transition: transform 180ms ease;
+  /* Let Google's button determine its own height */
+  min-height: 40px;
 }
 
 .google-signin-btn__container {
   width: 340px;
   max-width: 100%;
-  height: 48px;
 
   display: flex;
-  align-items: center;
   justify-content: center;
+  align-items: center;
 
-  /*
-   * Gives the Google iframe a clean, smooth boundary.
-   */
-  border-radius: 999px;
-  overflow: hidden;
+  /* IMPORTANT:
+     Do not add a border, shadow, radius,
+     background, height, or overflow here.
+     Google owns the actual button.
+  */
+  margin: 0;
+  padding: 0;
 
-  /*
-   * Soft outer outline instead of a harsh border.
-   */
-  box-shadow:
-    0 0 0 1px rgba(255, 255, 255, 0.18),
-    0 1px 2px rgba(0, 0, 0, 0.08);
-
-  background: #ffffff;
-
-  transition:
-    box-shadow 180ms ease,
-    transform 180ms ease;
+  border: 0;
+  outline: 0;
+  background: transparent;
+  box-shadow: none;
 }
 
-/*
- * Subtle lift when hovering over the button.
- */
-.google-signin-btn:hover .google-signin-btn__container {
-  box-shadow:
-    0 0 0 1px rgba(255, 255, 255, 0.32),
-    0 3px 8px rgba(0, 0, 0, 0.12);
-
-  transform: translateY(-1px);
+/* Don't modify Google's iframe dimensions */
+.google-signin-btn__container iframe {
+  display: block;
+  border: 0;
+  outline: 0;
+  margin: 0;
+  padding: 0;
 }
 
-/*
- * Loading state.
- */
+/* Loading */
 .google-signin-btn.is-loading {
-  opacity: 0.7;
+  opacity: 0.65;
 }
 
-/*
- * Disabled state.
- */
+/* Disabled */
 .google-signin-btn.is-disabled {
   opacity: 0.55;
   pointer-events: none;
 }
 
-/*
- * Keep the button clean on smaller screens.
- */
+/* Mobile */
 @media (max-width: 480px) {
   .google-signin-btn {
     width: 100%;
@@ -76,6 +60,5 @@
 
   .google-signin-btn__container {
     width: 100%;
-    height: 46px;
   }
 }

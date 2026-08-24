@@ -33,18 +33,18 @@ const GoogleSignInButton = ({ onCredential, disabled }) => {
 
       googleContainerRef.current.innerHTML = "";
 
-      window.google.accounts.id.renderButton(
-        googleContainerRef.current,
-        {
-          type: "standard",
-          theme: "outline",
-          size: "large",
-          text: "continue_with",
-          shape: "pill",
-          logo_alignment: "left",
-          width: 340,
-        }
-      );
+     window.google.accounts.id.renderButton(
+  googleContainerRef.current,
+  {
+    type: "standard",
+    theme: "outline",
+    size: "large",
+    text: "continue_with",
+    shape: "pill",
+    logo_alignment: "left",
+    width: 340,
+  }
+);
 
       setReady(true);
     };
