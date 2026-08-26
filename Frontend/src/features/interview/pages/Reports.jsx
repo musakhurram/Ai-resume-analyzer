@@ -14,6 +14,7 @@ const formatDate = (value) => value ? new Date(value).toLocaleDateString(undefin
 
 const Reports = () => {
   const [reports, setReports] = useState(null);
+  const [activeTab, setActiveTab] = useState("all");
   const [searchQuery, setSearchQuery] = useState("");
   const [sortBy, setSortBy] = useState("newest");
   const [error, setError] = useState("");
@@ -33,20 +34,19 @@ const Reports = () => {
 
   const filteredReports = useMemo(() => {
     if (!reports) return [];
-    let list = [...reports];
+    let list = reports.filter((report) => activeTab === "all" || (activeTab === "interview" ? report.reviewType === "JD Match" : report.reviewType === "ATS Review"));
     if (searchQuery.trim()) {
       const q = searchQuery.toLowerCase();
       list = list.filter((report) => report.searchText.toLowerCase().includes(q));
     }
-    if (sortBy === "oldest") list.sort((a, b) => new Date(a.createdAt || 0) - new Date(b.createdAt || 0));
-    else list.sort((a, b) => new Date(b.createdAt || 0) - new Date(a.createdAt || 0));
+    list.sort((a, b) => sortBy === "oldest" ? new Date(a.createdAt || 0) - new Date(b.createdAt || 0) : new Date(b.createdAt || 0) - new Date(a.createdAt || 0));
     return list;
-  }, [reports, searchQuery, sortBy]);
+  }, [reports, activeTab, searchQuery, sortBy]);
 
   const stats = useMemo(() => {
     if (!reports?.length) return null;
     const scores = reports.map((report) => report.score);
-    return { count: reports.length, avg: Math.round(scores.reduce((a, b) => a + b, 0) / scores.length), best: Math.max(...scores), jd: reports.filter((r) => r.reviewType === "JD Match").length, ats: reports.filter((r) => r.reviewType === "ATS Review").length };
+    return { count: reports.length, avg: Math.round(scores.reduce((a, b) => a + b, 0) / scores.length), jd: reports.filter((r) => r.reviewType === "JD Match").length, ats: reports.filter((r) => r.reviewType === "ATS Review").length };
   }, [reports]);
 
   if (reports === null) return <PageLoader label="Loading your past reviews" />;
@@ -56,7 +56,7 @@ const Reports = () => {
       <header className="page-header">
         <div className="glow-pill"><span className="glow-pill__dot" /><span>REVIEW ARCHIVE</span></div>
         <h1 className="reports-page__title">Past Reviews</h1>
-        <p className="page-header__desc">One place for every JD Match and ATS review. Search your history and revisit any result.</p>
+        <p className="page-header__desc">View your JD Match and ATS review history in one place.</p>
       </header>
 
       {error && <Callout tone="error" title="Couldn't load reviews">{error}</Callout>}
@@ -71,14 +71,21 @@ const Reports = () => {
         <div className="reports-page__stat-box"><span className="reports-page__stat-num">{stats.avg}%</span><span className="reports-page__stat-title">Average Score</span></div>
       </div>}
 
-      {reports.length > 0 && <div className="reports-page__toolbar glass-panel">
-        <div className="reports-page__search-wrap">
-          <svg viewBox="0 0 16 16" fill="none" className="reports-page__search-icon" aria-hidden="true"><path d="M7 12A5 5 0 1 0 7 2a5 5 0 0 0 0 10zM14 14l-3.5-3.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" /></svg>
-          <input type="text" placeholder="Search by job title, company, or resume name…" className="reports-page__search-input" value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} />
-          {searchQuery && <button type="button" className="reports-page__clear-btn" onClick={() => setSearchQuery("")}>Clear</button>}
+      {reports.length > 0 && <>
+        <div className="reports-page__tabs" role="tablist" aria-label="Past review type">
+          <button type="button" className={activeTab === "all" ? "is-active" : ""} onClick={() => setActiveTab("all")}>All Reviews <span>{reports.length}</span></button>
+          <button type="button" className={activeTab === "interview" ? "is-active" : ""} onClick={() => setActiveTab("interview")}>Interview <span>{stats?.jd || 0}</span></button>
+          <button type="button" className={activeTab === "ats" ? "is-active" : ""} onClick={() => setActiveTab("ats")}>ATS <span>{stats?.ats || 0}</span></button>
         </div>
-        <div className="reports-page__sort-wrap"><label htmlFor="sortSelect" className="reports-page__sort-label">Sort:</label><select id="sortSelect" className="reports-page__sort-select" value={sortBy} onChange={(e) => setSortBy(e.target.value)}><option value="newest">Most Recent</option><option value="oldest">Oldest</option></select></div>
-      </div>}
+        <div className="reports-page__toolbar glass-panel">
+          <div className="reports-page__search-wrap">
+            <svg viewBox="0 0 16 16" fill="none" className="reports-page__search-icon" aria-hidden="true"><path d="M7 12A5 5 0 1 0 7 2a5 5 0 0 0 0 10zM14 14l-3.5-3.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" /></svg>
+            <input type="text" placeholder="Search by job title, company, or resume name…" className="reports-page__search-input" value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} />
+            {searchQuery && <button type="button" className="reports-page__clear-btn" onClick={() => setSearchQuery("")}>Clear</button>}
+          </div>
+          <div className="reports-page__sort-wrap"><label htmlFor="sortSelect" className="reports-page__sort-label">Sort:</label><select id="sortSelect" className="reports-page__sort-select" value={sortBy} onChange={(e) => setSortBy(e.target.value)}><option value="newest">Most Recent</option><option value="oldest">Oldest</option></select></div>
+        </div>
+      </>}
 
       {!reports.length ? (
         <EmptyState eyebrow="No reviews yet" title="Your review archive is empty" description="Run a JD Match or ATS review and it will appear here automatically." action={<Button as={Link} to="/new" variant="primary">Start a review</Button>} />
