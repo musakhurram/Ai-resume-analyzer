@@ -126,7 +126,6 @@ const AtsUploadForm = ({ onAnalyze, loading, error }) => {
                 onError={setFileError}
               />
               <div className="ats-form__hints">
-                <span>✓ Tested on Workday, Taleo, Greenhouse & Lever algorithms</span>
                 <span>✓ High-resolution selectable text PDF format supported</span>
               </div>
             </div>
