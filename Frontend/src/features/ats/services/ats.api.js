@@ -6,18 +6,10 @@ export async function analyzeAtsResume({ resume, resumeText, fileName, category 
     formData.append("resume", resume);
     formData.append("category", category);
     if (title) formData.append("title", title);
-    const response = await api.post("/api/resume/ats-analyze", formData, {
-      headers: { "Content-Type": "multipart/form-data" },
-    });
+    const response = await api.post("/api/resume/ats-analyze", formData, { headers: { "Content-Type": "multipart/form-data" } });
     return response.data;
   }
-
-  const response = await api.post("/api/resume/ats-analyze", {
-    resume: resumeText,
-    fileName: fileName || "Pasted-Resume.txt",
-    category,
-    title,
-  });
+  const response = await api.post("/api/resume/ats-analyze", { resume: resumeText, fileName: fileName || "Pasted-Resume.txt", category, title });
   return response.data;
 }
 
@@ -31,17 +23,11 @@ export async function getAtsReportById(id) {
   return response.data;
 }
 
-export async function listAtsReports({ category = "all", search = "", limit = 50 } = {}) {
-  const params = { category, limit };
+export async function listAtsReports({ search = "", sort = "recent", limit = 50 } = {}) {
+  const params = { sort, limit };
   if (search.trim()) params.search = search.trim();
   const response = await api.get("/api/resume/ats-reports", { params });
   return response.data;
-}
-
-export async function fetchAtsPdfBlobUrl(id) {
-  const response = await api.get(`/api/resume/ats-download/${id}`, { responseType: "blob" });
-  const blob = new Blob([response.data], { type: "application/pdf" });
-  return window.URL.createObjectURL(blob);
 }
 
 export async function downloadAtsPdf(id, candidateName = "ATS-Resume") {
@@ -50,8 +36,7 @@ export async function downloadAtsPdf(id, candidateName = "ATS-Resume") {
   const url = window.URL.createObjectURL(blob);
   const link = document.createElement("a");
   link.href = url;
-  const safeName = (candidateName || "ATS-Resume").replace(/[^a-zA-Z0-9_-]/g, "_");
-  link.download = `${safeName}_ATS_Optimized.pdf`;
+  link.download = `${(candidateName || "ATS-Resume").replace(/[^a-zA-Z0-9_-]/g, "_")}_ATS_Optimized.pdf`;
   document.body.appendChild(link);
   link.click();
   link.remove();
