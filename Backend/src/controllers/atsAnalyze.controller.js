@@ -114,6 +114,11 @@ async function atsReviseController(req, res, next) {
     report.revisedResume = revisedJson;
     await report.save();
 
+    // Warm PDF cache in background so subsequent PDF preview / download is instantaneous (0ms)
+    generateAtsPdfBuffer(revisedJson, String(report._id)).catch((err) => {
+      console.warn("Background PDF cache warming notice:", err.message);
+    });
+
     return res.status(200).json({
       message: "Resume revised successfully with AI",
       id: report._id,
@@ -155,7 +160,7 @@ async function atsDownloadController(req, res, next) {
       await report.save();
     }
 
-    const pdfBuffer = await generateAtsPdfBuffer(revisedResume);
+    const pdfBuffer = await generateAtsPdfBuffer(revisedResume, String(report._id));
 
     const safeName = (
       revisedResume.contact?.fullName || "ATS-Optimized-Resume"

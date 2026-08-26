@@ -58,7 +58,7 @@ const AtsUploadForm = ({ onAnalyze, loading, error }) => {
       <header className="page-header">
         <div className="glow-pill">
           <span className="glow-pill__dot" />
-          <span>STANDALONE ATS AUDIT</span>
+          <span>ATS AUDIT</span>
         </div>
         <h1 className="ats-page-title">ATS Resume Analyzer & Fixer</h1>
         <p className="page-header__desc">

@@ -19,6 +19,7 @@ const AtsAnalyzer = () => {
   const [analyzing, setAnalyzing] = useState(false);
   const [analysisError, setAnalysisError] = useState("");
   const [report, setReport] = useState(null);
+  const [originalPdfUrl, setOriginalPdfUrl] = useState(null);
 
   const [activeTab, setActiveTab] = useState("audit"); // "audit" | "studio"
 
@@ -36,6 +37,16 @@ const AtsAnalyzer = () => {
     setAnalysisError("");
     setAnalyzing(true);
     try {
+      if (resume instanceof File || resume instanceof Blob) {
+        if (originalPdfUrl) {
+          window.URL.revokeObjectURL(originalPdfUrl);
+        }
+        const objUrl = window.URL.createObjectURL(resume);
+        setOriginalPdfUrl(objUrl);
+      } else {
+        setOriginalPdfUrl(null);
+      }
+
       const data = await analyzeAtsResume({ resume, resumeText, fileName });
       setReport(data.atsReport);
       setRevisedResume(data.atsReport.revisedResume || null);
@@ -109,6 +120,10 @@ const AtsAnalyzer = () => {
 
   // Reset to initial upload state
   const handleReset = () => {
+    if (originalPdfUrl) {
+      window.URL.revokeObjectURL(originalPdfUrl);
+    }
+    setOriginalPdfUrl(null);
     setReport(null);
     setRevisedResume(null);
     setAnalysisError("");
@@ -265,6 +280,7 @@ const AtsAnalyzer = () => {
           <AtsBeforeAfterPreview
             reportId={report._id}
             originalText={report.rawResumeText}
+            originalPdfUrl={originalPdfUrl}
             revisedResume={revisedResume}
             loading={revising}
             error={reviseError}

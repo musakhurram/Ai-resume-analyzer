@@ -333,13 +333,37 @@ function renderAtsHtmlTemplate(resume) {
 </html>`;
 }
 
-/**
- * Generate PDF buffer from revised resume JSON using Puppeteer
- */
-async function generateAtsPdfBuffer(revisedResume) {
-  const html = renderAtsHtmlTemplate(revisedResume);
-  const executablePath = findBrowserExecutable();
+// In-memory cache for fast instant PDF delivery (keyed by report ID / resume JSON hash)
+const pdfCache = new Map();
 
+let warmBrowserInstance = null;
+let browserIdleTimeout = null;
+
+function scheduleBrowserIdleClose() {
+  if (browserIdleTimeout) clearTimeout(browserIdleTimeout);
+  browserIdleTimeout = setTimeout(async () => {
+    if (warmBrowserInstance && warmBrowserInstance.connected) {
+      try {
+        await warmBrowserInstance.close();
+      } catch {
+        // Ignore close errors
+      }
+      warmBrowserInstance = null;
+    }
+  }, 45000); // Keep alive for 45 seconds of inactivity
+}
+
+async function getWarmBrowser() {
+  if (browserIdleTimeout) {
+    clearTimeout(browserIdleTimeout);
+    browserIdleTimeout = null;
+  }
+
+  if (warmBrowserInstance && warmBrowserInstance.connected) {
+    return warmBrowserInstance;
+  }
+
+  const executablePath = findBrowserExecutable();
   const launchOptions = {
     headless: "new",
     args: [
@@ -350,6 +374,14 @@ async function generateAtsPdfBuffer(revisedResume) {
       "--no-first-run",
       "--no-zygote",
       "--single-process",
+      "--disable-extensions",
+      "--disable-background-networking",
+      "--disable-default-apps",
+      "--disable-sync",
+      "--disable-translate",
+      "--metrics-recording-only",
+      "--mute-audio",
+      "--no-default-browser-check",
     ],
   };
 
@@ -357,12 +389,32 @@ async function generateAtsPdfBuffer(revisedResume) {
     launchOptions.executablePath = executablePath;
   }
 
-  const browser = await puppeteer.launch(launchOptions);
+  warmBrowserInstance = await puppeteer.launch(launchOptions);
+  warmBrowserInstance.on("disconnected", () => {
+    warmBrowserInstance = null;
+  });
+
+  return warmBrowserInstance;
+}
+
+/**
+ * Generate PDF buffer from revised resume JSON using Puppeteer
+ */
+async function generateAtsPdfBuffer(revisedResume, cacheKey = null) {
+  const effectiveCacheKey = cacheKey || JSON.stringify(revisedResume);
+  if (pdfCache.has(effectiveCacheKey)) {
+    return pdfCache.get(effectiveCacheKey);
+  }
+
+  const html = renderAtsHtmlTemplate(revisedResume);
+  const browser = await getWarmBrowser();
+  const page = await browser.newPage();
+
   try {
-    const page = await browser.newPage();
+    // Fast inline rendering without waiting for external network idle
     await page.setContent(html, {
-      waitUntil: ["load", "networkidle0"],
-      timeout: 30000,
+      waitUntil: "domcontentloaded",
+      timeout: 10000,
     });
 
     const pdfBuffer = await page.pdf({
@@ -376,9 +428,17 @@ async function generateAtsPdfBuffer(revisedResume) {
       },
     });
 
+    // Store in cache (cap at 40 items)
+    if (pdfCache.size > 40) {
+      const oldestKey = pdfCache.keys().next().value;
+      pdfCache.delete(oldestKey);
+    }
+    pdfCache.set(effectiveCacheKey, pdfBuffer);
+
     return pdfBuffer;
   } finally {
-    await browser.close();
+    await page.close();
+    scheduleBrowserIdleClose();
   }
 }
 
