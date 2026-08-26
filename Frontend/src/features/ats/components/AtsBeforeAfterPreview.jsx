@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import Button from "../../../shared/components/Button";
 import Callout from "../../../shared/components/Callout";
+import "./AtsBeforeAfterPreview.scss";
 
 const SECTIONS_AVAILABLE = [
   { id: "all", label: "All Sections (Full Rewrite)" },
@@ -10,7 +11,6 @@ const SECTIONS_AVAILABLE = [
   { id: "education", label: "Education & Details" },
 ];
 
-// Common strong action verbs to highlight in diff view
 const ACTION_VERBS = new Set([
   "Architected", "Engineered", "Spearheaded", "Optimized", "Implemented", "Scaled",
   "Designed", "Built", "Developed", "Led", "Pioneered", "Orchestrated", "Streamlined",
@@ -31,18 +31,17 @@ function highlightBulletContent(bullet = "") {
   return (
     <span>
       {isActionVerb ? (
-        <span className="ats-diff-verb" title="AI Action Verb Upgrade">
+        <span className="ats-diff-verb" title="AI action verb improvement">
           {words[0]}{" "}
         </span>
       ) : (
         words[0] + " "
       )}
       {words.slice(1).map((w, i) => {
-        // Highlight metrics ($100k, 45%, 99.9%, 10x, 200+)
         const isMetric = /[\$€£]?\d+(\.\d+)?%?[\+xX]?|\b\d+([kKmMbB])\b/.test(w);
         if (isMetric) {
           return (
-            <span key={i} className="ats-diff-metric" title="Preserved Metric">
+            <span key={i} className="ats-diff-metric" title="Preserved metric">
               {w}{" "}
             </span>
           );
@@ -66,12 +65,10 @@ const AtsBeforeAfterPreview = ({
 }) => {
   const [selectedSection, setSelectedSection] = useState("all");
   const [customNotes, setCustomNotes] = useState("");
-  const [leftMode, setLeftMode] = useState(originalPdfUrl ? "pdf" : "text"); // "pdf" | "text"
-  const [rightMode, setRightMode] = useState("diff"); // "diff" | "clean"
+  const [leftMode, setLeftMode] = useState(originalPdfUrl ? "pdf" : "text");
+  const [rightMode, setRightMode] = useState("diff");
   const [showDiffHighlights, setShowDiffHighlights] = useState(true);
-  const [copied, setCopied] = useState(false);
 
-  // Sync leftMode if originalPdfUrl changes
   useEffect(() => {
     if (originalPdfUrl && leftMode === "text") {
       setLeftMode("pdf");
@@ -85,15 +82,6 @@ const AtsBeforeAfterPreview = ({
     });
   };
 
-  const handleCopyRevised = () => {
-    if (!revisedResume) return;
-    const jsonStr = JSON.stringify(revisedResume, null, 2);
-    navigator.clipboard.writeText(jsonStr).then(() => {
-      setCopied(true);
-      setTimeout(() => setCopied(false), 2000);
-    });
-  };
-
   const contact = revisedResume?.contact || {};
   const summary = revisedResume?.summary || "";
   const experience = Array.isArray(revisedResume?.experience) ? revisedResume.experience : [];
@@ -104,17 +92,16 @@ const AtsBeforeAfterPreview = ({
 
   return (
     <div className="ats-preview-modal glass-panel">
-      {/* Header bar */}
       <div className="ats-preview-modal__header">
         <div className="ats-preview-modal__titles">
           <div className="glow-pill">
             <span className="glow-pill__dot" />
             <span>AI REVISION STUDIO</span>
           </div>
-          <h2 className="ats-preview-modal__title">Side-by-Side Comparison & AI Highlights</h2>
+          <h2 className="ats-preview-modal__title">See What Changed in Your Resume</h2>
           <p className="ats-preview-modal__desc">
-            Compare your original upload side-by-side with the AI-optimized version. Action verbs,
-            quantified impact, and ATS taxonomy improvements are highlighted in real-time.
+            Compare the original resume with the AI-revised version. The revised pane highlights
+            stronger wording, preserved metrics, and ATS-focused improvements.
           </p>
         </div>
 
@@ -127,7 +114,7 @@ const AtsBeforeAfterPreview = ({
               onClick={() => onDownload(reportId, contact.fullName)}
               className="ats-preview-modal__download-btn"
             >
-              <svg viewBox="0 0 16 16" fill="none" width="16" height="16" className="pdf-icon">
+              <svg viewBox="0 0 16 16" fill="none" width="16" height="16" aria-hidden="true">
                 <path
                   d="M8 2v8m0 0 3-3m-3 3-3-3M3 12v1a1 1 0 0 0 1 1h8a1 1 0 0 0 1-1v-1"
                   stroke="currentColor"
@@ -144,7 +131,6 @@ const AtsBeforeAfterPreview = ({
 
       {error && <Callout tone="error" title="Revision Issue">{error}</Callout>}
 
-      {/* Revision Controls Toolbar */}
       <div className="ats-preview-toolbar">
         <div className="ats-preview-toolbar__row">
           <div className="ats-preview-toolbar__section-picker">
@@ -185,26 +171,25 @@ const AtsBeforeAfterPreview = ({
         </div>
       </div>
 
-      {/* Diff Highlights Legend */}
       {rightMode === "diff" && showDiffHighlights && revisedResume && (
         <div className="ats-diff-legend">
-          <span className="ats-diff-legend__title">AI Enhancements:</span>
+          <span className="ats-diff-legend__title">What the AI improved:</span>
           <div className="ats-diff-legend__items">
             <span className="ats-legend-chip ats-legend-chip--verb">
               <span className="ats-legend-dot ats-legend-dot--verb" />
-              Power Action Verb
+              Stronger action verbs
             </span>
             <span className="ats-legend-chip ats-legend-chip--metric">
               <span className="ats-legend-dot ats-legend-dot--metric" />
-              Preserved Metric / Scale
+              Preserved metrics
             </span>
             <span className="ats-legend-chip ats-legend-chip--tax">
               <span className="ats-legend-dot ats-legend-dot--tax" />
-              ATS Taxonomy & Keywords
+              ATS keywords
             </span>
             <span className="ats-legend-chip ats-legend-chip--clean">
               <span className="ats-legend-dot ats-legend-dot--clean" />
-              Zero Fabrication Guaranteed
+              Facts preserved
             </span>
           </div>
 
@@ -214,14 +199,12 @@ const AtsBeforeAfterPreview = ({
               checked={showDiffHighlights}
               onChange={(e) => setShowDiffHighlights(e.target.checked)}
             />
-            <span>Show Highlights</span>
+            <span>Show highlights</span>
           </label>
         </div>
       )}
 
-      {/* Main Content Side-by-Side Split Panes */}
       <div className="ats-preview-panes ats-preview-panes--split">
-        {/* Left / Original Uploaded Pane */}
         <div className="ats-pane ats-pane--original">
           <div className="ats-pane__head">
             <div className="ats-pane__head-left">
@@ -229,15 +212,18 @@ const AtsBeforeAfterPreview = ({
               <h3 className="ats-pane__title">Original Resume</h3>
             </div>
 
-            {/* Switch between PDF iframe and Text view */}
-            <div className="ats-pane-view-tabs">
+            <div className="ats-pane-view-tabs" aria-label="Original resume view">
               {originalPdfUrl && (
                 <button
                   type="button"
                   className={`ats-pane-tab-btn ${leftMode === "pdf" ? "is-active" : ""}`}
                   onClick={() => setLeftMode("pdf")}
                 >
-                  📄 PDF
+                  <svg viewBox="0 0 16 16" fill="none" width="14" height="14" aria-hidden="true">
+                    <path d="M4 2.5h5l3 3V13.5H4z" stroke="currentColor" strokeWidth="1.3" strokeLinejoin="round" />
+                    <path d="M9 2.5v3h3M6 9h4M6 11h3" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" />
+                  </svg>
+                  PDF View
                 </button>
               )}
               <button
@@ -245,7 +231,10 @@ const AtsBeforeAfterPreview = ({
                 className={`ats-pane-tab-btn ${leftMode === "text" ? "is-active" : ""}`}
                 onClick={() => setLeftMode("text")}
               >
-                📝 Text
+                <svg viewBox="0 0 16 16" fill="none" width="14" height="14" aria-hidden="true">
+                  <path d="M3 3.5h10M3 6.5h10M3 9.5h7M3 12.5h5" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" />
+                </svg>
+                Text View
               </button>
             </div>
           </div>
@@ -267,43 +256,40 @@ const AtsBeforeAfterPreview = ({
           </div>
         </div>
 
-        {/* Right / AI-Revised Resume Pane */}
         <div className="ats-pane ats-pane--revised">
           <div className="ats-pane__head">
             <div className="ats-pane__head-left">
-              <span className="ats-pane__tag ats-pane__tag--accent">AFTER (AI ATS OPTIMIZED)</span>
-              <h3 className="ats-pane__title">Revised Output</h3>
+              <span className="ats-pane__tag ats-pane__tag--accent">AFTER</span>
+              <h3 className="ats-pane__title">AI Revised Resume</h3>
             </div>
 
             <div className="ats-pane-head-actions">
-              {/* Mode switch for right pane: Diff Document vs Clean */}
-              <div className="ats-pane-view-tabs">
+              <div className="ats-pane-view-tabs" aria-label="Revised resume view">
                 <button
                   type="button"
                   className={`ats-pane-tab-btn ${rightMode === "diff" ? "is-active" : ""}`}
                   onClick={() => setRightMode("diff")}
-                  title="Interactive Document with AI Diff Highlights"
+                  title="See AI improvements and highlights"
                 >
-                  ✨ Diff View
+                  <svg viewBox="0 0 16 16" fill="none" width="14" height="14" aria-hidden="true">
+                    <path d="M3 4.5h10M3 8h7M3 11.5h5" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" />
+                    <path d="m11.5 9.5 1 1 1.8-2" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round" />
+                  </svg>
+                  Changes
                 </button>
                 <button
                   type="button"
                   className={`ats-pane-tab-btn ${rightMode === "clean" ? "is-active" : ""}`}
                   onClick={() => setRightMode("clean")}
-                  title="Clean White Paper View"
+                  title="Review the final revised resume"
                 >
-                  📄 Clean
+                  <svg viewBox="0 0 16 16" fill="none" width="14" height="14" aria-hidden="true">
+                    <path d="M4 2.5h5l3 3v8H4z" stroke="currentColor" strokeWidth="1.3" strokeLinejoin="round" />
+                    <path d="M9 2.5v3h3M6 9h4M6 11h3" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" />
+                  </svg>
+                  Clean View
                 </button>
               </div>
-
-              <button
-                type="button"
-                className="ats-copy-btn"
-                onClick={handleCopyRevised}
-                disabled={!revisedResume}
-              >
-                {copied ? "Copied" : "JSON"}
-              </button>
             </div>
           </div>
 
@@ -311,17 +297,16 @@ const AtsBeforeAfterPreview = ({
             {loading ? (
               <div className="ats-pane-loading">
                 <div className="ats-spinner" />
-                <p>Synthesizing ATS-optimized resume with strict factual preservation…</p>
-                <span>Upgrading action verbs & formatting into clean single-column architecture</span>
+                <p>Preparing your revised resume…</p>
+                <span>Strengthening wording while preserving your original facts.</span>
               </div>
             ) : !revisedResume ? (
               <div className="ats-pane-prompt">
-                <p>Click "Generate Revision" above to rewrite your resume with ATS-optimized action bullets.</p>
+                <p>Generate a revision to see the improvements here.</p>
               </div>
             ) : (
               <div className={`ats-pane__body--document ${showDiffHighlights && rightMode === "diff" ? "has-diff-mode" : ""}`}>
                 <div className="ats-resume-doc">
-                  {/* Contact header */}
                   <div className="ats-doc__header">
                     <h1 className="ats-doc__name">{contact.fullName || "Candidate Name"}</h1>
                     <div className="ats-doc__contact-row">
@@ -342,26 +327,24 @@ const AtsBeforeAfterPreview = ({
                     </div>
                   </div>
 
-                  {/* Summary */}
                   {summary && (
                     <div className={`ats-doc__section ${showDiffHighlights && rightMode === "diff" ? "ats-diff-section" : ""}`}>
                       <div className="ats-doc__sec-header">
                         <h2 className="ats-doc__sec-title">Professional Summary</h2>
                         {showDiffHighlights && rightMode === "diff" && (
-                          <span className="ats-diff-chip ats-diff-chip--ai">ATS Tailored</span>
+                          <span className="ats-diff-chip ats-diff-chip--ai">Improved</span>
                         )}
                       </div>
                       <p className="ats-doc__summary-text">{summary}</p>
                     </div>
                   )}
 
-                  {/* Skills */}
                   {skills.length > 0 && (
                     <div className={`ats-doc__section ${showDiffHighlights && rightMode === "diff" ? "ats-diff-section" : ""}`}>
                       <div className="ats-doc__sec-header">
                         <h2 className="ats-doc__sec-title">Technical Skills</h2>
                         {showDiffHighlights && rightMode === "diff" && (
-                          <span className="ats-diff-chip ats-diff-chip--tax">Taxonomy Grouped</span>
+                          <span className="ats-diff-chip ats-diff-chip--tax">ATS Grouped</span>
                         )}
                       </div>
                       {skills.map((s, idx) => (
@@ -375,13 +358,12 @@ const AtsBeforeAfterPreview = ({
                     </div>
                   )}
 
-                  {/* Experience */}
                   {experience.length > 0 && (
                     <div className="ats-doc__section">
                       <div className="ats-doc__sec-header">
                         <h2 className="ats-doc__sec-title">Professional Experience</h2>
                         {showDiffHighlights && rightMode === "diff" && (
-                          <span className="ats-diff-chip ats-diff-chip--verb">Action-Verb Led</span>
+                          <span className="ats-diff-chip ats-diff-chip--verb">Stronger wording</span>
                         )}
                       </div>
                       {experience.map((exp, idx) => (
@@ -410,7 +392,6 @@ const AtsBeforeAfterPreview = ({
                     </div>
                   )}
 
-                  {/* Education */}
                   {education.length > 0 && (
                     <div className="ats-doc__section">
                       <h2 className="ats-doc__sec-title">Education</h2>
@@ -429,7 +410,6 @@ const AtsBeforeAfterPreview = ({
                     </div>
                   )}
 
-                  {/* Projects */}
                   {projects.length > 0 && (
                     <div className="ats-doc__section">
                       <h2 className="ats-doc__sec-title">Projects</h2>
@@ -458,7 +438,6 @@ const AtsBeforeAfterPreview = ({
                     </div>
                   )}
 
-                  {/* Certifications */}
                   {certifications.length > 0 && (
                     <div className="ats-doc__section">
                       <h2 className="ats-doc__sec-title">Certifications</h2>
