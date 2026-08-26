@@ -1,4 +1,5 @@
 import { useState } from "react";
+import AtsIcon from "./AtsIcon";
 
 const SEV_MAP = {
   high: { tone: "high", label: "Critical" },
@@ -12,7 +13,7 @@ const AtsIssuesList = ({ issues = [] }) => {
   if (!issues || issues.length === 0) {
     return (
       <div className="ats-issues-empty">
-        <span className="ats-issues-empty__icon">✓</span>
+        <span className="ats-issues-empty__icon"><AtsIcon name="checkCircle" size={18} /></span>
         <p>No ATS formatting blockers detected.</p>
       </div>
     );
