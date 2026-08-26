@@ -1,4 +1,5 @@
 import { useEffect, useRef } from "react";
+import "./GoogleSignInButton.scss";
 
 const GOOGLE_CLIENT_ID = import.meta.env.VITE_GOOGLE_CLIENT_ID;
 
