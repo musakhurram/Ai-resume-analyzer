@@ -72,6 +72,7 @@ const FileDropzone = ({ file, onChange, error, onError }) => {
           type="file"
           accept="application/pdf"
           className="visually-hidden"
+          onClick={(e) => e.stopPropagation()}
           onChange={(e) => validateAndSet(e.target.files?.[0])}
         />
 
