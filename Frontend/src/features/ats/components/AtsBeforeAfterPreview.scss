@@ -125,30 +125,50 @@
   box-shadow: 0 10px 30px rgba(0, 0, 0, 0.12);
 }
 
+/* Keep the pane title on its own row so it never gets squeezed by the view controls. */
 .ats-pane__head {
-  min-height: 58px;
-  padding: 10px 13px;
-  gap: 10px;
+  min-height: 86px;
+  padding: 11px 13px 10px;
+  gap: 8px;
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  justify-content: center;
 }
 
 .ats-pane__head-left {
+  width: 100%;
   min-width: 0;
-  flex: 1 1 auto;
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  gap: 9px;
 }
 
 .ats-pane__tag {
   letter-spacing: 0.045em;
   padding: 4px 7px;
   border-radius: 7px;
+  flex-shrink: 0;
 }
 
 .ats-pane__title {
   font-size: 0.9rem;
+  line-height: 1.25;
+  white-space: normal;
+  overflow: visible;
+  text-overflow: clip;
+  word-break: normal;
+  overflow-wrap: anywhere;
+  min-width: 0;
 }
 
 .ats-pane-head-actions {
-  flex-shrink: 0;
+  width: 100%;
   min-width: 0;
+  flex-shrink: 0;
+  display: flex;
+  justify-content: flex-end;
 }
 
 .ats-pane-view-tabs {
@@ -156,17 +176,20 @@
   gap: 3px;
   border-radius: 9px;
   flex-shrink: 0;
+  width: fit-content;
+  max-width: 100%;
 }
 
 .ats-pane-tab-btn {
-  min-height: 32px;
-  padding: 6px 10px;
+  min-height: 30px;
+  padding: 5px 10px;
   border-radius: 7px;
-  font-size: 0.74rem;
+  font-size: 0.73rem;
   display: inline-flex;
   align-items: center;
   justify-content: center;
   gap: 6px;
+  white-space: nowrap;
 }
 
 .ats-pane-tab-btn.is-active {
@@ -283,8 +306,16 @@
   }
 
   .ats-pane__head {
+    min-height: 0;
+    padding: 10px;
+  }
+
+  .ats-pane__head-left {
     align-items: flex-start;
-    flex-direction: column;
+  }
+
+  .ats-pane__title {
+    font-size: 0.86rem;
   }
 
   .ats-pane-head-actions {
