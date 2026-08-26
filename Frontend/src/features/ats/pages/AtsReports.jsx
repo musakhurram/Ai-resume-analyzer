@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router";
+import ScoreDial from "../../../shared/components/ScoreDial";
 import Button from "../../../shared/components/Button";
 import PageLoader from "../../../shared/components/PageLoader";
 import EmptyState from "../../../shared/components/EmptyState";
@@ -7,83 +8,74 @@ import Callout from "../../../shared/components/Callout";
 import { listAtsReports } from "../services/ats.api";
 import "./AtsReports.scss";
 
+const formatDate = (value) => value ? new Date(value).toLocaleDateString(undefined, { month: "short", day: "numeric", year: "numeric" }) : "";
+
 const AtsReports = () => {
   const [reports, setReports] = useState(null);
-  const [search, setSearch] = useState("");
-  const [sort, setSort] = useState("recent");
+  const [searchQuery, setSearchQuery] = useState("");
+  const [sortBy, setSortBy] = useState("newest");
   const [error, setError] = useState("");
 
   useEffect(() => {
     let cancelled = false;
     setError("");
-    listAtsReports({ search, sort })
-      .then((data) => !cancelled && setReports(data.reports || []))
-      .catch((err) => {
-        if (!cancelled) {
-          setError(err.response?.data?.message || err.message || "Couldn't load your reports.");
-          setReports([]);
-        }
-      });
+    listAtsReports({ search: searchQuery, sort: sortBy === "newest" ? "recent" : "oldest" })
+      .then((data) => { if (!cancelled) setReports(data.reports || []); })
+      .catch((err) => { if (!cancelled) { setError(err.response?.data?.message || err.message || "Couldn't load reports."); setReports([]); } });
     return () => { cancelled = true; };
-  }, [search, sort]);
+  }, [searchQuery, sortBy]);
 
   const stats = useMemo(() => {
     if (!reports?.length) return null;
-    const scores = reports.map((report) => report.analysis?.overallScore || 0);
-    return { count: reports.length, average: Math.round(scores.reduce((a, b) => a + b, 0) / scores.length), best: Math.max(...scores) };
+    const scores = reports.map((r) => r.analysis?.overallScore || 0);
+    return { count: reports.length, avg: Math.round(scores.reduce((a, b) => a + b, 0) / scores.length), best: Math.max(...scores) };
   }, [reports]);
 
-  if (reports === null) return <PageLoader label="Loading your ATS reports" />;
+  if (reports === null) return <PageLoader label="Loading your reports" />;
 
   return (
-    <main className="ats-reports-page">
-      <header className="ats-reports-hero">
-        <div>
-          <div className="glow-pill"><span className="glow-pill__dot" /><span>ATS ARCHIVE</span></div>
-          <h1>Past Reports</h1>
-          <p>Review your previous resume scans and pick up where you left off.</p>
-        </div>
-        <Button as={Link} to="/analyze/ats-score" variant="primary">+ New ATS Review</Button>
+    <div className="ats-reports-page">
+      <header className="page-header">
+        <div className="glow-pill"><span className="glow-pill__dot" /><span>ATS REPORT ARCHIVE</span></div>
+        <h1 className="ats-reports-page__title">Past Reports</h1>
+        <p className="page-header__desc">Review your previous ATS scans, track your scores, and revisit any report.</p>
       </header>
 
       {error && <Callout tone="error" title="Couldn't load reports">{error}</Callout>}
 
-      {stats && <section className="ats-reports-summary glass-panel" aria-label="Report summary">
-        <div><span>Total reports</span><strong>{stats.count}</strong></div>
-        <div><span>Average score</span><strong>{stats.average}%</strong></div>
-        <div><span>Best score</span><strong>{stats.best}%</strong></div>
-      </section>}
+      {stats && <div className="ats-reports-page__stats glass-panel">
+        <div className="ats-reports-page__stat-box"><span className="ats-reports-page__stat-num">{stats.count}</span><span className="ats-reports-page__stat-title">Reports Run</span></div>
+        <div className="ats-reports-page__stat-divider" />
+        <div className="ats-reports-page__stat-box"><span className="ats-reports-page__stat-num">{stats.avg}%</span><span className="ats-reports-page__stat-title">Average Score</span></div>
+        <div className="ats-reports-page__stat-divider" />
+        <div className="ats-reports-page__stat-box"><span className="ats-reports-page__stat-num">{stats.best}%</span><span className="ats-reports-page__stat-title">Best ATS Score</span></div>
+      </div>}
 
-      <section className="ats-reports-controls glass-panel">
-        <label className="ats-reports-search">
-          <span aria-hidden="true">⌕</span>
-          <input value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Search by resume name…" aria-label="Search reports by resume name" />
-          {search && <button type="button" onClick={() => setSearch("")} aria-label="Clear search">×</button>}
-        </label>
-        <label className="ats-reports-sort">
-          <span>Sort</span>
-          <select value={sort} onChange={(event) => setSort(event.target.value)} aria-label="Sort reports">
-            <option value="recent">Most recent</option>
-            <option value="oldest">Oldest</option>
-          </select>
-        </label>
-      </section>
+      {reports.length > 0 && <div className="ats-reports-page__toolbar glass-panel">
+        <div className="ats-reports-page__search-wrap">
+          <svg viewBox="0 0 16 16" fill="none" className="ats-reports-page__search-icon" aria-hidden="true"><path d="M7 12A5 5 0 1 0 7 2a5 5 0 0 0 0 10zM14 14l-3.5-3.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" /></svg>
+          <input type="text" placeholder="Search by resume name…" className="ats-reports-page__search-input" value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} />
+          {searchQuery && <button type="button" className="ats-reports-page__clear-btn" onClick={() => setSearchQuery("")}>Clear</button>}
+        </div>
+        <div className="ats-reports-page__sort-wrap"><label htmlFor="atsSort" className="ats-reports-page__sort-label">Sort:</label><select id="atsSort" className="ats-reports-page__sort-select" value={sortBy} onChange={(e) => setSortBy(e.target.value)}><option value="newest">Most Recent</option><option value="oldest">Oldest</option></select></div>
+      </div>}
 
-      {!reports.length ? (
-        <EmptyState eyebrow="No reports found" title={search ? "No matching reports" : "Your ATS archive is empty"} description={search ? "Try another resume name or clear your search." : "Run an ATS review and your report will automatically appear here."} action={<Button as={Link} to="/analyze/ats-score" variant="primary">Run ATS Review</Button>} />
+      {reports.length === 0 ? (
+        <EmptyState eyebrow={searchQuery ? "No matches" : "No reports yet"} title={searchQuery ? "No reports match your search" : "No ATS reports yet"} description={searchQuery ? "Try another resume name, or clear your search." : "Run an ATS review to create your first saved report."} action={<Button as={Link} to="/analyze/ats-score" variant="primary">Start an ATS review</Button>} />
       ) : (
-        <section className="ats-reports-list" aria-label="ATS reports">
-          {reports.map((report) => {
-            const score = report.analysis?.overallScore ?? 0;
-            return <Link key={report._id} to={`/ats/reports/${report._id}`} className="ats-report-card glass-panel">
-              <div className="ats-report-card__score"><strong>{score}</strong><span>/100</span></div>
-              <div className="ats-report-card__content"><div className="ats-report-card__eyebrow">ATS REVIEW</div><h2>{report.title || report.resumeFileName || "Resume Review"}</h2><p>{report.resumeFileName || "Resume"}</p><div className="ats-report-card__meta"><span>{new Date(report.createdAt).toLocaleDateString(undefined, { month: "short", day: "numeric", year: "numeric" })}</span><span>{report.revisedResume ? "AI optimized" : "ATS analysis"}</span></div></div>
-              <span className="ats-report-card__arrow" aria-hidden="true">→</span>
-            </Link>;
-          })}
-        </section>
+        <div className="ats-reports-page__list">
+          {reports.map((report) => <Link key={report._id} to={`/ats/reports/${report._id}`} className="ats-report-card">
+            <ScoreDial score={report.analysis?.overallScore ?? 0} size="sm" showLabel={false} />
+            <div className="ats-report-card__body">
+              <p className="ats-report-card__title">{report.title || report.resumeFileName || "ATS Resume Review"}</p>
+              <p className="ats-report-card__resume"><span className="ats-report-card__resume-icon" aria-hidden="true">▧</span>{report.resumeFileName || "Resume review"}</p>
+              <p className="ats-report-card__meta eyebrow">Filed {formatDate(report.createdAt)} · {report.revisedResume ? "AI optimized" : "ATS analysis"}</p>
+            </div>
+            <span className="ats-report-card__chevron" aria-hidden="true">›</span>
+          </Link>)}
+        </div>
       )}
-    </main>
+    </div>
   );
 };
 
