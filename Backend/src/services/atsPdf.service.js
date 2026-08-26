@@ -1,10 +1,13 @@
 const fs = require("fs");
 const path = require("path");
-let puppeteer;
-try {
-  puppeteer = require("puppeteer");
-} catch {
-  puppeteer = require("puppeteer-core");
+let puppeteerPromise;
+
+async function loadPuppeteer() {
+  if (!puppeteerPromise) {
+    puppeteerPromise = import("puppeteer").catch(() => import("puppeteer-core"));
+  }
+
+  return puppeteerPromise;
 }
 
 /**
@@ -389,6 +392,7 @@ async function getWarmBrowser() {
     launchOptions.executablePath = executablePath;
   }
 
+  const puppeteer = await loadPuppeteer();
   warmBrowserInstance = await puppeteer.launch(launchOptions);
   warmBrowserInstance.on("disconnected", () => {
     warmBrowserInstance = null;
