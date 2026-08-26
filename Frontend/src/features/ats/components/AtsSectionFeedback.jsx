@@ -1,12 +1,12 @@
 import { useState } from "react";
 
 const SECTION_META = [
-  { key: "experience", label: "Work Experience", icon: "💼" },
-  { key: "skills", label: "Skills & Taxonomy", icon: "⚡" },
-  { key: "summary", label: "Professional Summary", icon: "📝" },
-  { key: "formatting", label: "ATS Layout & Formatting", icon: "📐" },
-  { key: "contactInfo", label: "Contact Information", icon: "📇" },
-  { key: "education", label: "Education & Credentials", icon: "🎓" },
+  { key: "experience", label: "Experience", icon: "💼" },
+  { key: "skills", label: "Skills", icon: "⚡" },
+  { key: "summary", label: "Summary", icon: "📝" },
+  { key: "formatting", label: "Formatting", icon: "📐" },
+  { key: "contactInfo", label: "Contact", icon: "📇" },
+  { key: "education", label: "Education", icon: "🎓" },
 ];
 
 function getScoreColor(score = 0) {
@@ -32,12 +32,12 @@ const AtsSectionFeedback = ({ sections = {}, onReviseSection }) => {
         <div>
           <h3 className="ats-sections-module__title">Section-by-Section Audit</h3>
           <p className="ats-sections-module__desc">
-            Granular evaluation of each resume segment against ATS token parsing and recruiter heuristics.
+            Granular evaluation of each section against ATS token parsing rules.
           </p>
         </div>
       </div>
 
-      {/* Tabs / Selector */}
+      {/* Compact Tabs */}
       <div className="ats-sections-tabs">
         {SECTION_META.map((meta) => {
           const sData = sections[meta.key] || { score: 0 };
@@ -65,9 +65,9 @@ const AtsSectionFeedback = ({ sections = {}, onReviseSection }) => {
           <div className="ats-section-card__title-group">
             <span className="ats-section-card__big-icon">{currentMeta.icon}</span>
             <div>
-              <h4 className="ats-section-card__name">{currentMeta.label}</h4>
+              <h4 className="ats-section-card__name">{currentMeta.label} Section</h4>
               <p className="ats-section-card__score-label">
-                Performance Rating: <span className="ats-section-card__score-num">{currentSection.score ?? 0}/100</span>
+                Score: <span className="ats-section-card__score-num">{currentSection.score ?? 0}/100</span>
               </p>
             </div>
           </div>
@@ -78,7 +78,7 @@ const AtsSectionFeedback = ({ sections = {}, onReviseSection }) => {
               className="button button--secondary button--sm"
               onClick={() => onReviseSection(activeKey)}
             >
-              <span>Fix {currentMeta.label} with AI</span>
+              <span>Fix with AI</span>
             </button>
           )}
         </div>
@@ -91,7 +91,7 @@ const AtsSectionFeedback = ({ sections = {}, onReviseSection }) => {
         {/* Suggestions list */}
         {Array.isArray(currentSection.suggestions) && currentSection.suggestions.length > 0 && (
           <div className="ats-section-card__suggestions">
-            <h5 className="ats-section-card__sugg-title">Recommended Improvements:</h5>
+            <h5 className="ats-section-card__sugg-title">Suggested Improvements:</h5>
             <ul className="ats-section-card__sugg-list">
               {currentSection.suggestions.map((sug, i) => (
                 <li key={i} className="ats-section-card__sugg-item">

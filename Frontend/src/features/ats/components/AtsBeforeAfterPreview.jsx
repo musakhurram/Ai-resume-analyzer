@@ -93,64 +93,67 @@ const AtsBeforeAfterPreview = ({
 
       {/* Revision Controls Toolbar */}
       <div className="ats-preview-toolbar">
-        <div className="ats-preview-toolbar__section-picker">
-          <label htmlFor="sectionSelect" className="ats-toolbar-label">Target Section:</label>
-          <select
-            id="sectionSelect"
-            value={selectedSection}
-            onChange={(e) => setSelectedSection(e.target.value)}
-            className="ats-toolbar-select"
-            disabled={loading}
-          >
-            {SECTIONS_AVAILABLE.map((s) => (
-              <option key={s.id} value={s.id}>{s.label}</option>
-            ))}
-          </select>
-        </div>
+        <div className="ats-preview-toolbar__row">
+          <div className="ats-preview-toolbar__section-picker">
+            <label htmlFor="sectionSelect" className="ats-toolbar-label">Scope:</label>
+            <select
+              id="sectionSelect"
+              value={selectedSection}
+              onChange={(e) => setSelectedSection(e.target.value)}
+              className="ats-toolbar-select"
+              disabled={loading}
+            >
+              {SECTIONS_AVAILABLE.map((s) => (
+                <option key={s.id} value={s.id}>{s.label}</option>
+              ))}
+            </select>
+          </div>
 
-        <div className="ats-preview-toolbar__custom-notes">
-          <input
-            type="text"
-            placeholder="Optional instruction (e.g., emphasize cloud infrastructure)..."
-            value={customNotes}
-            onChange={(e) => setCustomNotes(e.target.value)}
-            className="ats-toolbar-input"
-            disabled={loading}
-          />
-        </div>
+          <div className="ats-preview-toolbar__custom-notes">
+            <input
+              type="text"
+              placeholder="Optional rewrite focus (e.g. emphasize metrics, cloud)..."
+              value={customNotes}
+              onChange={(e) => setCustomNotes(e.target.value)}
+              className="ats-toolbar-input"
+              disabled={loading}
+            />
+          </div>
 
-        <Button
-          variant="secondary"
-          size="sm"
-          loading={loading}
-          onClick={handleRunRevise}
-        >
-          {revisedResume ? "Re-generate with AI" : "Generate AI Revision"}
-        </Button>
+          <Button
+            variant="secondary"
+            size="sm"
+            loading={loading}
+            onClick={handleRunRevise}
+            className="ats-toolbar-btn"
+          >
+            {revisedResume ? "Re-generate" : "Generate Revision"}
+          </Button>
 
-        {/* View mode toggle */}
-        <div className="ats-view-mode-tabs">
-          <button
-            type="button"
-            className={`ats-view-btn ${viewMode === "split" ? "is-active" : ""}`}
-            onClick={() => setViewMode("split")}
-          >
-            Side-by-Side
-          </button>
-          <button
-            type="button"
-            className={`ats-view-btn ${viewMode === "revised" ? "is-active" : ""}`}
-            onClick={() => setViewMode("revised")}
-          >
-            Revised View
-          </button>
-          <button
-            type="button"
-            className={`ats-view-btn ${viewMode === "original" ? "is-active" : ""}`}
-            onClick={() => setViewMode("original")}
-          >
-            Original Text
-          </button>
+          {/* View mode toggle */}
+          <div className="ats-view-mode-tabs">
+            <button
+              type="button"
+              className={`ats-view-btn ${viewMode === "split" ? "is-active" : ""}`}
+              onClick={() => setViewMode("split")}
+            >
+              Split View
+            </button>
+            <button
+              type="button"
+              className={`ats-view-btn ${viewMode === "revised" ? "is-active" : ""}`}
+              onClick={() => setViewMode("revised")}
+            >
+              ATS Resume
+            </button>
+            <button
+              type="button"
+              className={`ats-view-btn ${viewMode === "original" ? "is-active" : ""}`}
+              onClick={() => setViewMode("original")}
+            >
+              Raw Input
+            </button>
+          </div>
         </div>
       </div>
 
