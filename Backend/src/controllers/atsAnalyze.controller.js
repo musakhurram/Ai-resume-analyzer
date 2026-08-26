@@ -3,6 +3,7 @@ const { PDFParse } = require("pdf-parse");
 PDFParse.setWorker(getData());
 
 const { analyzeResumeForAts, reviseResumeForAts } = require("../services/atsAi.service");
+const { normalizeAnalysis } = require("../services/atsScoring.service");
 const { generateAtsPdfBuffer } = require("../services/atsPdf.service");
 const atsReportModel = require("../models/atsReport.model");
 
@@ -22,10 +23,20 @@ async function atsAnalyzeController(req, res, next) {
       try { resumeContent = (await parser.getText()).text || ""; } finally { await parser.destroy(); }
     } else if (req.body.resume) { resumeContent = req.body.resume; fileName = req.body.fileName || "Pasted-Resume.txt"; }
     if (!resumeContent.trim()) return res.status(400).json({ message: "Please upload a resume PDF or paste your resume text to analyze." });
-    const analysisResult = await analyzeResumeForAts({ resumeText: resumeContent });
+
+    const rawAnalysis = await analyzeResumeForAts({ resumeText: resumeContent });
+    const analysisResult = normalizeAnalysis(rawAnalysis);
     const requestedCategory = String(req.body.category || "general").toLowerCase();
     const category = ["general", "job-targeted", "optimized"].includes(requestedCategory) ? requestedCategory : "general";
-    const atsReport = await atsReportModel.create({ user: getAuthenticatedUserId(req), rawResumeText: resumeContent, resumeFileName: fileName, title: String(req.body.title || getDefaultTitle(fileName, analysisResult)).trim(), category, analysis: analysisResult, revisedResume: null });
+    const atsReport = await atsReportModel.create({
+      user: getAuthenticatedUserId(req),
+      rawResumeText: resumeContent,
+      resumeFileName: fileName,
+      title: String(req.body.title || getDefaultTitle(fileName, analysisResult)).trim(),
+      category,
+      analysis: analysisResult,
+      revisedResume: null,
+    });
     return res.status(201).json({ message: "Resume analyzed successfully for ATS compatibility", id: atsReport._id, atsReport });
   } catch (error) { next(error); }
 }
@@ -85,7 +96,7 @@ async function listAtsReportsController(req, res, next) {
       filter.$or = [{ title: { $regex: escaped, $options: "i" } }, { resumeFileName: { $regex: escaped, $options: "i" } }];
     }
     const sortOrder = sort === "oldest" ? 1 : -1;
-    const reports = await atsReportModel.find(filter).select("_id title category resumeFileName analysis.overallScore analysis.atsCompatibility.score createdAt updatedAt revisedResume").sort({ createdAt: sortOrder }).limit(Math.min(Math.max(Number(limit) || 50, 1), 100)).lean();
+    const reports = await atsReportModel.find(filter).select("_id title category resumeFileName analysis.overallScore analysis.atsCompatibility.score analysis.scoringVersion analysis.scoreBreakdown createdAt updatedAt revisedResume").sort({ createdAt: sortOrder }).limit(Math.min(Math.max(Number(limit) || 50, 1), 100)).lean();
     return res.status(200).json({ reports });
   } catch (error) { next(error); }
 }
