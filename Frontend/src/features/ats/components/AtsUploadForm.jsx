@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import FileDropzone from "../../../shared/components/FileDropzone";
 import { Field, TextArea } from "../../../shared/components/Field";
 import Button from "../../../shared/components/Button";
@@ -15,6 +15,7 @@ const ANALYSIS_STEPS = [
 
 const AtsUploadForm = ({ onAnalyze, loading, error }) => {
   const [file, setFile] = useState(null);
+  const quickUploadInputRef = useRef(null);
   const [fileError, setFileError] = useState(null);
   const [pastedText, setPastedText] = useState("");
   const [inputMode, setInputMode] = useState("file"); // "file" | "paste"
@@ -31,6 +32,35 @@ const AtsUploadForm = ({ onAnalyze, loading, error }) => {
     }, 2400);
     return () => clearInterval(timer);
   }, [loading]);
+
+  const handleQuickUpload = (e) => {
+    const selected = e.target.files?.[0];
+    // Reset the native control so selecting the same file again still fires change.
+    e.target.value = "";
+
+    if (!selected) return;
+    const hasPdfExtension = selected.name?.toLowerCase().endsWith(".pdf");
+    const hasPdfMimeType = !selected.type || selected.type === "application/pdf";
+
+    if (!hasPdfExtension || !hasPdfMimeType) {
+      setFileError("Only PDF documents (.pdf) are supported.");
+      return;
+    }
+    if (selected.size > 3 * 1024 * 1024) {
+      setFileError("File size exceeds 3 MB limit. Please compress or upload a smaller PDF.");
+      return;
+    }
+
+    setFileError(null);
+    setLocalError("");
+    setFile(selected);
+    setInputMode("file");
+  };
+
+  const openQuickUpload = () => {
+    setLocalError("");
+    quickUploadInputRef.current?.click();
+  };
 
   const handleSubmit = (e) => {
     e?.preventDefault();
@@ -56,6 +86,14 @@ const AtsUploadForm = ({ onAnalyze, loading, error }) => {
 
   return (
     <div className="ats-upload-form">
+      <input
+        ref={quickUploadInputRef}
+        type="file"
+        accept="application/pdf,.pdf"
+        className="visually-hidden"
+        onChange={handleQuickUpload}
+      />
+
       <header className="page-header">
         <div className="glow-pill">
           <span className="glow-pill__dot" />
@@ -82,10 +120,7 @@ const AtsUploadForm = ({ onAnalyze, loading, error }) => {
             <button
               type="button"
               className={`ats-form__mode-btn ${inputMode === "file" ? "is-active" : ""}`}
-              onClick={() => {
-                setInputMode("file");
-                setLocalError("");
-              }}
+              onClick={openQuickUpload}
             >
               <svg viewBox="0 0 20 20" fill="none" width="16" height="16">
                 <path
