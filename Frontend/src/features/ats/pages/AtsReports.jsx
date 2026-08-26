@@ -7,34 +7,25 @@ import Callout from "../../../shared/components/Callout";
 import { listAtsReports } from "../services/ats.api";
 import "./AtsReports.scss";
 
-const CATEGORIES = [
-  { value: "all", label: "All Reports" },
-  { value: "general", label: "General" },
-  { value: "job-targeted", label: "Job Targeted" },
-  { value: "optimized", label: "AI Optimized" },
-];
-
-const categoryLabel = (category) => CATEGORIES.find((item) => item.value === category)?.label || "General";
-
 const AtsReports = () => {
   const [reports, setReports] = useState(null);
-  const [category, setCategory] = useState("all");
   const [search, setSearch] = useState("");
+  const [sort, setSort] = useState("recent");
   const [error, setError] = useState("");
 
   useEffect(() => {
     let cancelled = false;
     setError("");
-    listAtsReports({ category, search })
+    listAtsReports({ search, sort })
       .then((data) => !cancelled && setReports(data.reports || []))
       .catch((err) => {
         if (!cancelled) {
-          setError(err.response?.data?.message || err.message || "Couldn't load ATS history.");
+          setError(err.response?.data?.message || err.message || "Couldn't load your reports.");
           setReports([]);
         }
       });
     return () => { cancelled = true; };
-  }, [category, search]);
+  }, [search, sort]);
 
   const stats = useMemo(() => {
     if (!reports?.length) return null;
@@ -42,36 +33,57 @@ const AtsReports = () => {
     return { count: reports.length, average: Math.round(scores.reduce((a, b) => a + b, 0) / scores.length), best: Math.max(...scores) };
   }, [reports]);
 
-  if (reports === null) return <PageLoader label="Loading ATS report history" />;
+  if (reports === null) return <PageLoader label="Loading your ATS reports" />;
 
   return (
-    <div className="ats-reports-page">
-      <header className="page-header">
-        <div className="glow-pill"><span className="glow-pill__dot" /><span>ATS ARCHIVE</span></div>
-        <h1 className="ats-reports-page__title">Past Reports</h1>
-        <p className="page-header__desc">All your previous ATS reviews in one place, organized by category.</p>
+    <main className="ats-reports-page">
+      <header className="ats-reports-hero">
+        <div>
+          <div className="glow-pill"><span className="glow-pill__dot" /><span>ATS ARCHIVE</span></div>
+          <h1>Past Reports</h1>
+          <p>Review your previous resume scans and pick up where you left off.</p>
+        </div>
+        <Button as={Link} to="/analyze/ats-score" variant="primary">+ New ATS Review</Button>
       </header>
-      {error && <Callout tone="error" title="Couldn't load ATS history">{error}</Callout>}
-      {stats && <div className="ats-reports-page__stats glass-panel"><div><strong>{stats.count}</strong><span>Reports</span></div><div><strong>{stats.average}%</strong><span>Average Score</span></div><div><strong>{stats.best}%</strong><span>Best Score</span></div></div>}
-      <div className="ats-reports-page__toolbar glass-panel">
-        <input className="ats-reports-page__search" value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Search reports…" aria-label="Search ATS reports" />
-        <label className="ats-reports-page__category">Category
-          <select value={category} onChange={(event) => setCategory(event.target.value)} aria-label="Filter reports by category">
-            {CATEGORIES.map((item) => <option key={item.value} value={item.value}>{item.label}</option>)}
+
+      {error && <Callout tone="error" title="Couldn't load reports">{error}</Callout>}
+
+      {stats && <section className="ats-reports-summary glass-panel" aria-label="Report summary">
+        <div><span>Total reports</span><strong>{stats.count}</strong></div>
+        <div><span>Average score</span><strong>{stats.average}%</strong></div>
+        <div><span>Best score</span><strong>{stats.best}%</strong></div>
+      </section>}
+
+      <section className="ats-reports-controls glass-panel">
+        <label className="ats-reports-search">
+          <span aria-hidden="true">⌕</span>
+          <input value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Search by resume name…" aria-label="Search reports by resume name" />
+          {search && <button type="button" onClick={() => setSearch("")} aria-label="Clear search">×</button>}
+        </label>
+        <label className="ats-reports-sort">
+          <span>Sort</span>
+          <select value={sort} onChange={(event) => setSort(event.target.value)} aria-label="Sort reports">
+            <option value="recent">Most recent</option>
+            <option value="oldest">Oldest</option>
           </select>
         </label>
-      </div>
+      </section>
+
       {!reports.length ? (
-        <EmptyState eyebrow="No ATS reports" title="Your report archive is empty" description="Analyze a resume and the review will automatically appear here for your account." action={<Button as={Link} to="/analyze/ats-score" variant="primary">Run ATS Review</Button>} />
+        <EmptyState eyebrow="No reports found" title={search ? "No matching reports" : "Your ATS archive is empty"} description={search ? "Try another resume name or clear your search." : "Run an ATS review and your report will automatically appear here."} action={<Button as={Link} to="/analyze/ats-score" variant="primary">Run ATS Review</Button>} />
       ) : (
-        <div className="ats-reports-page__grid">
+        <section className="ats-reports-list" aria-label="ATS reports">
           {reports.map((report) => {
             const score = report.analysis?.overallScore ?? 0;
-            return <Link key={report._id} to={`/ats/reports/${report._id}`} className="ats-report-card glass-panel"><div className="ats-report-card__top"><span className="ats-report-card__category">{categoryLabel(report.category)}</span><strong>{score}%</strong></div><h2>{report.title || "ATS Resume Review"}</h2><p>{report.resumeFileName || "Resume"}</p><div className="ats-report-card__meta"><span>{new Date(report.createdAt).toLocaleDateString()}</span><span>{report.revisedResume ? "AI optimized" : "Audit only"}</span></div></Link>;
+            return <Link key={report._id} to={`/ats/reports/${report._id}`} className="ats-report-card glass-panel">
+              <div className="ats-report-card__score"><strong>{score}</strong><span>/100</span></div>
+              <div className="ats-report-card__content"><div className="ats-report-card__eyebrow">ATS REVIEW</div><h2>{report.title || report.resumeFileName || "Resume Review"}</h2><p>{report.resumeFileName || "Resume"}</p><div className="ats-report-card__meta"><span>{new Date(report.createdAt).toLocaleDateString(undefined, { month: "short", day: "numeric", year: "numeric" })}</span><span>{report.revisedResume ? "AI optimized" : "ATS analysis"}</span></div></div>
+              <span className="ats-report-card__arrow" aria-hidden="true">→</span>
+            </Link>;
           })}
-        </div>
+        </section>
       )}
-    </div>
+    </main>
   );
 };
 
