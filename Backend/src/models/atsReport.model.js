@@ -21,43 +21,19 @@ const atsIssueSchema = new mongoose.Schema(
 
 const atsSectionSchema = new mongoose.Schema(
   {
-    score: {
-      type: Number,
-      min: 0,
-      max: 100,
-      default: 0,
-    },
-    feedback: {
-      type: String,
-      default: "",
-    },
-    suggestions: {
-      type: [String],
-      default: [],
-    },
+    score: { type: Number, min: 0, max: 100, default: 0 },
+    feedback: { type: String, default: "" },
+    suggestions: { type: [String], default: [] },
   },
   { _id: false },
 );
 
 const atsTopSuggestionSchema = new mongoose.Schema(
   {
-    priority: {
-      type: String,
-      enum: ["high", "medium", "low"],
-      default: "medium",
-    },
-    section: {
-      type: String,
-      required: true,
-    },
-    suggestion: {
-      type: String,
-      required: true,
-    },
-    reasoning: {
-      type: String,
-      default: "",
-    },
+    priority: { type: String, enum: ["high", "medium", "low"], default: "medium" },
+    section: { type: String, required: true },
+    suggestion: { type: String, required: true },
+    reasoning: { type: String, default: "" },
   },
   { _id: false },
 );
@@ -68,29 +44,25 @@ const atsReportSchema = new mongoose.Schema(
       type: mongoose.Schema.Types.ObjectId,
       ref: "users",
       required: false,
+      index: true,
     },
-    rawResumeText: {
+    rawResumeText: { type: String, required: [true, "Resume text is required"] },
+    resumeFileName: { type: String, default: "resume.pdf" },
+    category: {
       type: String,
-      required: [true, "Resume text is required"],
+      enum: ["general", "job-targeted", "optimized"],
+      default: "general",
+      index: true,
     },
-    resumeFileName: {
+    title: {
       type: String,
-      default: "resume.pdf",
+      default: "ATS Resume Review",
+      trim: true,
     },
     analysis: {
-      overallScore: {
-        type: Number,
-        min: 0,
-        max: 100,
-        required: true,
-      },
+      overallScore: { type: Number, min: 0, max: 100, required: true },
       atsCompatibility: {
-        score: {
-          type: Number,
-          min: 0,
-          max: 100,
-          required: true,
-        },
+        score: { type: Number, min: 0, max: 100, required: true },
         issues: [atsIssueSchema],
       },
       sections: {
@@ -109,10 +81,11 @@ const atsReportSchema = new mongoose.Schema(
       default: null,
     },
   },
-  {
-    timestamps: true,
-  },
+  { timestamps: true },
 );
+
+atsReportSchema.index({ user: 1, createdAt: -1 });
+atsReportSchema.index({ user: 1, category: 1, createdAt: -1 });
 
 const atsReportModel =
   mongoose.models.AtsReport || mongoose.model("AtsReport", atsReportSchema);
