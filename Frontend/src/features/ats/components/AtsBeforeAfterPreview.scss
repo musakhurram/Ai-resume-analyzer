@@ -59,23 +59,23 @@
 }
 
 .ats-preview-modal__download-btn {
-  min-height: 52px;
-  min-width: 210px;
+  min-height: 40px;
   width: auto !important;
-  padding: 0 20px !important;
+  min-width: 0;
+  padding: 0 14px !important;
   display: inline-flex !important;
   flex-direction: row !important;
   align-items: center !important;
   justify-content: center !important;
-  gap: 9px !important;
+  gap: 7px !important;
   white-space: nowrap;
   line-height: 1;
 }
 
 .ats-preview-modal__download-btn svg {
-  width: 18px;
-  height: 18px;
-  flex: 0 0 18px;
+  width: 16px;
+  height: 16px;
+  flex: 0 0 16px;
   display: block;
 }
 
@@ -313,7 +313,7 @@
   }
 
   .ats-preview-modal__download-btn {
-    width: 100% !important;
+    width: auto !important;
     min-width: 0;
     justify-content: center;
   }
