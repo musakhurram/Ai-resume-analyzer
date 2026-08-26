@@ -1,79 +1,37 @@
 const express = require("express");
 const upload = require("../middlewares/file.middleware");
 const { aiGenerationLimiter } = require("../middlewares/rateLimit.middleware");
-const authMiddleware = require("../middlewares/auth.middleware");
+const { authUser } = require("../middlewares/auth.middleware");
 const atsController = require("../controllers/atsAnalyze.controller");
 
 const atsRouter = express.Router();
 
-// Middleware that attaches req.user if token is present, without rejecting guest users
+// Attaches req.user when a valid token is present, while preserving guest analysis.
 function optionalAuth(req, res, next) {
   let token = req.cookies?.token;
   if (!token && req.headers.authorization) {
-    if (req.headers.authorization.startsWith("Bearer ")) {
-      token = req.headers.authorization.split(" ")[1];
-    } else {
-      token = req.headers.authorization;
-    }
+    token = req.headers.authorization.startsWith("Bearer ")
+      ? req.headers.authorization.split(" ")[1]
+      : req.headers.authorization;
   }
-
-  if (!token) {
-    return next();
-  }
+  if (!token) return next();
 
   const jwt = require("jsonwebtoken");
   const env = require("../config/env");
-
   try {
-    const decoded = jwt.verify(token, env.JWT_SECRET);
-    req.user = decoded;
+    req.user = jwt.verify(token, env.JWT_SECRET);
   } catch {
-    // Ignore invalid token for optional auth
+    // Ignore invalid token for optional-auth endpoints.
   }
   next();
 }
 
-/**
- * @route POST /api/resume/ats-analyze
- * @description Upload resume and get ATS score + section feedback + suggestions
- */
-atsRouter.post(
-  "/ats-analyze",
-  optionalAuth,
-  aiGenerationLimiter,
-  upload.single("resume"),
-  atsController.atsAnalyzeController,
-);
+atsRouter.post("/ats-analyze", optionalAuth, aiGenerationLimiter, upload.single("resume"), atsController.atsAnalyzeController);
+atsRouter.post("/ats-revise", optionalAuth, aiGenerationLimiter, atsController.atsReviseController);
+atsRouter.get("/ats-download/:id", optionalAuth, atsController.atsDownloadController);
+atsRouter.get("/ats-report/:id", optionalAuth, atsController.getAtsReportByIdController);
 
-/**
- * @route POST /api/resume/ats-revise
- * @description Rewrite resume sections with AI using structured JSON schema & strict anti-fabrication
- */
-atsRouter.post(
-  "/ats-revise",
-  optionalAuth,
-  aiGenerationLimiter,
-  atsController.atsReviseController,
-);
-
-/**
- * @route GET /api/resume/ats-download/:id
- * @description Download clean single-column ATS PDF generated via Puppeteer
- */
-atsRouter.get(
-  "/ats-download/:id",
-  optionalAuth,
-  atsController.atsDownloadController,
-);
-
-/**
- * @route GET /api/resume/ats-report/:id
- * @description Retrieve stored ATS report details and revised resume JSON
- */
-atsRouter.get(
-  "/ats-report/:id",
-  optionalAuth,
-  atsController.getAtsReportByIdController,
-);
+// History is account-specific and must never expose another user's reports.
+atsRouter.get("/ats-reports", authUser, atsController.listAtsReportsController);
 
 module.exports = atsRouter;
