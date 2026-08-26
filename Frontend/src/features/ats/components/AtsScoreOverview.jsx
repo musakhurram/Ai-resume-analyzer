@@ -1,5 +1,5 @@
 import ScoreDial from "../../../shared/components/ScoreDial";
-import Badge from "../../../shared/components/Badge";
+import AtsIcon from "./AtsIcon";
 
 function getScoreTier(score = 0) {
   if (score >= 85) {
@@ -46,7 +46,7 @@ const AtsScoreOverview = ({ analysis, fileName, onFixClick, onViewStudio, hasRev
           <div className="ats-score-overview__eyebrow-row">
             <span className="eyebrow">ATS READINESS</span>
             <span className="ats-score-overview__dot" />
-            <span className="ats-score-overview__file">📄 {fileName || "Uploaded Resume"}</span>
+            <span className="ats-score-overview__file"><AtsIcon name="file" size={14} />{fileName || "Uploaded Resume"}</span>
           </div>
 
           <h2 className="ats-score-overview__heading">
