@@ -6,7 +6,7 @@ const navItems = [
   {
     to: "/new",
     alias: ["/", "/new", "/app", "/review"],
-    label: "New Review",
+    label: "JD Match Review",
     badge: "Studio",
     icon: (
       <svg viewBox="0 0 20 20" fill="none">
@@ -16,6 +16,32 @@ const navItems = [
           strokeWidth="1.75"
           strokeLinecap="round"
           strokeLinejoin="round"
+        />
+      </svg>
+    ),
+  },
+  {
+    to: "/analyze/ats-score",
+    alias: ["/analyze/ats-score", "/ats-score", "/ats", "/ats-analyzer"],
+    label: "ATS Score Scanner",
+    badge: "New",
+    icon: (
+      <svg viewBox="0 0 20 20" fill="none">
+        <path
+          d="M7.5 10.833l1.667 1.667 3.333-3.333"
+          stroke="currentColor"
+          strokeWidth="1.6"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        />
+        <rect
+          x="3.333"
+          y="3.333"
+          width="13.334"
+          height="13.334"
+          rx="2.5"
+          stroke="currentColor"
+          strokeWidth="1.6"
         />
       </svg>
     ),

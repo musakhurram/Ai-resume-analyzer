@@ -6,6 +6,7 @@ import AppShell from "./components/layout/AppShell";
 import NewReview from "./features/interview/pages/NewReview";
 import Reports from "./features/interview/pages/Reports";
 import ReportDetail from "./features/interview/pages/ReportDetail";
+import AtsAnalyzer from "./features/ats/pages/AtsAnalyzer";
 
 export const router = createBrowserRouter([
   {
@@ -27,6 +28,9 @@ export const router = createBrowserRouter([
       { path: "/new", element: <NewReview /> },
       { path: "/app", element: <NewReview /> },
       { path: "/review", element: <NewReview /> },
+      { path: "/analyze/ats-score", element: <AtsAnalyzer /> },
+      { path: "/ats-score", element: <AtsAnalyzer /> },
+      { path: "/ats", element: <AtsAnalyzer /> },
       { path: "/reports", element: <Reports /> },
       { path: "/reports/:id", element: <ReportDetail /> },
     ],

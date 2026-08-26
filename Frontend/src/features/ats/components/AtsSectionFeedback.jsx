@@ -1,4 +1,4 @@
-and fimport { useState } from "react";
+import { useState } from "react";
 
 const SECTION_META = [
   { key: "experience", label: "Work Experience", icon: "💼" },

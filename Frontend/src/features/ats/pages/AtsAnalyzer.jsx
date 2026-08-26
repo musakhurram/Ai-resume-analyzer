@@ -1,4 +1,4 @@
-pm run import { useState, useRef } from "react";
+import { useState, useRef } from "react";
 import AtsUploadForm from "../components/AtsUploadForm";
 import AtsScoreOverview from "../components/AtsScoreOverview";
 import AtsIssuesList from "../components/AtsIssuesList";
