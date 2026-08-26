@@ -1,7 +1,6 @@
 import { useState, useEffect } from "react";
 import Button from "../../../shared/components/Button";
 import Callout from "../../../shared/components/Callout";
-import { fetchAtsPdfBlobUrl } from "../services/ats.api";
 
 const SECTIONS_AVAILABLE = [
   { id: "all", label: "All Sections (Full Rewrite)" },
@@ -68,10 +67,8 @@ const AtsBeforeAfterPreview = ({
   const [selectedSection, setSelectedSection] = useState("all");
   const [customNotes, setCustomNotes] = useState("");
   const [leftMode, setLeftMode] = useState(originalPdfUrl ? "pdf" : "text"); // "pdf" | "text"
-  const [rightMode, setRightMode] = useState("diff"); // "diff" | "pdf" | "clean"
+  const [rightMode, setRightMode] = useState("diff"); // "diff" | "clean"
   const [showDiffHighlights, setShowDiffHighlights] = useState(true);
-  const [revisedPdfUrl, setRevisedPdfUrl] = useState(null);
-  const [loadingPdf, setLoadingPdf] = useState(false);
   const [copied, setCopied] = useState(false);
 
   // Sync leftMode if originalPdfUrl changes
@@ -81,44 +78,7 @@ const AtsBeforeAfterPreview = ({
     }
   }, [originalPdfUrl]);
 
-  // Pre-fetch revised PDF blob url in background as soon as revision is available
-  useEffect(() => {
-    let active = true;
-    if (reportId && revisedResume && !revisedPdfUrl && !loadingPdf) {
-      setLoadingPdf(true);
-      fetchAtsPdfBlobUrl(reportId)
-        .then((url) => {
-          if (active) {
-            setRevisedPdfUrl(url);
-          }
-        })
-        .catch((err) => {
-          console.warn("PDF background preload note:", err.message);
-        })
-        .finally(() => {
-          if (active) setLoadingPdf(false);
-        });
-    }
-    return () => {
-      active = false;
-    };
-  }, [reportId, revisedResume, revisedPdfUrl, loadingPdf]);
-
-  // Clean up object URLs on unmount
-  useEffect(() => {
-    return () => {
-      if (revisedPdfUrl) {
-        window.URL.revokeObjectURL(revisedPdfUrl);
-      }
-    };
-  }, [revisedPdfUrl]);
-
   const handleRunRevise = () => {
-    // Reset revised PDF preview so it refreshes with new revision
-    if (revisedPdfUrl) {
-      window.URL.revokeObjectURL(revisedPdfUrl);
-      setRevisedPdfUrl(null);
-    }
     onRevise({
       sections: selectedSection,
       customNotes,
@@ -316,7 +276,7 @@ const AtsBeforeAfterPreview = ({
             </div>
 
             <div className="ats-pane-head-actions">
-              {/* Mode switch for right pane: Diff Document vs PDF Viewer vs Clean */}
+              {/* Mode switch for right pane: Diff Document vs Clean */}
               <div className="ats-pane-view-tabs">
                 <button
                   type="button"
@@ -325,14 +285,6 @@ const AtsBeforeAfterPreview = ({
                   title="Interactive Document with AI Diff Highlights"
                 >
                   ✨ Diff View
-                </button>
-                <button
-                  type="button"
-                  className={`ats-pane-tab-btn ${rightMode === "pdf" ? "is-active" : ""}`}
-                  onClick={() => setRightMode("pdf")}
-                  title="View Live Generated ATS PDF"
-                >
-                  📄 ATS PDF
                 </button>
                 <button
                   type="button"
@@ -365,25 +317,6 @@ const AtsBeforeAfterPreview = ({
             ) : !revisedResume ? (
               <div className="ats-pane-prompt">
                 <p>Click "Generate Revision" above to rewrite your resume with ATS-optimized action bullets.</p>
-              </div>
-            ) : rightMode === "pdf" ? (
-              <div className="ats-iframe-container">
-                {loadingPdf ? (
-                  <div className="ats-pane-loading">
-                    <div className="ats-spinner" />
-                    <p>Rendering clean single-column PDF with Puppeteer…</p>
-                  </div>
-                ) : revisedPdfUrl ? (
-                  <iframe
-                    src={revisedPdfUrl}
-                    title="AI-Generated ATS Resume PDF"
-                    className="ats-preview-iframe"
-                  />
-                ) : (
-                  <div className="ats-pane-prompt">
-                    <p>Failed to load PDF preview. Click "Download ATS PDF" above.</p>
-                  </div>
-                )}
               </div>
             ) : (
               <div className={`ats-pane__body--document ${showDiffHighlights && rightMode === "diff" ? "has-diff-mode" : ""}`}>
