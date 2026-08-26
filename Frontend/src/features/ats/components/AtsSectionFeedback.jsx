@@ -1,12 +1,13 @@
 import { useState } from "react";
+import AtsIcon from "./AtsIcon";
 
 const SECTION_META = [
-  { key: "experience", label: "Experience", icon: "💼" },
-  { key: "skills", label: "Skills", icon: "⚡" },
-  { key: "summary", label: "Summary", icon: "📝" },
-  { key: "formatting", label: "Formatting", icon: "📐" },
-  { key: "contactInfo", label: "Contact", icon: "📇" },
-  { key: "education", label: "Education", icon: "🎓" },
+  { key: "experience", label: "Experience", icon: "briefcase" },
+  { key: "skills", label: "Skills", icon: "spark" },
+  { key: "summary", label: "Summary", icon: "document" },
+  { key: "formatting", label: "Formatting", icon: "ruler" },
+  { key: "contactInfo", label: "Contact", icon: "contact" },
+  { key: "education", label: "Education", icon: "graduation" },
 ];
 
 function getScoreColor(score = 0) {
@@ -49,7 +50,7 @@ const AtsSectionFeedback = ({ sections = {}, onReviseSection }) => {
               className={`ats-section-tab ${isActive ? "is-active" : ""}`}
               onClick={() => setActiveKey(meta.key)}
             >
-              <span className="ats-section-tab__icon">{meta.icon}</span>
+              <span className="ats-section-tab__icon"><AtsIcon name={meta.icon} size={15} /></span>
               <span className="ats-section-tab__name">{meta.label}</span>
               <span className={`ats-section-tab__score ${getScoreColor(sData.score)}`}>
                 {sData.score ?? 0}%
@@ -63,7 +64,7 @@ const AtsSectionFeedback = ({ sections = {}, onReviseSection }) => {
       <div className="ats-section-card">
         <div className="ats-section-card__top">
           <div className="ats-section-card__title-group">
-            <span className="ats-section-card__big-icon">{currentMeta.icon}</span>
+            <span className="ats-section-card__big-icon"><AtsIcon name={currentMeta.icon} size={20} /></span>
             <div>
               <h4 className="ats-section-card__name">{currentMeta.label} Section</h4>
               <p className="ats-section-card__score-label">
@@ -95,7 +96,7 @@ const AtsSectionFeedback = ({ sections = {}, onReviseSection }) => {
             <ul className="ats-section-card__sugg-list">
               {currentSection.suggestions.map((sug, i) => (
                 <li key={i} className="ats-section-card__sugg-item">
-                  <span className="ats-section-card__bullet">→</span>
+                  <span className="ats-section-card__bullet"><AtsIcon name="arrowRight" size={14} /></span>
                   <span>{sug}</span>
                 </li>
               ))}

@@ -3,6 +3,7 @@ import FileDropzone from "../../../shared/components/FileDropzone";
 import { Field, TextArea } from "../../../shared/components/Field";
 import Button from "../../../shared/components/Button";
 import Callout from "../../../shared/components/Callout";
+import AtsIcon from "./AtsIcon";
 
 const ANALYSIS_STEPS = [
   "Extracting resume text & layout tokens…",
@@ -126,7 +127,7 @@ const AtsUploadForm = ({ onAnalyze, loading, error }) => {
                 onError={setFileError}
               />
               <div className="ats-form__hints">
-                <span>✓ High-resolution selectable text PDF format supported</span>
+                <span className="ats-form__hint"><AtsIcon name="checkCircle" size={14} />High-resolution selectable text PDF format supported</span>
               </div>
             </div>
           ) : (
