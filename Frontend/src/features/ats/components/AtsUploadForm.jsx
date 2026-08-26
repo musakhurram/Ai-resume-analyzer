@@ -22,17 +22,19 @@ const AtsUploadForm = ({ onAnalyze, loading, error }) => {
       setStepIdx(0);
       return;
     }
+
     const timer = setInterval(() => {
       setStepIdx((prev) => (prev + 1) % ANALYSIS_STEPS.length);
     }, 2400);
+
     return () => clearInterval(timer);
   }, [loading]);
 
   const handleSubmit = (e) => {
-    e?.preventDefault();
+    e.preventDefault();
     setLocalError("");
 
-    if (!pastedText.trim() || pastedText.trim().length < 50) {
+    if (pastedText.trim().length < 50) {
       setLocalError("Please paste at least 50 characters of resume text.");
       return;
     }
@@ -66,6 +68,25 @@ const AtsUploadForm = ({ onAnalyze, loading, error }) => {
 
       <form className="ats-form" onSubmit={handleSubmit}>
         <div className="ats-form__panel glass-panel">
+          <div className="ats-form__mode-tabs">
+            <button
+              type="button"
+              className="ats-form__mode-btn is-active"
+              onClick={() => document.getElementById("pastedResume")?.focus()}
+            >
+              <svg viewBox="0 0 20 20" fill="none" width="16" height="16" aria-hidden="true">
+                <path
+                  d="M13.333 3.333h2.5A1.667 1.667 0 0 1 17.5 5v11.667A1.667 1.667 0 0 1 15.833 18.333H4.167A1.667 1.667 0 0 1 2.5 16.667V5a1.667 1.667 0 0 1 1.667-1.667h2.5"
+                  stroke="currentColor"
+                  strokeWidth="1.6"
+                />
+                <rect x="6.667" y="1.667" width="6.667" height="4.167" rx="1" stroke="currentColor" strokeWidth="1.6" />
+                <path d="M6.667 10.833h6.666M6.667 14.167h4.166" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
+              </svg>
+              Paste Resume Text
+            </button>
+          </div>
+
           <div className="ats-form__paste-wrap">
             <Field htmlFor="pastedResume">
               <TextArea
@@ -79,7 +100,9 @@ const AtsUploadForm = ({ onAnalyze, loading, error }) => {
               />
             </Field>
             <div className="ats-form__paste-meta">
-              <span>{wordCount} words {wordCount >= 100 ? "· Great length" : "· Minimum 50 words recommended"}</span>
+              <span>
+                {wordCount} words {wordCount >= 100 ? "· Great length" : "· Minimum 50 words recommended"}
+              </span>
               {pastedText && (
                 <button
                   type="button"
@@ -89,7 +112,10 @@ const AtsUploadForm = ({ onAnalyze, loading, error }) => {
                   Clear text
                 </button>
               )}
-         {/* Action Bar */}
+            </div>
+          </div>
+        </div>
+
         <div className="ats-form__action-bar glass-panel">
           <div className="ats-form__status-block">
             <span className="ats-form__status-indicator">
