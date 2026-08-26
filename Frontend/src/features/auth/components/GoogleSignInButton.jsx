@@ -18,30 +18,49 @@ const GoogleSignInButton = ({ onCredential, disabled }) => {
   const realBtnRef = useRef(null);
 
   useEffect(() => {
-    if (!GOOGLE_CLIENT_ID || disabled) return;
+    if (!GOOGLE_CLIENT_ID) {
+      console.warn(
+        "[GoogleSignIn] VITE_GOOGLE_CLIENT_ID is not configured. Google Sign-In is disabled."
+      );
+      return;
+    }
+    if (disabled) return;
 
     let cancelled = false;
+    let attempts = 0;
+    const maxAttempts = 40; // ~6s timeout
 
     function render() {
       if (cancelled || !window.google?.accounts?.id || !realBtnRef.current) return;
 
-      window.google.accounts.id.initialize({
-        client_id: GOOGLE_CLIENT_ID,
-        callback: (response) => onCredential(response.credential),
-        // Without this, Google auto-detects an active browser session and
-        // may auto-complete sign-in unexpectedly on load.
-        auto_select: false,
-      });
+      try {
+        window.google.accounts.id.initialize({
+          client_id: GOOGLE_CLIENT_ID,
+          callback: (response) => {
+            if (response?.credential) {
+              onCredential(response.credential);
+            }
+          },
+          error_callback: (err) => {
+            console.error("[GoogleSignIn] Google Identity error:", err);
+          },
+          // Without this, Google auto-detects an active browser session and
+          // may auto-complete sign-in unexpectedly on load.
+          auto_select: false,
+        });
 
-      realBtnRef.current.innerHTML = "";
-      window.google.accounts.id.renderButton(realBtnRef.current, {
-        type: "standard",
-        theme: "outline",
-        size: "large",
-        shape: "pill",
-        width: 340,
-        text: "continue_with",
-      });
+        realBtnRef.current.innerHTML = "";
+        window.google.accounts.id.renderButton(realBtnRef.current, {
+          type: "standard",
+          theme: "outline",
+          size: "large",
+          shape: "pill",
+          width: 340,
+          text: "continue_with",
+        });
+      } catch (err) {
+        console.error("[GoogleSignIn] Failed to render Google button:", err);
+      }
     }
 
     if (window.google?.accounts?.id) {
@@ -49,9 +68,15 @@ const GoogleSignInButton = ({ onCredential, disabled }) => {
     } else {
       // The GSI script loads async — poll briefly until it's ready.
       const interval = setInterval(() => {
+        attempts += 1;
         if (window.google?.accounts?.id) {
           clearInterval(interval);
           render();
+        } else if (attempts >= maxAttempts) {
+          clearInterval(interval);
+          console.error(
+            "[GoogleSignIn] Google Identity script failed to load. Check your network or adblocker."
+          );
         }
       }, 150);
       return () => {

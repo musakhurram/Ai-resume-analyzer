@@ -33,16 +33,20 @@
     position: absolute;
     inset: 0;
     z-index: 2;
-    opacity: 0;
+    opacity: 0.0001;
     overflow: hidden;
     border-radius: var(--radius-full);
+    cursor: pointer;
 
     &.is-disabled {
       pointer-events: none;
     }
 
+    > div,
     iframe {
       width: 100% !important;
+      height: 100% !important;
+      cursor: pointer !important;
     }
   }
 
