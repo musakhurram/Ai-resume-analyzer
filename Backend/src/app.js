@@ -63,9 +63,11 @@ app.get("/api/health", (req, res) => {
 /* Routes */
 const authRouter = require("./routes/auth.routes");
 const interviewRouter = require("./routes/interview.routes");
+const atsRouter = require("./routes/atsAnalyze.routes");
 
 app.use("/api/auth", authRouter);
 app.use("/api/interview", interviewRouter);
+app.use("/api/resume", atsRouter);
 
 app.use(notFoundHandler);
 app.use(errorHandler);
