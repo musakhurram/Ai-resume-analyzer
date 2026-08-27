@@ -18,13 +18,11 @@ async function stripeRequest(path, params = {}, method = "POST") {
     error.statusCode = 503;
     throw error;
   }
-
   const options = { method, headers: { Authorization: `Bearer ${env.STRIPE_SECRET_KEY}` } };
   if (method !== "GET") {
     options.headers["Content-Type"] = "application/x-www-form-urlencoded";
     options.body = new URLSearchParams(params);
   }
-
   const response = await fetch(`https://api.stripe.com/v1/${path}`, options);
   const data = await response.json();
   if (!response.ok) {
@@ -36,56 +34,42 @@ async function stripeRequest(path, params = {}, method = "POST") {
 }
 
 async function creditCompletedCheckout(session) {
-  if (!session || session.mode !== "payment" || session.payment_status !== "paid") {
-    return { credited: false, reason: "Payment has not been completed" };
-  }
+  if (!session || session.mode !== "payment" || session.payment_status !== "paid") return { credited: false, reason: "Payment has not been completed" };
 
   const userId = session.metadata?.userId;
   const plan = normalizePlan(session.metadata?.plan);
   const config = getPlanConfig(plan);
-  const credits = Number(session.metadata?.credits) || config.creditsPerPurchase;
+  const tokens = Number(session.metadata?.tokens) || config.tokensPerPurchase;
 
   if (!userId) return { credited: false, reason: "Checkout session has no user metadata" };
-  if (!["pro", "premium"].includes(plan) || credits <= 0) {
-    return { credited: false, reason: "Checkout session contains an invalid paid plan" };
-  }
+  if (!["pro", "premium"].includes(plan) || !Number.isInteger(tokens) || tokens <= 0) return { credited: false, reason: "Checkout session contains an invalid paid plan" };
 
   const user = await userModel.findOneAndUpdate(
-    {
-      _id: userId,
-      processedStripeCheckoutSessionIds: { $ne: session.id },
-    },
+    { _id: userId, processedStripeCheckoutSessionIds: { $ne: session.id } },
     {
       $set: { plan, lastStripeCheckoutSessionId: session.id },
       $addToSet: { processedStripeCheckoutSessionIds: session.id },
-      $inc: { resumeCredits: credits },
+      $inc: { aiTokens: tokens },
     },
-    { new: true, projection: { plan: 1, resumeCredits: 1 } },
+    { new: true, projection: { plan: 1, aiTokens: 1 } },
   );
 
   if (!user) {
-    const existingUser = await userModel.findById(userId).select("plan resumeCredits processedStripeCheckoutSessionIds");
+    const existingUser = await userModel.findById(userId).select("plan aiTokens processedStripeCheckoutSessionIds");
     if (!existingUser) return { credited: false, reason: "User not found" };
-    return {
-      credited: false,
-      alreadyCredited: existingUser.processedStripeCheckoutSessionIds?.includes(session.id) === true,
-      resumeCredits: Number(existingUser.resumeCredits) || 0,
-    };
+    return { credited: false, alreadyCredited: existingUser.processedStripeCheckoutSessionIds?.includes(session.id) === true, aiTokens: Number(existingUser.aiTokens) || 0 };
   }
-
-  return { credited: true, resumeCredits: Number(user.resumeCredits) || 0 };
+  return { credited: true, aiTokens: Number(user.aiTokens) || 0 };
 }
 
 async function createCheckoutSessionController(req, res, next) {
   try {
     const requestedPlan = String(req.body?.plan || "").trim().toLowerCase();
-    if (!["pro", "premium"].includes(requestedPlan)) {
-      return res.status(400).json({ message: "Choose a valid Pro or Premium plan." });
-    }
+    if (!["pro", "premium"].includes(requestedPlan)) return res.status(400).json({ message: "Choose a valid Pro or Premium plan." });
 
     const config = PLAN_CONFIG[requestedPlan];
     const priceCents = PLAN_PRICES_CENTS[requestedPlan];
-    const user = await userModel.findById(req.user.id).select("_id plan resumeCredits");
+    const user = await userModel.findById(req.user.id).select("_id plan aiTokens");
     if (!user) return res.status(404).json({ message: "User not found" });
 
     const clientUrl = getClientUrl();
@@ -94,11 +78,11 @@ async function createCheckoutSessionController(req, res, next) {
       "line_items[0][price_data][currency]": "usd",
       "line_items[0][price_data][unit_amount]": String(priceCents),
       "line_items[0][price_data][product_data][name]": `Resume Analyzer ${config.label}`,
-      "line_items[0][price_data][product_data][description]": `${config.creditsPerPurchase} AI resume generations`,
+      "line_items[0][price_data][product_data][description]": `${config.tokensPerPurchase.toLocaleString()} AI tokens`,
       "line_items[0][quantity]": "1",
       "metadata[userId]": String(user._id),
       "metadata[plan]": requestedPlan,
-      "metadata[credits]": String(config.creditsPerPurchase),
+      "metadata[tokens]": String(config.tokensPerPurchase),
       success_url: `${clientUrl}/pricing?checkout=success&session_id={CHECKOUT_SESSION_ID}`,
       cancel_url: `${clientUrl}/pricing?checkout=cancelled`,
     });
@@ -108,13 +92,11 @@ async function createCheckoutSessionController(req, res, next) {
       sessionId: session.id,
       plan: requestedPlan,
       planLabel: config.label,
-      credits: config.creditsPerPurchase,
+      tokens: config.tokensPerPurchase,
       priceCents,
-      currentCredits: Number(user.resumeCredits) || 0,
+      currentTokens: Number(user.aiTokens) || 0,
     });
-  } catch (err) {
-    next(err);
-  }
+  } catch (err) { next(err); }
 }
 
 function verifyStripeSignature(rawBody, signatureHeader) {
@@ -125,7 +107,6 @@ function verifyStripeSignature(rawBody, signatureHeader) {
   if (!timestamp || signatures.length === 0) return false;
   const timestampNumber = Number(timestamp);
   if (!Number.isFinite(timestampNumber) || Math.abs(Date.now() / 1000 - timestampNumber) > 300) return false;
-
   const payload = `${timestamp}.${rawBody.toString("utf8")}`;
   const expected = crypto.createHmac("sha256", env.STRIPE_WEBHOOK_SECRET).update(payload, "utf8").digest("hex");
   return signatures.some((signature) => {
@@ -137,50 +118,35 @@ function verifyStripeSignature(rawBody, signatureHeader) {
 
 async function stripeWebhookController(req, res, next) {
   try {
-    if (!verifyStripeSignature(req.body, req.headers["stripe-signature"])) {
-      return res.status(400).json({ message: "Invalid Stripe webhook signature" });
-    }
-
+    if (!verifyStripeSignature(req.body, req.headers["stripe-signature"])) return res.status(400).json({ message: "Invalid Stripe webhook signature" });
     const event = JSON.parse(req.body.toString("utf8"));
-    if (["checkout.session.completed", "checkout.session.async_payment_succeeded"].includes(event.type)) {
-      await creditCompletedCheckout(event.data.object);
-    }
+    if (["checkout.session.completed", "checkout.session.async_payment_succeeded"].includes(event.type)) await creditCompletedCheckout(event.data.object);
     return res.status(200).json({ received: true });
-  } catch (err) {
-    next(err);
-  }
+  } catch (err) { next(err); }
 }
 
 async function confirmCheckoutSessionController(req, res, next) {
   try {
     const sessionId = String(req.query.session_id || "").trim();
-    if (!sessionId || !sessionId.startsWith("cs_")) {
-      return res.status(400).json({ message: "A valid checkout session ID is required" });
-    }
-
+    if (!sessionId || !sessionId.startsWith("cs_")) return res.status(400).json({ message: "A valid checkout session ID is required" });
     const session = await stripeRequest(`checkout/sessions/${encodeURIComponent(sessionId)}`, {}, "GET");
     const sessionUserId = session.metadata?.userId;
-    if (!sessionUserId || String(sessionUserId) !== String(req.user.id)) {
-      return res.status(403).json({ message: "Checkout session does not belong to this user" });
-    }
-
+    if (!sessionUserId || String(sessionUserId) !== String(req.user.id)) return res.status(403).json({ message: "Checkout session does not belong to this user" });
     const result = await creditCompletedCheckout(session);
     const billing = await getBillingSnapshot(req.user.id);
-
     return res.status(200).json({
       confirmed: session.payment_status === "paid",
       credited: result.credited || result.alreadyCredited === true,
       purchasedPlan: normalizePlan(session.metadata?.plan),
-      purchasedCredits: Number(session.metadata?.credits) || 0,
+      purchasedTokens: Number(session.metadata?.tokens) || 0,
       plan: billing?.plan || "free",
       planLabel: billing?.planLabel || "Free",
-      resumeCredits: billing?.resumeCredits || 0,
-      creditsPerPurchase: billing?.creditsPerPurchase || 3,
-      generations: billing?.generations || 3,
+      aiTokens: billing?.aiTokens || 0,
+      tokensPerPurchase: billing?.tokensPerPurchase || 3000,
+      planTokens: billing?.planTokens || 3000,
+      tokenCosts: billing?.tokenCosts || {},
     });
-  } catch (err) {
-    next(err);
-  }
+  } catch (err) { next(err); }
 }
 
 async function getBillingStatusController(req, res, next) {
@@ -188,14 +154,7 @@ async function getBillingStatusController(req, res, next) {
     const billing = await getBillingSnapshot(req.user.id);
     if (!billing) return res.status(404).json({ message: "User not found" });
     return res.status(200).json(billing);
-  } catch (err) {
-    next(err);
-  }
+  } catch (err) { next(err); }
 }
 
-module.exports = {
-  createCheckoutSessionController,
-  stripeWebhookController,
-  confirmCheckoutSessionController,
-  getBillingStatusController,
-};
+module.exports = { createCheckoutSessionController, stripeWebhookController, confirmCheckoutSessionController, getBillingStatusController };
