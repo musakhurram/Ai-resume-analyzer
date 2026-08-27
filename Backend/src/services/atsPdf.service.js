@@ -6,79 +6,60 @@ async function loadPuppeteer() {
   if (!puppeteerPromise) {
     puppeteerPromise = import("puppeteer").catch(() => import("puppeteer-core"));
   }
-
   return puppeteerPromise;
 }
 
-/**
- * Locate Chrome or Edge executable across various OS environments
- */
 function findBrowserExecutable() {
-  if (
-    process.env.PUPPETEER_EXECUTABLE_PATH &&
-    fs.existsSync(process.env.PUPPETEER_EXECUTABLE_PATH)
-  ) {
+  if (process.env.PUPPETEER_EXECUTABLE_PATH && fs.existsSync(process.env.PUPPETEER_EXECUTABLE_PATH)) {
     return process.env.PUPPETEER_EXECUTABLE_PATH;
   }
 
   const candidatePaths = [
-    // Windows Chrome
     "C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe",
     "C:\\Program Files (x86)\\Google\\Chrome\\Application\\chrome.exe",
-    process.env.LOCALAPPDATA
-      ? path.join(
-          process.env.LOCALAPPDATA,
-          "Google\\Chrome\\Application\\chrome.exe",
-        )
-      : null,
-    // Windows Edge
+    process.env.LOCALAPPDATA ? path.join(process.env.LOCALAPPDATA, "Google\\Chrome\\Application\\chrome.exe") : null,
     "C:\\Program Files (x86)\\Microsoft\\Edge\\Application\\msedge.exe",
     "C:\\Program Files\\Microsoft\\Edge\\Application\\msedge.exe",
-    // Linux Chrome/Chromium
     "/usr/bin/google-chrome",
     "/usr/bin/google-chrome-stable",
     "/usr/bin/chromium",
     "/usr/bin/chromium-browser",
     "/snap/bin/chromium",
-    // macOS Chrome/Edge
     "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome",
     "/Applications/Microsoft Edge.app/Contents/MacOS/Microsoft Edge",
   ].filter(Boolean);
 
-  for (const p of candidatePaths) {
-    if (fs.existsSync(p)) {
-      return p;
-    }
-  }
-
-  return undefined;
+  return candidatePaths.find((candidate) => fs.existsSync(candidate));
 }
 
-/**
- * Escape HTML special characters for safe template rendering
- */
 function escapeHtml(str = "") {
   return String(str)
     .replace(/&/g, "&amp;")
     .replace(/</g, "&lt;")
     .replace(/>/g, "&gt;")
-    .replace(/"/g, "&quot;")
+    .replace(/\"/g, "&quot;")
     .replace(/'/g, "&#039;");
 }
 
+function normalizeUrl(value = "") {
+  const raw = String(value).trim();
+  if (!raw) return "";
+  return /^https?:\/\//i.test(raw) ? raw : `https://${raw}`;
+}
+
+function displayUrl(value = "") {
+  return String(value)
+    .replace(/^https?:\/\/(www\.)?/i, "")
+    .replace(/\/$/, "");
+}
+
 /**
- * Render structured resume JSON to clean single-column ATS-friendly HTML/CSS.
+ * ATS-safe resume template.
  *
- * Design constraints (ATS-safety):
- *  - Single column, no tables, no floated/positioned layout, no images/icons.
- *  - Standard web-safe fonts only (Arial/Helvetica/Calibri fallback chain).
- *  - Headings and links are real text nodes (not text-transform tricks that
- *    would change extracted text, not background-image labels, etc).
- *  - All sizing that affects vertical rhythm (font-size, section/item
- *    spacing, list spacing) is expressed via calc(...) against the single
- *    `--s` custom property so the one-page auto-fit pass in
- *    generateAtsPdfBuffer can shrink the whole document proportionally
- *    without touching the markup or re-rendering from scratch.
+ * Important layout rule: the PDF uses explicit CSS page padding rather than
+ * mixing @page margins with Puppeteer's margin option. Chromium can otherwise
+ * measure the page at one width and print it at another width, which causes
+ * right-aligned dates and long lines to appear clipped at the page edge.
  */
 function renderAtsHtmlTemplate(resume) {
   const contact = resume.contact || {};
@@ -89,15 +70,27 @@ function renderAtsHtmlTemplate(resume) {
   const projects = Array.isArray(resume.projects) ? resume.projects : [];
   const certifications = Array.isArray(resume.certifications) ? resume.certifications : [];
 
-  // Build contact row items
   const contactItems = [
-    contact.email ? escapeHtml(contact.email) : null,
-    contact.phone ? escapeHtml(contact.phone) : null,
-    contact.location ? escapeHtml(contact.location) : null,
-    contact.linkedin ? `<a href="${escapeHtml(contact.linkedin)}" target="_blank">${escapeHtml(contact.linkedin.replace(/^https?:\/\/(www\.)?linkedin\.com\/in\//i, "linkedin.com/in/"))}</a>` : null,
-    contact.github ? `<a href="${escapeHtml(contact.github)}" target="_blank">${escapeHtml(contact.github.replace(/^https?:\/\/(www\.)?github\.com\//i, "github.com/"))}</a>` : null,
-    contact.website ? `<a href="${escapeHtml(contact.website)}" target="_blank">${escapeHtml(contact.website.replace(/^https?:\/\//i, ""))}</a>` : null,
-  ].filter(Boolean).join(' <span class="contact-sep">|</span> ');
+    contact.email ? `<span>${escapeHtml(contact.email)}</span>` : null,
+    contact.phone ? `<span>${escapeHtml(contact.phone)}</span>` : null,
+    contact.location ? `<span>${escapeHtml(contact.location)}</span>` : null,
+    contact.linkedin ? `<a href="${escapeHtml(normalizeUrl(contact.linkedin))}">${escapeHtml(displayUrl(contact.linkedin))}</a>` : null,
+    contact.github ? `<a href="${escapeHtml(normalizeUrl(contact.github))}">${escapeHtml(displayUrl(contact.github))}</a>` : null,
+    contact.website ? `<a href="${escapeHtml(normalizeUrl(contact.website))}">${escapeHtml(displayUrl(contact.website))}</a>` : null,
+  ].filter(Boolean).join('<span class="contact-sep" aria-hidden="true">|</span>');
+
+  const renderItemHeader = (title, role, dates) => `
+    <div class="item-header">
+      <div class="item-title">
+        ${escapeHtml(title || "")}${role ? ` <span class="item-role">— ${escapeHtml(role)}</span>` : ""}
+      </div>
+      ${dates ? `<div class="item-date">${escapeHtml(dates)}</div>` : ""}
+    </div>`;
+
+  const renderBullets = (bullets) => {
+    if (!Array.isArray(bullets) || !bullets.length) return "";
+    return `<ul class="bullets">${bullets.map((bullet) => `<li>${escapeHtml(bullet)}</li>`).join("")}</ul>`;
+  };
 
   return `<!DOCTYPE html>
 <html lang="en">
@@ -105,291 +98,252 @@ function renderAtsHtmlTemplate(resume) {
   <meta charset="UTF-8">
   <title>${escapeHtml(contact.fullName || "Resume")}</title>
   <style>
-    /* Margins are controlled entirely from Puppeteer's page.pdf({ margin })
-       call (single source of truth for the printable area), so the @page
-       box itself stays at zero margin here to avoid the two settings
-       silently disagreeing with each other. */
-    @page {
-      size: letter;
-      margin: 0;
-    }
+    @page { size: Letter; margin: 0; }
     :root {
-      /* Uniform shrink factor applied to every font-size and every piece of
-         vertical rhythm below. The PDF service reads/writes this custom
-         property on document.documentElement to auto-fit the resume onto
-         a single page without needing separate "compact" markup/CSS. */
       --s: 1;
+      --page-margin: 0.58in;
+      --ink: #172033;
+      --muted: #526074;
+      --rule: #cbd3df;
+      --accent: #0f172a;
     }
-    *, *::before, *::after {
-      box-sizing: border-box;
-      margin: 0;
-      padding: 0;
-    }
-    html, body {
-      width: 100%;
-    }
+    *, *::before, *::after { box-sizing: border-box; }
+    html, body { width: 100%; margin: 0; padding: 0; }
     body {
       font-family: Arial, "Helvetica Neue", Helvetica, Calibri, sans-serif;
-      font-size: calc(10.2pt * var(--s));
-      line-height: 1.38;
-      color: #1a1a1a;
-      background: #ffffff;
+      font-size: calc(10pt * var(--s));
+      line-height: 1.35;
+      color: var(--ink);
+      background: #fff;
       -webkit-print-color-adjust: exact;
       print-color-adjust: exact;
-      hyphens: manual;
-      overflow-wrap: break-word;
-      word-break: break-word;
+      overflow-wrap: anywhere;
+      word-break: normal;
     }
-    a {
-      color: #1a1a1a;
-      text-decoration: none;
+    .page {
+      width: 100%;
+      padding: var(--page-margin);
     }
     .header {
       text-align: center;
-      margin-bottom: calc(11pt * var(--s));
-      border-bottom: 1.25pt solid #111827;
-      padding-bottom: calc(7pt * var(--s));
+      padding-bottom: calc(8pt * var(--s));
+      margin-bottom: calc(10pt * var(--s));
+      border-bottom: 1.25pt solid var(--accent);
     }
     .name {
       font-size: calc(19pt * var(--s));
+      line-height: 1.08;
       font-weight: 700;
-      letter-spacing: 0.3pt;
-      color: #0f172a;
+      letter-spacing: 0.15pt;
+      color: var(--accent);
       margin-bottom: calc(4pt * var(--s));
     }
     .contact-line {
-      font-size: calc(9.3pt * var(--s));
-      color: #334155;
-      line-height: 1.5;
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      align-items: center;
+      column-gap: 5pt;
+      row-gap: 2pt;
+      font-size: calc(8.8pt * var(--s));
+      line-height: 1.35;
+      color: var(--muted);
     }
-    .contact-sep {
-      color: #94a3b8;
-      margin: 0 4pt;
-    }
+    .contact-line a { color: inherit; text-decoration: none; }
+    .contact-sep { color: #9aa5b5; }
+
     .section {
-      margin-bottom: calc(9.5pt * var(--s));
+      margin-bottom: calc(9pt * var(--s));
+      break-inside: auto;
     }
-    .section:last-child {
-      margin-bottom: 0;
-    }
+    .section:last-child { margin-bottom: 0; }
     .section-title {
-      font-size: calc(10.8pt * var(--s));
+      display: block;
+      font-size: calc(10.7pt * var(--s));
+      line-height: 1.15;
       font-weight: 700;
       text-transform: uppercase;
-      letter-spacing: 0.7pt;
-      color: #0f172a;
-      border-bottom: 0.9pt solid #cbd5e1;
-      padding-bottom: calc(2.5pt * var(--s));
-      margin-bottom: calc(5.5pt * var(--s));
+      letter-spacing: 0.75pt;
+      color: var(--accent);
+      padding-bottom: calc(3pt * var(--s));
+      margin-bottom: calc(5pt * var(--s));
+      border-bottom: 0.8pt solid var(--rule);
+      break-after: avoid;
     }
     .summary-text {
-      font-size: calc(9.9pt * var(--s));
+      font-size: calc(9.65pt * var(--s));
       line-height: 1.42;
-      color: #26324a;
-      text-align: left;
+      margin: 0;
+      color: #263449;
     }
+
+    .skills-group {
+      margin: 0 0 calc(3.5pt * var(--s));
+      font-size: calc(9.55pt * var(--s));
+      line-height: 1.38;
+    }
+    .skills-group:last-child { margin-bottom: 0; }
+    .skills-category { font-weight: 700; color: var(--accent); }
+    .skills-list { color: #344257; }
+
     .item {
-      margin-bottom: calc(7.5pt * var(--s));
+      margin-bottom: calc(7pt * var(--s));
+      break-inside: avoid;
       page-break-inside: avoid;
     }
-    .item:last-child {
-      margin-bottom: 0;
-    }
-    /* Two-column "title left / date right" rows deliberately use CSS table
-       layout instead of flexbox. Chromium's print/PDF pipeline has a known
-       flexbox min-content bug: a flex child that contains a nested inline
-       element (our .item-role span) can refuse to shrink/wrap during
-       pagination and instead overflow straight past the printable area,
-       getting physically clipped at the page edge rather than wrapping.
-       display:table + a "width:1%" shrink-to-fit date cell has no such
-       ambiguity in any rendering engine and is the standard safe pattern
-       for this layout in generated PDFs. */
+    .item:last-child { margin-bottom: 0; }
     .item-header {
-      display: table;
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) auto;
+      gap: calc(8pt * var(--s));
+      align-items: baseline;
       width: 100%;
-      table-layout: auto;
       margin-bottom: calc(1pt * var(--s));
     }
-    .item-title-group {
-      display: table-cell;
+    .item-title {
+      min-width: 0;
+      font-size: calc(10pt * var(--s));
+      line-height: 1.25;
       font-weight: 700;
-      font-size: calc(10.2pt * var(--s));
-      color: #0f172a;
-      overflow-wrap: break-word;
-      word-break: break-word;
-      vertical-align: baseline;
+      color: var(--accent);
+      overflow-wrap: anywhere;
     }
-    .item-role {
-      font-weight: 600;
-      color: #334155;
-    }
+    .item-role { font-weight: 600; color: #3c4b60; }
     .item-date {
-      display: table-cell;
-      width: 1%;
-      font-size: calc(9.3pt * var(--s));
+      min-width: max-content;
+      font-size: calc(9pt * var(--s));
+      line-height: 1.2;
       font-weight: 600;
-      color: #475569;
+      color: #4b5a70;
       white-space: nowrap;
       text-align: right;
-      padding-left: 8pt;
-      vertical-align: baseline;
     }
     .item-location {
-      font-size: calc(8.9pt * var(--s));
-      color: #64748b;
+      margin: 0 0 calc(1.5pt * var(--s));
+      font-size: calc(8.7pt * var(--s));
+      line-height: 1.2;
+      color: #68778b;
       font-style: italic;
-      margin-bottom: calc(1.5pt * var(--s));
     }
-    ul.bullets {
-      list-style-type: disc;
-      margin-left: 14pt;
-      margin-top: calc(2pt * var(--s));
+    .bullets {
+      margin: calc(2pt * var(--s)) 0 0;
+      padding-left: calc(14pt * var(--s));
     }
-    ul.bullets li {
-      font-size: calc(9.7pt * var(--s));
-      line-height: 1.36;
-      color: #1e293b;
-      margin-bottom: calc(2pt * var(--s));
-      padding-left: 1pt;
+    .bullets li {
+      margin: 0 0 calc(2pt * var(--s));
+      padding-left: calc(1pt * var(--s));
+      font-size: calc(9.45pt * var(--s));
+      line-height: 1.35;
+      color: #243247;
+      overflow-wrap: anywhere;
     }
-    ul.bullets li:last-child {
-      margin-bottom: 0;
-    }
-    .skills-group {
-      margin-bottom: calc(3.5pt * var(--s));
-      font-size: calc(9.8pt * var(--s));
-      line-height: 1.4;
-    }
-    .skills-group:last-child {
-      margin-bottom: 0;
-    }
-    .skills-category {
-      font-weight: 700;
-      color: #0f172a;
-    }
-    .skills-list {
-      color: #334155;
-    }
+    .bullets li:last-child { margin-bottom: 0; }
+
     .education-item {
-      margin-bottom: calc(5.5pt * var(--s));
+      margin-bottom: calc(5pt * var(--s));
+      break-inside: avoid;
       page-break-inside: avoid;
     }
-    .education-item:last-child {
-      margin-bottom: 0;
-    }
+    .education-item:last-child { margin-bottom: 0; }
     .education-degree {
+      min-width: 0;
+      font-size: calc(10pt * var(--s));
+      line-height: 1.25;
       font-weight: 700;
-      font-size: calc(10.2pt * var(--s));
-      color: #0f172a;
+      color: var(--accent);
+      overflow-wrap: anywhere;
     }
-    .education-inst {
-      font-weight: 400;
-      color: #334155;
-    }
+    .education-inst { font-weight: 400; color: #3c4b60; }
     .education-details {
-      font-size: calc(9.2pt * var(--s));
-      color: #475569;
       margin-top: calc(1pt * var(--s));
+      font-size: calc(9.05pt * var(--s));
+      line-height: 1.35;
+      color: #4b5a70;
+    }
+
+    @media print {
+      .section-title { break-after: avoid-page; }
     }
   </style>
 </head>
 <body>
-  <div class="header">
-    <div class="name">${escapeHtml(contact.fullName || "Candidate Name")}</div>
-    <div class="contact-line">${contactItems}</div>
-  </div>
+  <main class="page">
+    <header class="header">
+      <div class="name">${escapeHtml(contact.fullName || "Candidate Name")}</div>
+      ${contactItems ? `<div class="contact-line">${contactItems}</div>` : ""}
+    </header>
 
-  ${summary ? `
-  <div class="section">
-    <h2 class="section-title">Professional Summary</h2>
-    <p class="summary-text">${escapeHtml(summary)}</p>
-  </div>` : ""}
+    ${summary ? `
+    <section class="section">
+      <h2 class="section-title">Professional Summary</h2>
+      <p class="summary-text">${escapeHtml(summary)}</p>
+    </section>` : ""}
 
-  ${skills.length > 0 ? `
-  <div class="section">
-    <h2 class="section-title">Technical Skills</h2>
-    ${skills.map((s) => `
-      <div class="skills-group">
-        <span class="skills-category">${escapeHtml(s.category)}: </span><span class="skills-list">${Array.isArray(s.items) ? escapeHtml(s.items.join(", ")) : escapeHtml(s.items || "")}</span>
-      </div>
-    `).join("")}
-  </div>` : ""}
+    ${skills.length ? `
+    <section class="section">
+      <h2 class="section-title">Technical Skills</h2>
+      ${skills.map((skill) => `
+        <div class="skills-group">
+          <span class="skills-category">${escapeHtml(skill.category || "Skills")}: </span>
+          <span class="skills-list">${escapeHtml(Array.isArray(skill.items) ? skill.items.join(", ") : skill.items || "")}</span>
+        </div>`).join("")}
+    </section>` : ""}
 
-  ${experience.length > 0 ? `
-  <div class="section">
-    <h2 class="section-title">Professional Experience</h2>
-    ${experience.map((exp) => `
-      <div class="item">
-        <div class="item-header">
-          <div class="item-title-group">
-            ${escapeHtml(exp.company)}${exp.title ? ` &mdash; <span class="item-role">${escapeHtml(exp.title)}</span>` : ""}
+    ${experience.length ? `
+    <section class="section">
+      <h2 class="section-title">Professional Experience</h2>
+      ${experience.map((exp) => `
+        <article class="item">
+          ${renderItemHeader(exp.company, exp.title, exp.dates)}
+          ${exp.location ? `<div class="item-location">${escapeHtml(exp.location)}</div>` : ""}
+          ${renderBullets(exp.bullets)}
+        </article>`).join("")}
+    </section>` : ""}
+
+    ${education.length ? `
+    <section class="section">
+      <h2 class="section-title">Education</h2>
+      ${education.map((edu) => `
+        <article class="education-item">
+          <div class="item-header">
+            <div class="education-degree">
+              ${escapeHtml(edu.degree || "")}${edu.institution ? ` <span class="education-inst">— ${escapeHtml(edu.institution)}</span>` : ""}
+            </div>
+            ${edu.dates ? `<div class="item-date">${escapeHtml(edu.dates)}</div>` : ""}
           </div>
-          <div class="item-date">${escapeHtml(exp.dates || "")}</div>
-        </div>
-        ${exp.location ? `<div class="item-location">${escapeHtml(exp.location)}</div>` : ""}
-        ${Array.isArray(exp.bullets) && exp.bullets.length > 0 ? `
-          <ul class="bullets">
-            ${exp.bullets.map((b) => `<li>${escapeHtml(b)}</li>`).join("")}
-          </ul>
-        ` : ""}
-      </div>
-    `).join("")}
-  </div>` : ""}
+          ${edu.details ? `<div class="education-details">${escapeHtml(edu.details)}</div>` : ""}
+        </article>`).join("")}
+    </section>` : ""}
 
-  ${education.length > 0 ? `
-  <div class="section">
-    <h2 class="section-title">Education</h2>
-    ${education.map((edu) => `
-      <div class="education-item">
-        <div class="item-header">
-          <div class="education-degree">
-            ${escapeHtml(edu.degree)}${edu.institution ? ` &mdash; <span class="education-inst">${escapeHtml(edu.institution)}</span>` : ""}
+    ${projects.length ? `
+    <section class="section">
+      <h2 class="section-title">Key Projects</h2>
+      ${projects.map((project) => `
+        <article class="item">
+          ${renderItemHeader(project.name, project.role, project.dates)}
+          ${renderBullets(project.bullets)}
+        </article>`).join("")}
+    </section>` : ""}
+
+    ${certifications.length ? `
+    <section class="section">
+      <h2 class="section-title">Certifications</h2>
+      ${certifications.map((cert) => `
+        <article class="education-item">
+          <div class="item-header">
+            <div class="education-degree">
+              ${escapeHtml(cert.name || "")}${cert.issuer ? ` <span class="education-inst">— ${escapeHtml(cert.issuer)}</span>` : ""}
+            </div>
+            ${cert.date ? `<div class="item-date">${escapeHtml(cert.date)}</div>` : ""}
           </div>
-          <div class="item-date">${escapeHtml(edu.dates || "")}</div>
-        </div>
-        ${edu.details ? `<div class="education-details">${escapeHtml(edu.details)}</div>` : ""}
-      </div>
-    `).join("")}
-  </div>` : ""}
-
-  ${projects.length > 0 ? `
-  <div class="section">
-    <h2 class="section-title">Key Projects</h2>
-    ${projects.map((proj) => `
-      <div class="item">
-        <div class="item-header">
-          <div class="item-title-group">
-            ${escapeHtml(proj.name)}${proj.role ? ` &mdash; <span class="item-role">${escapeHtml(proj.role)}</span>` : ""}${proj.link ? ` (<a href="${escapeHtml(proj.link)}" target="_blank">Link</a>)` : ""}
-          </div>
-        </div>
-        ${Array.isArray(proj.bullets) && proj.bullets.length > 0 ? `
-          <ul class="bullets">
-            ${proj.bullets.map((b) => `<li>${escapeHtml(b)}</li>`).join("")}
-          </ul>
-        ` : ""}
-      </div>
-    `).join("")}
-  </div>` : ""}
-
-  ${certifications.length > 0 ? `
-  <div class="section">
-    <h2 class="section-title">Certifications</h2>
-    ${certifications.map((cert) => `
-      <div class="education-item">
-        <div class="item-header">
-          <div class="education-degree">${escapeHtml(cert.name)}${cert.issuer ? ` &mdash; <span class="education-inst">${escapeHtml(cert.issuer)}</span>` : ""}</div>
-          ${cert.date ? `<div class="item-date">${escapeHtml(cert.date)}</div>` : ""}
-        </div>
-      </div>
-    `).join("")}
-  </div>` : ""}
+        </article>`).join("")}
+    </section>` : ""}
+  </main>
 </body>
 </html>`;
 }
 
-// In-memory cache for fast instant PDF delivery (keyed by report ID / resume JSON hash)
 const pdfCache = new Map();
-
 let warmBrowserInstance = null;
 let browserIdleTimeout = null;
 
@@ -397,14 +351,10 @@ function scheduleBrowserIdleClose() {
   if (browserIdleTimeout) clearTimeout(browserIdleTimeout);
   browserIdleTimeout = setTimeout(async () => {
     if (warmBrowserInstance && warmBrowserInstance.connected) {
-      try {
-        await warmBrowserInstance.close();
-      } catch {
-        // Ignore close errors
-      }
+      try { await warmBrowserInstance.close(); } catch { /* ignore */ }
       warmBrowserInstance = null;
     }
-  }, 45000); // Keep alive for 45 seconds of inactivity
+  }, 45000);
 }
 
 async function getWarmBrowser() {
@@ -412,10 +362,7 @@ async function getWarmBrowser() {
     clearTimeout(browserIdleTimeout);
     browserIdleTimeout = null;
   }
-
-  if (warmBrowserInstance && warmBrowserInstance.connected) {
-    return warmBrowserInstance;
-  }
+  if (warmBrowserInstance && warmBrowserInstance.connected) return warmBrowserInstance;
 
   const executablePath = findBrowserExecutable();
   const launchOptions = {
@@ -438,173 +385,111 @@ async function getWarmBrowser() {
       "--no-default-browser-check",
     ],
   };
-
-  if (executablePath) {
-    launchOptions.executablePath = executablePath;
-  }
+  if (executablePath) launchOptions.executablePath = executablePath;
 
   const puppeteer = await loadPuppeteer();
   warmBrowserInstance = await puppeteer.launch(launchOptions);
-  warmBrowserInstance.on("disconnected", () => {
-    warmBrowserInstance = null;
-  });
-
+  warmBrowserInstance.on("disconnected", () => { warmBrowserInstance = null; });
   return warmBrowserInstance;
 }
 
-/**
- * One-page auto-fit geometry.
- *
- * The template's font sizes and vertical spacing are all expressed as
- * calc(<base> * var(--s)), so shrinking the whole resume to fit one page is
- * just a matter of finding the smallest --s (down to MIN_FONT_SCALE) that
- * makes the rendered content height fit inside the printable area. This is
- * measured directly in the browser (fast, no repeated PDF renders needed)
- * by setting the viewport to the printable width and reading
- * document.documentElement.scrollHeight.
- */
-const PAGE_WIDTH_IN = 8.5;
-const PAGE_HEIGHT_IN = 11; // US Letter
-const PX_PER_IN = 96; // CSS reference pixel, matches Chromium's print pipeline
-const PX_PER_MM = PX_PER_IN / 25.4;
-const mmToPx = (mm) => mm * PX_PER_MM;
+const PAGE_WIDTH_PX = 816; // 8.5in × 96dpi
+const PAGE_HEIGHT_PX = 1056; // 11in × 96dpi
+const PAGE_MARGIN_IN = 0.58;
+const PAGE_MARGIN_PX = PAGE_MARGIN_IN * 96;
+const PRINTABLE_WIDTH_PX = PAGE_WIDTH_PX - PAGE_MARGIN_PX * 2;
+const PRINTABLE_HEIGHT_PX = PAGE_HEIGHT_PX - PAGE_MARGIN_PX * 2;
+const MIN_SCALE = 0.86;
+const MAX_SCALE = 1.12;
+const MAX_FIT_ATTEMPTS = 7;
 
-// Margins to try, widest (most generous) first. If the resume still doesn't
-// fit at the smallest allowed font scale, margins are tightened step by
-// step as a last resort before falling back to letting it spill onto a
-// second page (better than illegibly small text).
-const MARGIN_STEPS_MM = [15, 13, 11, 10];
-const MIN_FONT_SCALE = 0.72;
-// Light resumes (few entries, students/early-career) are scaled UP toward
-// this ceiling instead of being left tiny in the top third of the page with
-// a wall of dead white space below.
-const MAX_FONT_SCALE = 1.18;
-// Only grow the layout if the un-scaled content leaves at least this much of
-// the printable height empty — a near-full page is left alone rather than
-// being stretched for a marginal gain.
-const GROW_TRIGGER_RATIO = 0.82;
-const MAX_FIT_ATTEMPTS = 8;
+async function setLayoutScale(page, scale) {
+  await page.evaluate((value) => {
+    document.documentElement.style.setProperty("--s", String(value));
+  }, scale);
+}
 
-/**
- * Sets the viewport to the printable content area for a given margin, then
- * adjusts --s so the rendered content uses the printable page height as
- * fully as possible: shrinking oversized resumes down to MIN_FONT_SCALE so
- * everything still fits on one page, and growing light/short resumes up to
- * MAX_FONT_SCALE so they don't look sparse with a mostly-empty page.
- */
-async function fitToOnePage(page, marginMm) {
-  const printableWidthPx = PAGE_WIDTH_IN * PX_PER_IN - 2 * mmToPx(marginMm);
-  const printableHeightPx = PAGE_HEIGHT_IN * PX_PER_IN - 2 * mmToPx(marginMm);
+async function measureContentHeight(page) {
+  return page.evaluate(() => {
+    const pageEl = document.querySelector(".page");
+    if (!pageEl) return document.documentElement.scrollHeight;
+    const styles = getComputedStyle(pageEl);
+    const paddingTop = parseFloat(styles.paddingTop) || 0;
+    const paddingBottom = parseFloat(styles.paddingBottom) || 0;
+    return Math.max(0, pageEl.getBoundingClientRect().height - paddingTop - paddingBottom);
+  });
+}
 
+async function fitResume(page) {
   await page.setViewport({
-    width: Math.round(printableWidthPx),
-    // Generous headroom so nothing clips during measurement even if the
-    // content would otherwise span more than one printable page.
-    height: Math.round(printableHeightPx) * 2,
+    width: Math.round(PRINTABLE_WIDTH_PX),
+    height: Math.round(PRINTABLE_HEIGHT_PX * 1.5),
+    deviceScaleFactor: 1,
   });
 
-  const setScale = (s) =>
-    page.evaluate((val) => {
-      document.documentElement.style.setProperty("--s", String(val));
-    }, s);
-  const measure = () => page.evaluate(() => document.documentElement.scrollHeight);
-
   let scale = 1;
-  await setScale(scale);
-  let contentHeight = await measure();
+  await setLayoutScale(page, scale);
+  let contentHeight = await measureContentHeight(page);
 
-  if (contentHeight > printableHeightPx) {
-    // Shrink to fit.
+  if (contentHeight > PRINTABLE_HEIGHT_PX) {
     let attempts = 0;
-    while (
-      contentHeight > printableHeightPx &&
-      scale > MIN_FONT_SCALE &&
-      attempts < MAX_FIT_ATTEMPTS
-    ) {
-      const ratio = printableHeightPx / contentHeight;
-      // Small safety buffer (0.985) so the search converges from above
-      // rather than oscillating just over the limit from rounding.
-      scale = Math.max(MIN_FONT_SCALE, scale * ratio * 0.985);
-      await setScale(scale);
-      contentHeight = await measure();
+    while (contentHeight > PRINTABLE_HEIGHT_PX && scale > MIN_SCALE && attempts < MAX_FIT_ATTEMPTS) {
+      const ratio = PRINTABLE_HEIGHT_PX / contentHeight;
+      scale = Math.max(MIN_SCALE, scale * ratio * 0.985);
+      await setLayoutScale(page, scale);
+      contentHeight = await measureContentHeight(page);
       attempts += 1;
     }
-  } else if (contentHeight < printableHeightPx * GROW_TRIGGER_RATIO) {
-    // Grow to fill the page for light resumes, without overshooting onto a
-    // second page.
+  } else if (contentHeight < PRINTABLE_HEIGHT_PX * 0.68) {
     let attempts = 0;
-    let lastGoodScale = scale;
-    while (scale < MAX_FONT_SCALE && attempts < MAX_FIT_ATTEMPTS) {
-      const ratio = printableHeightPx / contentHeight;
-      const nextScale = Math.min(MAX_FONT_SCALE, scale * ratio * 0.97);
+    let lastGood = scale;
+    while (scale < MAX_SCALE && attempts < MAX_FIT_ATTEMPTS) {
+      const ratio = PRINTABLE_HEIGHT_PX / Math.max(contentHeight, 1);
+      const nextScale = Math.min(MAX_SCALE, scale * Math.sqrt(ratio) * 0.97);
       if (nextScale <= scale) break;
-      await setScale(nextScale);
-      const nextHeight = await measure();
-      if (nextHeight > printableHeightPx) {
-        // Overshot onto a second page — back off and stop.
-        await setScale(lastGoodScale);
-        contentHeight = await measure();
+      await setLayoutScale(page, nextScale);
+      const nextHeight = await measureContentHeight(page);
+      if (nextHeight > PRINTABLE_HEIGHT_PX) {
+        await setLayoutScale(page, lastGood);
+        contentHeight = await measureContentHeight(page);
         break;
       }
       scale = nextScale;
       contentHeight = nextHeight;
-      lastGoodScale = scale;
+      lastGood = scale;
       attempts += 1;
     }
   }
 
-  return { fits: contentHeight <= printableHeightPx, scale, contentHeight, printableHeightPx };
+  return { scale, fitsOnePage: contentHeight <= PRINTABLE_HEIGHT_PX, contentHeight };
 }
 
-/**
- * Generate a single-page, ATS-friendly PDF buffer from revised resume JSON
- * using Puppeteer. Automatically shrinks font size/spacing (and, only as a
- * last resort, page margins) so typical one-to-two-page resume content
- * lands on a single US Letter page without truncating any content.
- */
 async function generateAtsPdfBuffer(revisedResume, cacheKey = null) {
   const effectiveCacheKey = cacheKey || JSON.stringify(revisedResume);
-  if (pdfCache.has(effectiveCacheKey)) {
-    return pdfCache.get(effectiveCacheKey);
-  }
+  if (pdfCache.has(effectiveCacheKey)) return pdfCache.get(effectiveCacheKey);
 
   const html = renderAtsHtmlTemplate(revisedResume);
   const browser = await getWarmBrowser();
   const page = await browser.newPage();
 
   try {
-    // Fast inline rendering without waiting for external network idle
-    await page.setContent(html, {
-      waitUntil: "domcontentloaded",
-      timeout: 10000,
-    });
-
-    let marginMm = MARGIN_STEPS_MM[0];
-    let fit = await fitToOnePage(page, marginMm);
-
-    for (let i = 1; i < MARGIN_STEPS_MM.length && !fit.fits; i += 1) {
-      marginMm = MARGIN_STEPS_MM[i];
-      fit = await fitToOnePage(page, marginMm);
-    }
+    await page.setContent(html, { waitUntil: "domcontentloaded", timeout: 10000 });
+    await fitResume(page);
 
     const pdfBuffer = await page.pdf({
       format: "Letter",
       printBackground: true,
-      margin: {
-        top: `${marginMm}mm`,
-        right: `${marginMm}mm`,
-        bottom: `${marginMm}mm`,
-        left: `${marginMm}mm`,
-      },
+      preferCSSPageSize: true,
+      margin: { top: "0", right: "0", bottom: "0", left: "0" },
+      displayHeaderFooter: false,
+      scale: 1,
     });
 
-    // Store in cache (cap at 40 items)
-    if (pdfCache.size > 40) {
+    if (pdfCache.size >= 40) {
       const oldestKey = pdfCache.keys().next().value;
       pdfCache.delete(oldestKey);
     }
     pdfCache.set(effectiveCacheKey, pdfBuffer);
-
     return pdfBuffer;
   } finally {
     await page.close();
