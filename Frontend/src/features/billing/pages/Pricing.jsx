@@ -4,9 +4,34 @@ import { confirmCheckoutSession, createCheckoutSession, getBillingStatus } from 
 import "./Pricing.scss";
 
 const PLANS = [
-  { id: "free", name: "Free", price: "$0", period: "forever", tokens: 3000, description: "Try the complete Resume Analyzer workflow with a starter token balance.", features: ["3,000 AI tokens", "ATS compatibility analysis", "JD match review", "Past reports saved to your account"], cta: "Current Free Plan" },
-  { id: "pro", name: "Pro", price: "$9.99", period: "one-time", tokens: 25000, description: "More AI power for regular applications, revisions, and interview preparation.", features: ["25,000 AI tokens", "ATS compatibility analysis", "JD match review", "AI resume optimization", "ATS-optimized PDF generation"], cta: "Get Pro", popular: true },
-  { id: "premium", name: "Premium", price: "$19.99", period: "one-time", tokens: 75000, description: "A large token balance for intensive applications and frequent resume iterations.", features: ["75,000 AI tokens", "ATS compatibility analysis", "JD match review", "AI resume optimization", "ATS-optimized PDF generation", "Extensive interview preparation"], cta: "Get Premium" },
+  {
+    id: "free",
+    name: "Free",
+    price: "$0",
+    period: "forever",
+    tokens: 3000,
+    description: "A clean starting point for trying the complete Resume Analyzer workflow.",
+    features: ["3,000 AI tokens", "ATS compatibility analysis", "JD match review", "Past reports saved to your account"],
+  },
+  {
+    id: "pro",
+    name: "Pro",
+    price: "$9.99",
+    period: "one-time",
+    tokens: 25000,
+    description: "More room for regular applications, resume revisions, and interview preparation.",
+    features: ["25,000 AI tokens", "ATS compatibility analysis", "JD match review", "AI resume optimization", "ATS-optimized PDF generation"],
+    popular: true,
+  },
+  {
+    id: "premium",
+    name: "Premium",
+    price: "$19.99",
+    period: "one-time",
+    tokens: 75000,
+    description: "The largest token balance for intensive applications and frequent iterations.",
+    features: ["75,000 AI tokens", "ATS compatibility analysis", "JD match review", "AI resume optimization", "ATS-optimized PDF generation", "Extensive interview preparation"],
+  },
 ];
 
 const formatTokens = (value) => Number(value || 0).toLocaleString();
@@ -61,39 +86,65 @@ const Pricing = () => {
     }
   };
 
+  const currentPlan = PLANS.find((plan) => plan.id === billing.plan) || PLANS[0];
+  const currentAllowance = currentPlan.tokens;
+  const tokenBalance = Math.max(0, Number(billing.aiTokens) || 0);
+  const usagePercent = currentAllowance > 0 ? Math.min(100, Math.round((tokenBalance / currentAllowance) * 100)) : 0;
+
   return <div className="pricing-page">
-    <div className="pricing-page__intro">
-      <span className="pricing-page__eyebrow">Resume Analyzer Plans</span>
-      <h1>More AI power. One simple token balance.</h1>
-      <p>AI tokens are app usage units. Different features use different amounts, so you get more value from one balance instead of losing a whole credit for every small action.</p>
-    </div>
+    <header className="pricing-hero">
+      <div className="pricing-hero__copy">
+        <span className="pricing-page__eyebrow">Plans & Billing</span>
+        <h1>Simple plans.<br /><span>More room to apply.</span></h1>
+        <p>Choose a token balance that fits your job search. Use your tokens across Resume Analyzer's AI features instead of paying separately for every action.</p>
+      </div>
+      <div className="pricing-balance-card">
+        <div className="pricing-balance-card__top"><span className="pricing-balance-card__label">CURRENT BALANCE</span><span className="pricing-balance-card__plan">{billing.planLabel || "Free"}</span></div>
+        <div className="pricing-balance-card__number">{formatTokens(tokenBalance)} <small>tokens</small></div>
+        <div className="pricing-balance-card__track" aria-label={`${usagePercent}% of plan tokens remaining`}><span style={{ width: `${usagePercent}%` }} /></div>
+        <div className="pricing-balance-card__bottom"><span>{usagePercent}% remaining</span><span>{formatTokens(Math.max(0, currentAllowance - tokenBalance))} used</span></div>
+      </div>
+    </header>
 
-    {checkoutState === "success" && <div className="pricing-page__notice pricing-page__notice--success">{confirming ? "Confirming your payment…" : paymentConfirmed ? `${billing.planLabel} activated. ${formatTokens(billing.aiTokens)} AI tokens are now available.` : "Payment is still processing. Your token balance will update once Stripe confirms it."}</div>}
-    {checkoutState === "cancelled" && <div className="pricing-page__notice">Checkout was cancelled. No charge was made.</div>}
+    {checkoutState === "success" && <div className="pricing-page__notice pricing-page__notice--success"><span className="pricing-page__notice-icon">✓</span><span>{confirming ? "Confirming your payment…" : paymentConfirmed ? `${billing.planLabel} activated. ${formatTokens(billing.aiTokens)} AI tokens are now available.` : "Payment is still processing. Your token balance will update once Stripe confirms it."}</span></div>}
+    {checkoutState === "cancelled" && <div className="pricing-page__notice"><span className="pricing-page__notice-icon">×</span><span>Checkout was cancelled. No charge was made.</span></div>}
 
-    <div className="pricing-grid">
-      {PLANS.map((plan) => {
-        const isCurrent = billing.plan === plan.id;
-        const isFree = plan.id === "free";
-        const isLoading = loadingPlan === plan.id;
-        return <article key={plan.id} className={`pricing-card ${plan.popular ? "pricing-card--popular" : ""} ${isCurrent ? "pricing-card--current" : ""}`}>
-          {plan.popular && <span className="pricing-card__popular">MOST POPULAR</span>}
-          <div className="pricing-card__top">
-            <div><span className="pricing-card__label">{plan.name}</span><h2>{formatTokens(plan.tokens)} AI tokens</h2><p>{plan.description}</p></div>
-            <div className="pricing-card__price"><strong>{plan.price}</strong><span>{plan.period}</span></div>
-          </div>
-          <ul className="pricing-card__features">{plan.features.map((feature) => <li key={feature}>{feature}</li>)}</ul>
-          <button type="button" className={`pricing-card__button ${isCurrent ? "pricing-card__button--current" : ""}`} onClick={() => handlePurchase(plan.id)} disabled={isFree || Boolean(loadingPlan) || confirming}>
-            {isFree && isCurrent ? "Current Free Plan" : isCurrent ? `Buy More ${plan.name} Tokens` : isLoading ? "Opening checkout…" : plan.cta}
-          </button>
-        </article>;
-      })}
-    </div>
+    <section className="pricing-section">
+      <div className="pricing-section__heading"><div><span className="pricing-section__eyebrow">CHOOSE YOUR PLAN</span><h2>Pick your level of AI access</h2></div><span className="pricing-section__hint">All plans use the same AI features</span></div>
+      <div className="pricing-grid">
+        {PLANS.map((plan) => {
+          const isCurrent = billing.plan === plan.id;
+          const isFree = plan.id === "free";
+          const isLoading = loadingPlan === plan.id;
+          const valuePerDollar = plan.price === "$0" ? "Starter access" : `${formatTokens(plan.tokens / Number(plan.price.slice(1)))} tokens / $1`;
+          return <article key={plan.id} className={`pricing-card ${plan.popular ? "pricing-card--popular" : ""} ${isCurrent ? "pricing-card--current" : ""}`}>
+            {plan.popular && <div className="pricing-card__popular"><span>Recommended</span><i /></div>}
+            <div className="pricing-card__heading"><div><span className="pricing-card__label">{plan.name}</span><div className="pricing-card__token-title"><strong>{formatTokens(plan.tokens)}</strong><span>AI tokens</span></div></div><div className="pricing-card__price"><strong>{plan.price}</strong><span>{plan.period}</span></div></div>
+            <p className="pricing-card__description">{plan.description}</p>
+            <div className="pricing-card__value"><span>{valuePerDollar}</span>{isCurrent && <b>YOUR PLAN</b>}</div>
+            <div className="pricing-card__divider" />
+            <p className="pricing-card__includes">Everything you need</p>
+            <ul className="pricing-card__features">{plan.features.map((feature) => <li key={feature}><span className="pricing-card__check">✓</span><span>{feature}</span></li>)}</ul>
+            <button type="button" className={`pricing-card__button ${isCurrent ? "pricing-card__button--current" : ""}`} onClick={() => handlePurchase(plan.id)} disabled={isFree || Boolean(loadingPlan) || confirming}>
+              {isFree && isCurrent ? "Current Free Plan" : isCurrent ? `Buy More ${plan.name} Tokens` : isLoading ? "Opening checkout…" : `Choose ${plan.name}`}
+            </button>
+          </article>;
+        })}
+      </div>
+    </section>
 
-    <div className="pricing-page__balance"><strong>{billing.planLabel || "Free"} Plan</strong><span>{formatTokens(billing.aiTokens)} AI tokens remaining</span></div>
-    {billing.tokenCosts && <div className="pricing-page__costs"><strong>Typical token costs</strong><span>ATS {formatTokens(billing.tokenCosts.atsAnalysis)}</span><span>JD Match {formatTokens(billing.tokenCosts.jdMatch)}</span><span>Optimization {formatTokens(billing.tokenCosts.resumeOptimization)}</span><span>ATS PDF {formatTokens(billing.tokenCosts.atsResumeGeneration)}</span></div>}
+    <section className="token-guide">
+      <div className="token-guide__intro"><span className="pricing-section__eyebrow">HOW TOKENS WORK</span><h2>One balance. Every AI feature.</h2><p>Token costs vary by task, so smaller actions don't consume a full generation.</p></div>
+      <div className="token-guide__items">{[
+        ["ATS Analysis", billing.tokenCosts?.atsAnalysis || 500],
+        ["JD Match", billing.tokenCosts?.jdMatch || 750],
+        ["Resume Optimization", billing.tokenCosts?.resumeOptimization || 2000],
+        ["ATS Resume PDF", billing.tokenCosts?.atsResumeGeneration || 2500],
+      ].map(([label, cost]) => <div className="token-guide__item" key={label}><span>{label}</span><strong>{formatTokens(cost)}</strong><small>tokens</small></div>)}</div>
+    </section>
+
     {error && <p className="pricing-card__error" role="alert">{error}</p>}
-    <p className="pricing-card__secure">Secure checkout powered by Stripe. Your card details are handled by Stripe.</p>
+    <p className="pricing-card__secure"><span>⌁</span> Secure checkout powered by Stripe · Your card details are handled by Stripe</p>
   </div>;
 };
 
