@@ -38,9 +38,6 @@ export async function getAtsPreviewPdf(id) {
     });
     return response.data;
   } catch (error) {
-    // Some deployed versions may not yet expose the dedicated preview route.
-    // Fall back to the authenticated download endpoint, which returns the
-    // same generated PDF without exposing the report publicly.
     if (error?.response?.status === 404) {
       const response = await api.get(`/api/resume/ats-download/${id}`, {
         responseType: "arraybuffer",
@@ -53,6 +50,18 @@ export async function getAtsPreviewPdf(id) {
 }
 
 export async function getAtsOriginalPdf(id, originalPdfUrl = "") {
+  // Blob URLs belong to the browser/frontend origin. Never pass them through
+  // the Axios API client because Axios prepends the backend baseURL, turning
+  // `blob:http://localhost:5173/...` into the invalid
+  // `http://localhost:3000/blob:http://localhost:5173/...` request.
+  if (originalPdfUrl?.startsWith("blob:")) {
+    const response = await fetch(originalPdfUrl);
+    if (!response.ok) {
+      throw new Error(`Unable to read the uploaded resume PDF (${response.status}).`);
+    }
+    return response.arrayBuffer();
+  }
+
   if (originalPdfUrl) {
     const response = await api.get(originalPdfUrl, {
       responseType: "arraybuffer",
@@ -60,6 +69,7 @@ export async function getAtsOriginalPdf(id, originalPdfUrl = "") {
     });
     return response.data;
   }
+
   const response = await api.get(`/api/resume/ats-original/${id}`, {
     responseType: "arraybuffer",
     headers: { Accept: "application/pdf" },
