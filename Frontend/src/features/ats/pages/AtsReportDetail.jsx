@@ -8,7 +8,7 @@ import AtsIssuesList from "../components/AtsIssuesList";
 import AtsSectionFeedback from "../components/AtsSectionFeedback";
 import AtsTopSuggestions from "../components/AtsTopSuggestions";
 import AtsStrengthsList from "../components/AtsStrengthsList";
-import AtsBeforeAfterPreview from "../components/AtsBeforeAfterPreview";
+import AtsGitDiffComparison from "../components/AtsGitDiffComparison";
 import { getAtsReportById, reviseAtsResume, downloadAtsPdf } from "../services/ats.api";
 import "./AtsAnalyzer.scss";
 
@@ -98,60 +98,38 @@ const AtsReportDetail = () => {
 
       {reviseError && <Callout tone="error" title="AI Revision Issue">{reviseError}</Callout>}
 
-      <AtsScoreOverview
-        analysis={analysis}
-        fileName={report.resumeFileName}
-        onFixClick={handleFixAll}
-        hasRevised={!!revisedResume}
-      />
+      <AtsScoreOverview analysis={analysis} fileName={report.resumeFileName} onFixClick={handleFixAll} hasRevised={!!revisedResume} />
 
       {activeView === "audit" ? (
         <div className="ats-audit-grid">
           <div className="ats-audit-col ats-audit-col--side">
             <section className="ats-audit-section glass-panel">
-              <div className="ats-audit-section__head">
-                <div>
-                  <h3 className="ats-audit-section__title">ATS Compatibility Flags</h3>
-                  <p className="ats-audit-section__desc">Saved issues from this review.</p>
-                </div>
-                <span className="ats-audit-section__badge">{issues.length} Issues</span>
-              </div>
+              <div className="ats-audit-section__head"><div><h3 className="ats-audit-section__title">ATS Compatibility Flags</h3><p className="ats-audit-section__desc">Saved issues from this review.</p></div><span className="ats-audit-section__badge">{issues.length} Issues</span></div>
               <AtsIssuesList issues={issues} />
             </section>
             <AtsStrengthsList strengths={analysis.strengths} />
           </div>
-
           <div className="ats-audit-col ats-audit-col--main">
             <AtsSectionFeedback sections={analysis.sections} />
             <section className="ats-audit-section glass-panel">
-              <div className="ats-audit-section__head">
-                <div>
-                  <h3 className="ats-audit-section__title">Prioritized Recommendations</h3>
-                  <p className="ats-audit-section__desc">Saved recommendations from this review.</p>
-                </div>
-              </div>
+              <div className="ats-audit-section__head"><div><h3 className="ats-audit-section__title">Prioritized Recommendations</h3><p className="ats-audit-section__desc">Saved recommendations from this review.</p></div></div>
               <AtsTopSuggestions suggestions={analysis.topSuggestions} />
             </section>
           </div>
         </div>
       ) : (
         <div className="ats-preview-wrapper">
-          <AtsBeforeAfterPreview
+          <AtsGitDiffComparison
             reportId={report._id}
             originalText={report.rawResumeText}
             revisedResume={revisedResume}
             loading={revising}
-            error={reviseError}
             onRevise={handleRevise}
             onDownload={async (reportId, candidateName) => {
               setDownloading(true);
-              try {
-                await downloadAtsPdf(reportId, candidateName || report.resumeFileName);
-              } catch (err) {
-                setReviseError(err.response?.data?.message || err.message || "Failed to download PDF.");
-              } finally {
-                setDownloading(false);
-              }
+              try { await downloadAtsPdf(reportId, candidateName || report.resumeFileName); }
+              catch (err) { setReviseError(err.response?.data?.message || err.message || "Failed to download PDF."); }
+              finally { setDownloading(false); }
             }}
             downloading={downloading}
           />
