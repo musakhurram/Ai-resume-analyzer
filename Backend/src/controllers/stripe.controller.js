@@ -46,28 +46,27 @@ async function creditCompletedCheckout(session) {
   if (!userId) return { credited: false, reason: "Checkout session has no user metadata" };
   if (plan !== PRO_PLAN || credits <= 0) return { credited: false, reason: "Checkout session contains an invalid plan" };
 
+  // processedStripeCheckoutSessionIds makes webhook retries safe even after
+  // the user has completed a newer purchase.
   const user = await userModel.findOneAndUpdate(
     {
       _id: userId,
-      $or: [
-        { lastStripeCheckoutSessionId: { $exists: false } },
-        { lastStripeCheckoutSessionId: null },
-        { lastStripeCheckoutSessionId: { $ne: session.id } },
-      ],
+      processedStripeCheckoutSessionIds: { $ne: session.id },
     },
     {
       $set: { plan, lastStripeCheckoutSessionId: session.id },
+      $addToSet: { processedStripeCheckoutSessionIds: session.id },
       $inc: { resumeCredits: credits },
     },
     { new: true, projection: { plan: 1, resumeCredits: 1 } },
   );
 
   if (!user) {
-    const existingUser = await userModel.findById(userId).select("plan resumeCredits lastStripeCheckoutSessionId");
+    const existingUser = await userModel.findById(userId).select("plan resumeCredits processedStripeCheckoutSessionIds");
     if (!existingUser) return { credited: false, reason: "User not found" };
     return {
       credited: false,
-      alreadyCredited: existingUser.lastStripeCheckoutSessionId === session.id,
+      alreadyCredited: existingUser.processedStripeCheckoutSessionIds?.includes(session.id) === true,
       resumeCredits: Number(existingUser.resumeCredits) || 0,
     };
   }
