@@ -6,6 +6,13 @@ export async function createCheckoutSession() {
 }
 
 export async function getBillingStatus() {
-  const response = await api.get("/api/stripe/billing-status");
+  const response = await api.get("/api/stripe/billing-status", { params: { t: Date.now() } });
+  return response.data;
+}
+
+export async function confirmCheckoutSession(sessionId) {
+  const response = await api.get("/api/stripe/confirm-checkout-session", {
+    params: { session_id: sessionId, t: Date.now() },
+  });
   return response.data;
 }
