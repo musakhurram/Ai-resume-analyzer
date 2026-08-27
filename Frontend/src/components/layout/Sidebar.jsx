@@ -1,5 +1,7 @@
+import { useEffect, useState } from "react";
 import { NavLink, Link, useLocation } from "react-router";
 import { LogoMark } from "../../shared/components/Logo";
+import { getBillingStatus } from "../../features/billing/services/billing.api";
 import "./Sidebar.scss";
 
 const navItems = [
@@ -11,10 +13,43 @@ const navItems = [
 
 const Sidebar = ({ open, onNavigate, onClose }) => {
   const location = useLocation();
+  const [billing, setBilling] = useState({ plan: "free", planLabel: "Free", resumeCredits: 0 });
+
+  useEffect(() => {
+    let active = true;
+
+    const loadBilling = async () => {
+      try {
+        const status = await getBillingStatus();
+        if (active) setBilling(status);
+      } catch {
+        // Keep the safe Free/0 fallback when billing is temporarily unavailable.
+      }
+    };
+
+    loadBilling();
+    const handleBillingUpdate = () => loadBilling();
+    window.addEventListener("billing:updated", handleBillingUpdate);
+    return () => {
+      active = false;
+      window.removeEventListener("billing:updated", handleBillingUpdate);
+    };
+  }, [location.pathname]);
+
+  const planLabel = billing.planLabel || (billing.plan === "pro" ? "Pro" : "Free");
+  const credits = Number(billing.resumeCredits) || 0;
+  const creditLabel = `${credits} AI credit${credits === 1 ? "" : "s"} remaining`;
+
   return <aside className={`sidebar ${open ? "is-open" : ""}`} aria-label="Main sidebar">
     <div className="sidebar__header"><Link to="/analyze/ats-score" className="sidebar__brand" onClick={onNavigate}><div className="sidebar__mark"><LogoMark className="sidebar__logo-svg" /></div><div className="sidebar__brand-text"><span className="sidebar__wordmark">Resume Analyzer</span><span className="sidebar__tagline">Interview Studio</span></div></Link>{open && <button type="button" className="sidebar__close-btn" onClick={onClose || onNavigate} aria-label="Close sidebar">×</button>}</div>
     <nav className="sidebar__nav" aria-label="Primary Navigation"><p className="sidebar__section-title">Navigation</p>{navItems.map((item) => { const isActive = item.alias.some((p) => location.pathname === p || (p !== "/" && location.pathname.startsWith(p))); return <NavLink key={item.to} to={item.to} className={`sidebar__link ${isActive ? "is-active" : ""}`} onClick={onNavigate}><span className="sidebar__link-icon">{item.icon}</span><span className="sidebar__link-text">{item.label}</span></NavLink>; })}</nav>
-    <div className="sidebar__footer"><div className="sidebar__status-card"><div className="sidebar__status-header"><span className="sidebar__status-dot" /><span className="sidebar__status-title">AI Engine Active</span></div><p className="sidebar__status-desc">Ready to evaluate resume-job compatibility</p></div></div>
+    <div className="sidebar__footer">
+      <div className={`sidebar__status-card ${credits === 0 ? "is-empty" : ""}`}>
+        <div className="sidebar__status-header"><span className="sidebar__status-dot" /><span className="sidebar__status-title">{planLabel} Plan</span></div>
+        <p className="sidebar__status-desc">{creditLabel}</p>
+        <p className="sidebar__status-meta">{credits > 0 ? "Available for ATS analysis and AI optimization" : planLabel === "Free" ? "Upgrade to unlock AI resume analysis" : "Purchase more credits to continue"}</p>
+      </div>
+    </div>
   </aside>;
 };
 export default Sidebar;
