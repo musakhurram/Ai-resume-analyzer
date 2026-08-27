@@ -34,6 +34,7 @@
     "pdf-parse": "^2.4.5",
     "pdfkit": "^0.15.1",
     "puppeteer-core": "^25.9.0",
+    "stripe": "^22.6.0",
     "zod": "^3.25.76"
   },
   "devDependencies": {

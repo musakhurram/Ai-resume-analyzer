@@ -15,6 +15,7 @@ const express = require("express");
 const cookieParser = require("cookie-parser");
 const cors = require("cors");
 const helmet = require("helmet");
+const stripe = require("stripe");
 const compression = require("compression");
 const morgan = require("morgan");
 const env = require("./config/env");
