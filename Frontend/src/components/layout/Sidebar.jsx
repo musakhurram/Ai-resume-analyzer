@@ -13,7 +13,7 @@ const navItems = [
 
 const Sidebar = ({ open, onNavigate, onClose }) => {
   const location = useLocation();
-  const [billing, setBilling] = useState({ plan: "free", planLabel: "Free", aiTokens: 3000 });
+  const [billing, setBilling] = useState({ plan: "free", planLabel: "Free", aiTokens: 3000, tokenAllowance: 3000 });
 
   useEffect(() => {
     let active = true;
@@ -27,13 +27,26 @@ const Sidebar = ({ open, onNavigate, onClose }) => {
   }, [location.pathname]);
 
   const planLabel = billing.planLabel || (billing.plan === "premium" ? "Premium" : billing.plan === "pro" ? "Pro" : "Free");
-  const tokens = Number(billing.aiTokens) || 0;
+  const tokens = Math.max(0, Number(billing.aiTokens) || 0);
+  const allowance = Math.max(1, Number(billing.tokenAllowance) || (billing.plan === "premium" ? 75000 : billing.plan === "pro" ? 25000 : 3000));
+  const percentage = Math.min(100, Math.max(0, (tokens / allowance) * 100));
+  const used = Math.max(0, allowance - tokens);
   const tokenLabel = `${tokens.toLocaleString()} AI token${tokens === 1 ? "" : "s"} remaining`;
 
   return <aside className={`sidebar ${open ? "is-open" : ""}`} aria-label="Main sidebar">
     <div className="sidebar__header"><Link to="/analyze/ats-score" className="sidebar__brand" onClick={onNavigate}><div className="sidebar__mark"><LogoMark className="sidebar__logo-svg" /></div><div className="sidebar__brand-text"><span className="sidebar__wordmark">Resume Analyzer</span><span className="sidebar__tagline">Interview Studio</span></div></Link>{open && <button type="button" className="sidebar__close-btn" onClick={onClose || onNavigate} aria-label="Close sidebar">×</button>}</div>
     <nav className="sidebar__nav" aria-label="Primary Navigation"><p className="sidebar__section-title">Navigation</p>{navItems.map((item) => { const isActive = item.alias.some((p) => location.pathname === p || (p !== "/" && location.pathname.startsWith(p))); return <NavLink key={item.to} to={item.to} className={`sidebar__link ${isActive ? "is-active" : ""}`} onClick={onNavigate}><span className="sidebar__link-icon">{item.icon}</span><span className="sidebar__link-text">{item.label}</span></NavLink>; })}</nav>
-    <div className="sidebar__footer"><div className={`sidebar__status-card ${tokens === 0 ? "is-empty" : ""}`}><div className="sidebar__status-header"><span className="sidebar__status-dot" /><span className="sidebar__status-title">{planLabel} Plan</span></div><p className="sidebar__status-desc">{tokenLabel}</p><p className="sidebar__status-meta">{tokens > 0 ? "Available across your AI features" : planLabel === "Free" ? "Your 3,000 free tokens are used. Upgrade to continue." : "Purchase another token pack to continue"}</p></div></div>
+    <div className="sidebar__footer">
+      <div className={`sidebar__status-card ${tokens === 0 ? "is-empty" : ""}`}>
+        <div className="sidebar__status-header"><span className="sidebar__status-dot" /><span className="sidebar__status-title">{planLabel} Plan</span></div>
+        <div className="sidebar__token-row"><p className="sidebar__status-desc">{tokenLabel}</p><span className="sidebar__token-percent">{Math.round(percentage)}%</span></div>
+        <div className="sidebar__token-track" role="progressbar" aria-label="AI tokens remaining" aria-valuemin="0" aria-valuemax={allowance} aria-valuenow={tokens}>
+          <span className="sidebar__token-fill" style={{ width: `${percentage}%` }} />
+        </div>
+        <div className="sidebar__token-meta"><span>{used.toLocaleString()} used</span><span>{allowance.toLocaleString()} total</span></div>
+        <p className="sidebar__status-meta">{tokens > 0 ? "Available across your AI features" : planLabel === "Free" ? "Your 3,000 free tokens are used. Upgrade to continue." : "Purchase another token pack to continue"}</p>
+      </div>
+    </div>
   </aside>;
 };
 export default Sidebar;
