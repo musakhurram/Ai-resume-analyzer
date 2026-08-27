@@ -8,7 +8,7 @@ import AtsIssuesList from "../components/AtsIssuesList";
 import AtsSectionFeedback from "../components/AtsSectionFeedback";
 import AtsTopSuggestions from "../components/AtsTopSuggestions";
 import AtsStrengthsList from "../components/AtsStrengthsList";
-import AtsGitDiffComparison from "../components/AtsGitDiffComparison";
+import AtsBeforeAfterPreview from "../components/AtsBeforeAfterPreview";
 import { getAtsReportById, reviseAtsResume, downloadAtsPdf } from "../services/ats.api";
 import "./AtsAnalyzer.scss";
 
@@ -119,11 +119,13 @@ const AtsReportDetail = () => {
         </div>
       ) : (
         <div className="ats-preview-wrapper">
-          <AtsGitDiffComparison
+          <AtsBeforeAfterPreview
             reportId={report._id}
             originalText={report.rawResumeText}
+            originalPdfUrl=""
             revisedResume={revisedResume}
             loading={revising}
+            error={reviseError}
             onRevise={handleRevise}
             onDownload={async (reportId, candidateName) => {
               setDownloading(true);
