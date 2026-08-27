@@ -3,15 +3,19 @@ import { useSearchParams } from "react-router";
 import { confirmCheckoutSession, createCheckoutSession, getBillingStatus } from "../services/billing.api";
 import "./Pricing.scss";
 
+const DEFAULT_PURCHASE_CREDITS = 10;
+
 const Pricing = () => {
   const [searchParams] = useSearchParams();
-  const [billing, setBilling] = useState({ plan: "free", resumeCredits: 0 });
+  const [billing, setBilling] = useState({ plan: "free", planLabel: "Free", resumeCredits: 0, creditsPerPurchase: DEFAULT_PURCHASE_CREDITS });
   const [loading, setLoading] = useState(false);
   const [confirming, setConfirming] = useState(false);
   const [error, setError] = useState("");
 
   const checkoutState = searchParams.get("checkout");
   const sessionId = searchParams.get("session_id");
+  const purchaseCredits = Number(billing.creditsPerPurchase) || DEFAULT_PURCHASE_CREDITS;
+  const planLabel = billing.planLabel || (billing.plan === "pro" ? "Pro" : "Free");
 
   const refreshBilling = async () => {
     const status = await getBillingStatus();
@@ -28,7 +32,13 @@ const Pricing = () => {
           setConfirming(true);
           const result = await confirmCheckoutSession(sessionId);
           if (active) {
-            setBilling({ plan: result.plan, resumeCredits: result.resumeCredits });
+            setBilling({
+              plan: result.plan,
+              planLabel: result.planLabel,
+              resumeCredits: result.resumeCredits,
+              creditsPerPurchase: purchaseCredits,
+            });
+            window.dispatchEvent(new Event("billing:updated"));
           }
         } else {
           await refreshBilling();
@@ -70,7 +80,7 @@ const Pricing = () => {
 
       {checkoutState === "success" && (
         <div className="pricing-page__notice pricing-page__notice--success">
-          {confirming ? "Confirming your payment…" : "Payment confirmed. Your Pro credits are ready."}
+          {confirming ? "Confirming your payment…" : `${planLabel} activated. Your credits are ready.`}
         </div>
       )}
       {checkoutState === "cancelled" && (
@@ -81,14 +91,14 @@ const Pricing = () => {
         <div className="pricing-card__top">
           <div>
             <span className="pricing-card__label">PRO CREDIT PACK</span>
-            <h2>10 AI resume analyses</h2>
-            <p>Use the credits across ATS scanning, AI improvements and future resume iterations.</p>
+            <h2>{purchaseCredits} AI resume analyses</h2>
+            <p>Use credits across ATS scanning, AI optimization and ATS-optimized resume generation.</p>
           </div>
           <div className="pricing-card__price"><strong>$9.99</strong><span>one-time</span></div>
         </div>
 
         <ul className="pricing-card__features">
-          <li>10 additional resume analysis credits</li>
+          <li>{purchaseCredits} AI resume analysis credits</li>
           <li>ATS compatibility analysis</li>
           <li>AI rewrite workflow</li>
           <li>ATS-optimized PDF generation</li>
@@ -96,11 +106,11 @@ const Pricing = () => {
 
         <div className="pricing-card__actions">
           <div className="pricing-card__current">
-            Current plan: <strong>{billing.plan === "pro" ? "Pro" : "Free"}</strong>
-            <span>{billing.resumeCredits} purchased credits remaining</span>
+            Current plan: <strong>{planLabel}</strong>
+            <span>{billing.resumeCredits} AI credit{billing.resumeCredits === 1 ? "" : "s"} remaining</span>
           </div>
           <button type="button" className="pricing-card__button" onClick={handleUpgrade} disabled={loading || confirming}>
-            {loading ? "Opening checkout…" : confirming ? "Confirming payment…" : "Get Pro Credits"}
+            {loading ? "Opening checkout…" : confirming ? "Confirming payment…" : billing.plan === "pro" ? "Buy More Credits" : "Upgrade to Pro"}
           </button>
         </div>
 
