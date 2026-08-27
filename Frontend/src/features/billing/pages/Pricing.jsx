@@ -1,19 +1,52 @@
 import { useEffect, useState } from "react";
 import { useSearchParams } from "react-router";
-import { createCheckoutSession, getBillingStatus } from "../services/billing.api";
+import { confirmCheckoutSession, createCheckoutSession, getBillingStatus } from "../services/billing.api";
 import "./Pricing.scss";
 
 const Pricing = () => {
   const [searchParams] = useSearchParams();
   const [billing, setBilling] = useState({ plan: "free", resumeCredits: 0 });
   const [loading, setLoading] = useState(false);
+  const [confirming, setConfirming] = useState(false);
   const [error, setError] = useState("");
 
-  useEffect(() => {
-    getBillingStatus().then(setBilling).catch(() => {});
-  }, []);
-
   const checkoutState = searchParams.get("checkout");
+  const sessionId = searchParams.get("session_id");
+
+  const refreshBilling = async () => {
+    const status = await getBillingStatus();
+    setBilling(status);
+    return status;
+  };
+
+  useEffect(() => {
+    let active = true;
+
+    async function loadBilling() {
+      try {
+        if (checkoutState === "success" && sessionId) {
+          setConfirming(true);
+          const result = await confirmCheckoutSession(sessionId);
+          if (active) {
+            setBilling({ plan: result.plan, resumeCredits: result.resumeCredits });
+          }
+        } else {
+          await refreshBilling();
+        }
+      } catch (err) {
+        if (active) {
+          setError(err.response?.data?.message || "Unable to confirm your payment yet. Please refresh in a moment.");
+        }
+      } finally {
+        if (active) setConfirming(false);
+      }
+    }
+
+    loadBilling();
+    return () => {
+      active = false;
+    };
+  }, [checkoutState, sessionId]);
 
   const handleUpgrade = async () => {
     setError("");
@@ -37,7 +70,7 @@ const Pricing = () => {
 
       {checkoutState === "success" && (
         <div className="pricing-page__notice pricing-page__notice--success">
-          Payment completed. Your Pro credits will appear as soon as Stripe confirms the payment.
+          {confirming ? "Confirming your payment…" : "Payment confirmed. Your Pro credits are ready."}
         </div>
       )}
       {checkoutState === "cancelled" && (
@@ -66,8 +99,8 @@ const Pricing = () => {
             Current plan: <strong>{billing.plan === "pro" ? "Pro" : "Free"}</strong>
             <span>{billing.resumeCredits} purchased credits remaining</span>
           </div>
-          <button type="button" className="pricing-card__button" onClick={handleUpgrade} disabled={loading}>
-            {loading ? "Opening checkout…" : "Get Pro Credits"}
+          <button type="button" className="pricing-card__button" onClick={handleUpgrade} disabled={loading || confirming}>
+            {loading ? "Opening checkout…" : confirming ? "Confirming payment…" : "Get Pro Credits"}
           </button>
         </div>
 
