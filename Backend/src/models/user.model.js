@@ -19,7 +19,6 @@ const userSchema = new mongoose.Schema(
     },
     password: {
       type: String,
-      // Not required for accounts created via Google Sign-In.
       required: function () {
         return this.authProvider === "local";
       },
@@ -33,10 +32,24 @@ const userSchema = new mongoose.Schema(
     googleId: {
       type: String,
       unique: true,
-      sparse: true, // allows many docs with no googleId
+      sparse: true,
     },
     avatarUrl: {
       type: String,
+    },
+    plan: {
+      type: String,
+      enum: ["free", "pro"],
+      default: "free",
+    },
+    resumeCredits: {
+      type: Number,
+      default: 0,
+      min: 0,
+    },
+    lastStripeCheckoutSessionId: {
+      type: String,
+      default: null,
     },
   },
   { timestamps: true },
