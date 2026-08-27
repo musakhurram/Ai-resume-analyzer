@@ -3,20 +3,68 @@ import { useSearchParams } from "react-router";
 import { confirmCheckoutSession, createCheckoutSession, getBillingStatus } from "../services/billing.api";
 import "./Pricing.scss";
 
-const DEFAULT_PURCHASE_CREDITS = 10;
+const PLANS = [
+  {
+    id: "free",
+    name: "Free",
+    price: "$0",
+    period: "forever",
+    generations: 3,
+    description: "A simple way to try Resume Analyzer before upgrading.",
+    features: [
+      "3 AI resume generations",
+      "ATS compatibility analysis",
+      "JD match review",
+      "Past reports saved to your account",
+    ],
+    cta: "Current Free Plan",
+  },
+  {
+    id: "pro",
+    name: "Pro",
+    price: "$9.99",
+    period: "one-time",
+    generations: 20,
+    description: "The best balance for regular job applications and resume iterations.",
+    features: [
+      "20 AI resume generations",
+      "ATS compatibility analysis",
+      "JD match review",
+      "AI resume optimization",
+      "ATS-optimized PDF generation",
+    ],
+    cta: "Get Pro",
+    popular: true,
+  },
+  {
+    id: "premium",
+    name: "Premium",
+    price: "$19.99",
+    period: "one-time",
+    generations: 50,
+    description: "For intensive applications, multiple roles, and frequent resume iterations.",
+    features: [
+      "50 AI resume generations",
+      "ATS compatibility analysis",
+      "JD match review",
+      "AI resume optimization",
+      "ATS-optimized PDF generation",
+      "Largest generation allowance",
+    ],
+    cta: "Get Premium",
+  },
+];
 
 const Pricing = () => {
   const [searchParams] = useSearchParams();
-  const [billing, setBilling] = useState({ plan: "free", planLabel: "Free", resumeCredits: 0, creditsPerPurchase: DEFAULT_PURCHASE_CREDITS });
-  const [loading, setLoading] = useState(false);
+  const [billing, setBilling] = useState({ plan: "free", planLabel: "Free", resumeCredits: 3, generations: 3 });
+  const [loadingPlan, setLoadingPlan] = useState("");
   const [confirming, setConfirming] = useState(false);
   const [paymentConfirmed, setPaymentConfirmed] = useState(false);
   const [error, setError] = useState("");
 
   const checkoutState = searchParams.get("checkout");
   const sessionId = searchParams.get("session_id");
-  const purchaseCredits = Number(billing.creditsPerPurchase) || DEFAULT_PURCHASE_CREDITS;
-  const planLabel = billing.planLabel || (billing.plan === "pro" ? "Pro" : "Free");
 
   useEffect(() => {
     let active = true;
@@ -31,7 +79,7 @@ const Pricing = () => {
               plan: result.plan,
               planLabel: result.planLabel,
               resumeCredits: result.resumeCredits,
-              creditsPerPurchase: result.creditsPerPurchase || DEFAULT_PURCHASE_CREDITS,
+              generations: result.generations || result.creditsPerPurchase || 3,
             });
             setPaymentConfirmed(Boolean(result.confirmed));
             window.dispatchEvent(new Event("billing:updated"));
@@ -43,7 +91,7 @@ const Pricing = () => {
       } catch (err) {
         if (active) {
           setPaymentConfirmed(false);
-          setError(err.response?.data?.message || "Unable to confirm your payment yet. Please refresh in a moment.");
+          setError(err.response?.data?.message || "Unable to load your billing status. Please refresh in a moment.");
         }
       } finally {
         if (active) setConfirming(false);
@@ -56,24 +104,25 @@ const Pricing = () => {
     };
   }, [checkoutState, sessionId]);
 
-  const handleUpgrade = async () => {
+  const handleUpgrade = async (plan) => {
+    if (plan === "free" || plan === billing.plan) return;
     setError("");
-    setLoading(true);
+    setLoadingPlan(plan);
     try {
-      const data = await createCheckoutSession();
+      const data = await createCheckoutSession(plan);
       window.location.assign(data.url);
     } catch (err) {
       setError(err.response?.data?.message || "Unable to start checkout. Please try again.");
-      setLoading(false);
+      setLoadingPlan("");
     }
   };
 
   return (
     <div className="pricing-page">
       <div className="pricing-page__intro">
-        <span className="pricing-page__eyebrow">Resume Analyzer Pro</span>
-        <h1>Build a resume that gets through the first screen.</h1>
-        <p>Unlock additional AI resume analysis credits and get more iterations from your ATS workflow.</p>
+        <span className="pricing-page__eyebrow">Resume Analyzer Plans</span>
+        <h1>Choose the right amount of AI power for your job search.</h1>
+        <p>Every AI generation uses one credit. Credits are enforced securely on the server and your remaining balance follows your account.</p>
       </div>
 
       {checkoutState === "success" && (
@@ -81,44 +130,54 @@ const Pricing = () => {
           {confirming
             ? "Confirming your payment…"
             : paymentConfirmed
-              ? `${planLabel} activated. Your credits are ready.`
-              : "Payment is still processing. Your credits will appear here once Stripe confirms the payment."}
+              ? `${billing.planLabel} activated. You now have ${billing.resumeCredits} AI generations remaining.`
+              : "Payment is still processing. Your generations will appear here once Stripe confirms the payment."}
         </div>
       )}
       {checkoutState === "cancelled" && (
         <div className="pricing-page__notice">Checkout was cancelled. No charge was made.</div>
       )}
 
-      <div className="pricing-card">
-        <div className="pricing-card__top">
-          <div>
-            <span className="pricing-card__label">PRO CREDIT PACK</span>
-            <h2>{purchaseCredits} AI resume analyses</h2>
-            <p>Use credits across ATS scanning, AI optimization and ATS-optimized resume generation.</p>
-          </div>
-          <div className="pricing-card__price"><strong>$9.99</strong><span>one-time</span></div>
-        </div>
+      <div className="pricing-grid">
+        {PLANS.map((plan) => {
+          const isCurrent = billing.plan === plan.id;
+          const isLoading = loadingPlan === plan.id;
+          return (
+            <article key={plan.id} className={`pricing-card ${plan.popular ? "pricing-card--popular" : ""} ${isCurrent ? "pricing-card--current" : ""}`}>
+              {plan.popular && <span className="pricing-card__popular">MOST POPULAR</span>}
+              <div className="pricing-card__top">
+                <div>
+                  <span className="pricing-card__label">{plan.name}</span>
+                  <h2>{plan.generations} AI generations</h2>
+                  <p>{plan.description}</p>
+                </div>
+                <div className="pricing-card__price"><strong>{plan.price}</strong><span>{plan.period}</span></div>
+              </div>
 
-        <ul className="pricing-card__features">
-          <li>{purchaseCredits} AI resume analysis credits</li>
-          <li>ATS compatibility analysis</li>
-          <li>AI rewrite workflow</li>
-          <li>ATS-optimized PDF generation</li>
-        </ul>
+              <ul className="pricing-card__features">
+                {plan.features.map((feature) => <li key={feature}>{feature}</li>)}
+              </ul>
 
-        <div className="pricing-card__actions">
-          <div className="pricing-card__current">
-            Current plan: <strong>{planLabel}</strong>
-            <span>{billing.resumeCredits} AI credit{billing.resumeCredits === 1 ? "" : "s"} remaining</span>
-          </div>
-          <button type="button" className="pricing-card__button" onClick={handleUpgrade} disabled={loading || confirming}>
-            {loading ? "Opening checkout…" : confirming ? "Confirming payment…" : billing.plan === "pro" ? "Buy More Credits" : "Upgrade to Pro"}
-          </button>
-        </div>
-
-        {error && <p className="pricing-card__error" role="alert">{error}</p>}
-        <p className="pricing-card__secure">Secure checkout powered by Stripe. Your card details are handled by Stripe.</p>
+              <button
+                type="button"
+                className={`pricing-card__button ${isCurrent ? "pricing-card__button--current" : ""}`}
+                onClick={() => handleUpgrade(plan.id)}
+                disabled={isCurrent || Boolean(loadingPlan) || confirming}
+              >
+                {isCurrent ? "Current Plan" : isLoading ? "Opening checkout…" : plan.cta}
+              </button>
+            </article>
+          );
+        })}
       </div>
+
+      <div className="pricing-page__balance">
+        <strong>{billing.planLabel || "Free"} Plan</strong>
+        <span>{billing.resumeCredits ?? 0} AI generations remaining</span>
+      </div>
+
+      {error && <p className="pricing-card__error" role="alert">{error}</p>}
+      <p className="pricing-card__secure">Secure checkout powered by Stripe. Your card details are handled by Stripe.</p>
     </div>
   );
 };
