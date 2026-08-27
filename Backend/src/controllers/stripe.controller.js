@@ -1,11 +1,12 @@
 const crypto = require("crypto");
 const userModel = require("../models/user.model");
 const env = require("../config/env");
-const { getBillingSnapshot, normalizePlan, getPlanConfig } = require("../services/credit.service");
+const { getBillingSnapshot, normalizePlan, getPlanConfig, PLAN_CONFIG } = require("../services/credit.service");
 
-const PRO_CREDITS = Number(process.env.STRIPE_PRO_CREDITS) || 10;
-const PRO_PRICE_CENTS = Number(process.env.STRIPE_PRO_PRICE_CENTS) || 999;
-const PRO_PLAN = "pro";
+const PLAN_PRICES_CENTS = {
+  pro: Number(process.env.STRIPE_PRO_PRICE_CENTS) || 999,
+  premium: Number(process.env.STRIPE_PREMIUM_PRICE_CENTS) || 1999,
+};
 
 function getClientUrl() {
   return String(env.CLIENT_URL || "http://localhost:5173").split(",")[0].trim().replace(/\/$/, "");
@@ -40,14 +41,15 @@ async function creditCompletedCheckout(session) {
   }
 
   const userId = session.metadata?.userId;
-  const plan = normalizePlan(session.metadata?.plan || PRO_PLAN);
-  const credits = Number(session.metadata?.credits) || getPlanConfig(plan).creditsPerPurchase;
+  const plan = normalizePlan(session.metadata?.plan);
+  const config = getPlanConfig(plan);
+  const credits = Number(session.metadata?.credits) || config.creditsPerPurchase;
 
   if (!userId) return { credited: false, reason: "Checkout session has no user metadata" };
-  if (plan !== PRO_PLAN || credits <= 0) return { credited: false, reason: "Checkout session contains an invalid plan" };
+  if (!["pro", "premium"].includes(plan) || credits <= 0) {
+    return { credited: false, reason: "Checkout session contains an invalid paid plan" };
+  }
 
-  // processedStripeCheckoutSessionIds makes webhook retries safe even after
-  // the user has completed a newer purchase.
   const user = await userModel.findOneAndUpdate(
     {
       _id: userId,
@@ -76,6 +78,13 @@ async function creditCompletedCheckout(session) {
 
 async function createCheckoutSessionController(req, res, next) {
   try {
+    const requestedPlan = String(req.body?.plan || "").trim().toLowerCase();
+    if (!["pro", "premium"].includes(requestedPlan)) {
+      return res.status(400).json({ message: "Choose a valid Pro or Premium plan." });
+    }
+
+    const config = PLAN_CONFIG[requestedPlan];
+    const priceCents = PLAN_PRICES_CENTS[requestedPlan];
     const user = await userModel.findById(req.user.id).select("_id plan resumeCredits");
     if (!user) return res.status(404).json({ message: "User not found" });
 
@@ -83,13 +92,13 @@ async function createCheckoutSessionController(req, res, next) {
     const session = await stripeRequest("checkout/sessions", {
       mode: "payment",
       "line_items[0][price_data][currency]": "usd",
-      "line_items[0][price_data][unit_amount]": String(PRO_PRICE_CENTS),
-      "line_items[0][price_data][product_data][name]": "Resume Analyzer Pro",
-      "line_items[0][price_data][product_data][description]": `${PRO_CREDITS} additional AI resume analysis credits`,
+      "line_items[0][price_data][unit_amount]": String(priceCents),
+      "line_items[0][price_data][product_data][name]": `Resume Analyzer ${config.label}`,
+      "line_items[0][price_data][product_data][description]": `${config.creditsPerPurchase} AI resume generations`,
       "line_items[0][quantity]": "1",
       "metadata[userId]": String(user._id),
-      "metadata[plan]": PRO_PLAN,
-      "metadata[credits]": String(PRO_CREDITS),
+      "metadata[plan]": requestedPlan,
+      "metadata[credits]": String(config.creditsPerPurchase),
       success_url: `${clientUrl}/pricing?checkout=success&session_id={CHECKOUT_SESSION_ID}`,
       cancel_url: `${clientUrl}/pricing?checkout=cancelled`,
     });
@@ -97,8 +106,10 @@ async function createCheckoutSessionController(req, res, next) {
     return res.status(200).json({
       url: session.url,
       sessionId: session.id,
-      plan: PRO_PLAN,
-      credits: PRO_CREDITS,
+      plan: requestedPlan,
+      planLabel: config.label,
+      credits: config.creditsPerPurchase,
+      priceCents,
       currentCredits: Number(user.resumeCredits) || 0,
     });
   } catch (err) {
@@ -159,10 +170,13 @@ async function confirmCheckoutSessionController(req, res, next) {
     return res.status(200).json({
       confirmed: session.payment_status === "paid",
       credited: result.credited || result.alreadyCredited === true,
+      purchasedPlan: normalizePlan(session.metadata?.plan),
+      purchasedCredits: Number(session.metadata?.credits) || 0,
       plan: billing?.plan || "free",
       planLabel: billing?.planLabel || "Free",
       resumeCredits: billing?.resumeCredits || 0,
-      creditsPerPurchase: billing?.creditsPerPurchase || PRO_CREDITS,
+      creditsPerPurchase: billing?.creditsPerPurchase || 3,
+      generations: billing?.generations || 3,
     });
   } catch (err) {
     next(err);
