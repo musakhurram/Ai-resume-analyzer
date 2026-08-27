@@ -9,23 +9,28 @@ function getClientUrl() {
   return String(env.CLIENT_URL || "http://localhost:5173").split(",")[0].trim().replace(/\/$/, "");
 }
 
-async function stripeRequest(path, params) {
+async function stripeRequest(path, params = {}, method = "POST") {
   if (!env.STRIPE_SECRET_KEY) {
     const error = new Error("Stripe is not configured on the server");
     error.statusCode = 503;
     throw error;
   }
 
-  const response = await fetch(`https://api.stripe.com/v1/${path}`, {
-    method: "POST",
+  const options = {
+    method,
     headers: {
       Authorization: `Bearer ${env.STRIPE_SECRET_KEY}`,
-      "Content-Type": "application/x-www-form-urlencoded",
     },
-    body: new URLSearchParams(params),
-  });
+  };
 
+  if (method !== "GET") {
+    options.headers["Content-Type"] = "application/x-www-form-urlencoded";
+    options.body = new URLSearchParams(params);
+  }
+
+  const response = await fetch(`https://api.stripe.com/v1/${path}`, options);
   const data = await response.json();
+
   if (!response.ok) {
     const error = new Error(data?.error?.message || "Stripe request failed");
     error.statusCode = response.status >= 400 && response.status < 500 ? 400 : 502;
@@ -33,6 +38,36 @@ async function stripeRequest(path, params) {
   }
 
   return data;
+}
+
+async function creditCompletedCheckout(session) {
+  if (!session || session.payment_status !== "paid") {
+    return { credited: false, reason: "Payment has not been completed" };
+  }
+
+  const userId = session.metadata?.userId;
+  const credits = Number(session.metadata?.credits) || PRO_CREDITS;
+
+  if (!userId) {
+    return { credited: false, reason: "Checkout session has no user metadata" };
+  }
+
+  const user = await userModel.findById(userId);
+  if (!user) {
+    return { credited: false, reason: "User not found" };
+  }
+
+  // Webhooks and the success-page confirmation may both run, so credit once.
+  if (user.lastStripeCheckoutSessionId === session.id) {
+    return { credited: false, alreadyCredited: true, resumeCredits: Number(user.resumeCredits) || 0 };
+  }
+
+  user.plan = "pro";
+  user.resumeCredits = (Number(user.resumeCredits) || 0) + credits;
+  user.lastStripeCheckoutSessionId = session.id;
+  await user.save();
+
+  return { credited: true, resumeCredits: user.resumeCredits };
 }
 
 async function createCheckoutSessionController(req, res, next) {
@@ -50,7 +85,7 @@ async function createCheckoutSessionController(req, res, next) {
       "line_items[0][quantity]": "1",
       "metadata[userId]": String(user._id),
       "metadata[credits]": String(PRO_CREDITS),
-      success_url: `${clientUrl}/pricing?checkout=success`,
+      success_url: `${clientUrl}/pricing?checkout=success&session_id={CHECKOUT_SESSION_ID}`,
       cancel_url: `${clientUrl}/pricing?checkout=cancelled`,
     });
 
@@ -90,23 +125,39 @@ async function stripeWebhookController(req, res, next) {
     const event = JSON.parse(req.body.toString("utf8"));
 
     if (event.type === "checkout.session.completed") {
-      const session = event.data.object;
-      if (session.payment_status !== "paid") return res.status(200).json({ received: true });
-
-      const userId = session.metadata?.userId;
-      const credits = Number(session.metadata?.credits) || PRO_CREDITS;
-      if (!userId) return res.status(200).json({ received: true });
-
-      const user = await userModel.findById(userId);
-      if (user && user.lastStripeCheckoutSessionId !== session.id) {
-        user.plan = "pro";
-        user.resumeCredits = (Number(user.resumeCredits) || 0) + credits;
-        user.lastStripeCheckoutSessionId = session.id;
-        await user.save();
-      }
+      await creditCompletedCheckout(event.data.object);
     }
 
     return res.status(200).json({ received: true });
+  } catch (err) {
+    next(err);
+  }
+}
+
+async function confirmCheckoutSessionController(req, res, next) {
+  try {
+    const sessionId = String(req.query.session_id || "").trim();
+    if (!sessionId || !sessionId.startsWith("cs_")) {
+      return res.status(400).json({ message: "A valid checkout session ID is required" });
+    }
+
+    const session = await stripeRequest(`checkout/sessions/${encodeURIComponent(sessionId)}`, {}, "GET");
+    const sessionUserId = session.metadata?.userId;
+
+    // Never allow one logged-in user to confirm another user's checkout.
+    if (!sessionUserId || String(sessionUserId) !== String(req.user.id)) {
+      return res.status(403).json({ message: "Checkout session does not belong to this user" });
+    }
+
+    const result = await creditCompletedCheckout(session);
+    const user = await userModel.findById(req.user.id).select("plan resumeCredits");
+
+    return res.status(200).json({
+      confirmed: session.payment_status === "paid",
+      credited: result.credited || result.alreadyCredited === true,
+      plan: user?.plan || "free",
+      resumeCredits: Number(user?.resumeCredits) || 0,
+    });
   } catch (err) {
     next(err);
   }
@@ -125,5 +176,6 @@ async function getBillingStatusController(req, res, next) {
 module.exports = {
   createCheckoutSessionController,
   stripeWebhookController,
+  confirmCheckoutSessionController,
   getBillingStatusController,
 };
