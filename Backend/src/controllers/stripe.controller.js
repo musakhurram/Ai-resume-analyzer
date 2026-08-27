@@ -51,16 +51,9 @@ async function creditCompletedCheckout(session) {
   const plan = normalizePlan(session.metadata?.plan || PRO_PLAN);
   const credits = Number(session.metadata?.credits) || getPlanConfig(plan).creditsPerPurchase;
 
-  if (!userId) {
-    return { credited: false, reason: "Checkout session has no user metadata" };
-  }
+  if (!userId) return { credited: false, reason: "Checkout session has no user metadata" };
+  if (plan !== PRO_PLAN || credits <= 0) return { credited: false, reason: "Checkout session contains an invalid plan" };
 
-  if (plan !== PRO_PLAN || credits <= 0) {
-    return { credited: false, reason: "Checkout session contains an invalid plan" };
-  }
-
-  // Atomic idempotency: webhook delivery and success-page confirmation can
-  // arrive at the same time, but only one may consume this session.
   const user = await userModel.findOneAndUpdate(
     {
       _id: userId,
@@ -71,10 +64,7 @@ async function creditCompletedCheckout(session) {
       ],
     },
     {
-      $set: {
-        plan,
-        lastStripeCheckoutSessionId: session.id,
-      },
+      $set: { plan, lastStripeCheckoutSessionId: session.id },
       $inc: { resumeCredits: credits },
     },
     { new: true, projection: { plan: 1, resumeCredits: 1 } },
@@ -83,7 +73,6 @@ async function creditCompletedCheckout(session) {
   if (!user) {
     const existingUser = await userModel.findById(userId).select("plan resumeCredits lastStripeCheckoutSessionId");
     if (!existingUser) return { credited: false, reason: "User not found" };
-
     return {
       credited: false,
       alreadyCredited: existingUser.lastStripeCheckoutSessionId === session.id,
@@ -128,18 +117,15 @@ async function createCheckoutSessionController(req, res, next) {
 
 function verifyStripeSignature(rawBody, signatureHeader) {
   if (!signatureHeader || !env.STRIPE_WEBHOOK_SECRET) return false;
-
   const parts = signatureHeader.split(",");
   const timestamp = parts.find((part) => part.startsWith("t="))?.slice(2);
   const signatures = parts.filter((part) => part.startsWith("v1=")).map((part) => part.slice(3));
-
   if (!timestamp || signatures.length === 0) return false;
   const timestampNumber = Number(timestamp);
   if (!Number.isFinite(timestampNumber) || Math.abs(Date.now() / 1000 - timestampNumber) > 300) return false;
 
   const payload = `${timestamp}.${rawBody.toString("utf8")}`;
   const expected = crypto.createHmac("sha256", env.STRIPE_WEBHOOK_SECRET).update(payload, "utf8").digest("hex");
-
   return signatures.some((signature) => {
     const expectedBuffer = Buffer.from(expected, "hex");
     const signatureBuffer = Buffer.from(signature, "hex");
@@ -154,11 +140,7 @@ async function stripeWebhookController(req, res, next) {
     }
 
     const event = JSON.parse(req.body.toString("utf8"));
-
-    if (event.type === "checkout.session.completed") {
-      await creditCompletedCheckout(event.data.object);
-    }
-
+    if (event.type === "checkout.session.completed") await creditCompletedCheckout(event.data.object);
     return res.status(200).json({ received: true });
   } catch (err) {
     next(err);
@@ -174,7 +156,6 @@ async function confirmCheckoutSessionController(req, res, next) {
 
     const session = await stripeRequest(`checkout/sessions/${encodeURIComponent(sessionId)}`, {}, "GET");
     const sessionUserId = session.metadata?.userId;
-
     if (!sessionUserId || String(sessionUserId) !== String(req.user.id)) {
       return res.status(403).json({ message: "Checkout session does not belong to this user" });
     }
@@ -188,6 +169,7 @@ async function confirmCheckoutSessionController(req, res, next) {
       plan: billing?.plan || "free",
       planLabel: billing?.planLabel || "Free",
       resumeCredits: billing?.resumeCredits || 0,
+      creditsPerPurchase: billing?.creditsPerPurchase || PRO_CREDITS,
     });
   } catch (err) {
     next(err);
