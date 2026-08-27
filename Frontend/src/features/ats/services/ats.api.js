@@ -18,6 +18,11 @@ export async function reviseAtsResume({ id, sections = "all", customNotes = "" }
   return response.data;
 }
 
+export async function saveAtsManualRevision(id, revisedResume) {
+  const response = await api.put(`/api/resume/ats-revision/${id}`, { revisedResume });
+  return response.data;
+}
+
 export async function getAtsReportById(id) {
   const response = await api.get(`/api/resume/ats-report/${id}`);
   return response.data;
@@ -32,17 +37,11 @@ export async function listAtsReports({ search = "", sort = "recent", limit = 50 
 
 export async function getAtsPreviewPdf(id) {
   try {
-    const response = await api.get(`/api/resume/ats-preview/${id}`, {
-      responseType: "arraybuffer",
-      headers: { Accept: "application/pdf" },
-    });
+    const response = await api.get(`/api/resume/ats-preview/${id}`, { responseType: "arraybuffer", headers: { Accept: "application/pdf" } });
     return response.data;
   } catch (error) {
     if (error?.response?.status === 404) {
-      const response = await api.get(`/api/resume/ats-download/${id}`, {
-        responseType: "arraybuffer",
-        headers: { Accept: "application/pdf" },
-      });
+      const response = await api.get(`/api/resume/ats-download/${id}`, { responseType: "arraybuffer", headers: { Accept: "application/pdf" } });
       return response.data;
     }
     throw error;
@@ -50,30 +49,16 @@ export async function getAtsPreviewPdf(id) {
 }
 
 export async function getAtsOriginalPdf(id, originalPdfUrl = "") {
-  // Blob URLs belong to the browser/frontend origin. Never pass them through
-  // the Axios API client because Axios prepends the backend baseURL, turning
-  // `blob:http://localhost:5173/...` into the invalid
-  // `http://localhost:3000/blob:http://localhost:5173/...` request.
   if (originalPdfUrl?.startsWith("blob:")) {
     const response = await fetch(originalPdfUrl);
-    if (!response.ok) {
-      throw new Error(`Unable to read the uploaded resume PDF (${response.status}).`);
-    }
+    if (!response.ok) throw new Error(`Unable to read the uploaded resume PDF (${response.status}).`);
     return response.arrayBuffer();
   }
-
   if (originalPdfUrl) {
-    const response = await api.get(originalPdfUrl, {
-      responseType: "arraybuffer",
-      headers: { Accept: "application/pdf" },
-    });
+    const response = await api.get(originalPdfUrl, { responseType: "arraybuffer", headers: { Accept: "application/pdf" } });
     return response.data;
   }
-
-  const response = await api.get(`/api/resume/ats-original/${id}`, {
-    responseType: "arraybuffer",
-    headers: { Accept: "application/pdf" },
-  });
+  const response = await api.get(`/api/resume/ats-original/${id}`, { responseType: "arraybuffer", headers: { Accept: "application/pdf" } });
   return response.data;
 }
 
@@ -85,7 +70,5 @@ export async function downloadAtsPdf(id, candidateName = "ATS-Resume") {
   link.href = url;
   link.download = `${(candidateName || "ATS-Resume").replace(/[^a-zA-Z0-9_-]/g, "_")}_ATS_Optimized.pdf`;
   document.body.appendChild(link);
-  link.click();
-  link.remove();
-  window.URL.revokeObjectURL(url);
+  link.click(); link.remove(); window.URL.revokeObjectURL(url);
 }
