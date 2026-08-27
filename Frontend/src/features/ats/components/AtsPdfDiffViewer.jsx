@@ -3,7 +3,10 @@ import * as pdfjsLib from "pdfjs-dist";
 import api from "../../../shared/api/client";
 import "./AtsPdfDiffViewer.scss";
 
-pdfjsLib.GlobalWorkerOptions.workerSrc = new URL("pdfjs-dist/build/pdf.worker.min.mjs", import.meta.url).toString();
+pdfjsLib.GlobalWorkerOptions.workerSrc = new URL(
+  "pdfjs-dist/build/pdf.worker.min.mjs",
+  import.meta.url,
+).toString();
 
 const normalize = (value = "") => String(value).toLowerCase().replace(/\s+/g, " ").trim();
 const words = (value = "") => normalize(value).split(/[^a-z0-9+#.%-]+/i).filter(Boolean);
@@ -29,9 +32,22 @@ function changedItems(items, otherItems) {
   });
 }
 
+function toUint8Array(source) {
+  if (source instanceof Uint8Array) return source;
+  if (source instanceof ArrayBuffer) return new Uint8Array(source);
+  if (ArrayBuffer.isView(source)) return new Uint8Array(source.buffer, source.byteOffset, source.byteLength);
+  throw new Error("The server did not return a valid PDF file.");
+}
+
 async function readPdf(source) {
-  const pdf = await pdfjsLib.getDocument({ data: source }).promise;
+  const data = toUint8Array(source);
+  if (data.length < 5 || String.fromCharCode(...data.slice(0, 5)) !== "%PDF-") {
+    throw new Error("The preview endpoint did not return a PDF. Check the backend deployment and authentication.");
+  }
+
+  const pdf = await pdfjsLib.getDocument({ data }).promise;
   const pages = [];
+
   for (let pageNumber = 1; pageNumber <= pdf.numPages; pageNumber += 1) {
     const page = await pdf.getPage(pageNumber);
     const viewport = page.getViewport({ scale: 1 });
@@ -41,45 +57,75 @@ async function readPdf(source) {
       .map((item) => ({
         str: item.str,
         transform: item.transform,
-        width: item.width,
+        width: item.width || 0,
         height: item.height || Math.abs(item.transform?.[3] || 10),
       }));
-    pages.push({ pageNumber, viewport, items });
+    pages.push({ pageNumber, page, viewport, items });
   }
+
   return { pdf, pages };
 }
 
 function PdfPage({ page, scale, changed, tone, onChangeClick }) {
   const canvasRef = useRef(null);
   const [rendered, setRendered] = useState(false);
+  const [renderError, setRenderError] = useState("");
 
   useEffect(() => {
     let cancelled = false;
+    let renderTask;
+
     const render = async () => {
       const canvas = canvasRef.current;
       if (!canvas) return;
-      const viewport = page.viewport.clone({ scale });
-      const context = canvas.getContext("2d", { alpha: false });
-      canvas.width = Math.ceil(viewport.width);
-      canvas.height = Math.ceil(viewport.height);
-      await page.page.render({ canvasContext: context, viewport }).promise;
-      if (!cancelled) setRendered(true);
+      setRendered(false);
+      setRenderError("");
+
+      try {
+        const viewport = page.viewport.clone({ scale });
+        const context = canvas.getContext("2d", { alpha: false });
+        if (!context) throw new Error("Your browser could not create a PDF canvas.");
+
+        canvas.width = Math.ceil(viewport.width);
+        canvas.height = Math.ceil(viewport.height);
+        canvas.style.width = `${viewport.width}px`;
+        canvas.style.height = `${viewport.height}px`;
+
+        context.save();
+        context.fillStyle = "#ffffff";
+        context.fillRect(0, 0, canvas.width, canvas.height);
+        context.restore();
+
+        renderTask = page.page.render({ canvasContext: context, viewport, intent: "display" });
+        await renderTask.promise;
+        if (!cancelled) setRendered(true);
+      } catch (error) {
+        if (!cancelled) setRenderError(error?.message || "Unable to render this PDF page.");
+      }
     };
+
     render();
-    return () => { cancelled = true; };
+    return () => {
+      cancelled = true;
+      if (renderTask) renderTask.cancel();
+    };
   }, [page, scale]);
 
   const viewport = page.viewport.clone({ scale });
+
   return (
     <div className="ats-pdf-page" style={{ width: viewport.width, height: viewport.height }}>
       <canvas ref={canvasRef} className="ats-pdf-canvas" />
+      {renderError && <div className="ats-pdf-page__error">{renderError}</div>}
       {rendered && changed.map((item, index) => {
         if (!item.changed) return null;
-        const [, , , , x, y] = item.transform;
+        const [, , , , x, y] = item.transform || [];
+        if (!Number.isFinite(x) || !Number.isFinite(y)) return null;
         const left = x * scale;
         const top = viewport.height - (y + item.height) * scale;
         const width = Math.max(item.width * scale, 8);
         const height = Math.max(item.height * scale, 8);
+
         return (
           <button
             type="button"
@@ -109,28 +155,49 @@ const AtsPdfDiffViewer = ({ reportId, originalPdfUrl, originalText = "", revised
 
   useEffect(() => {
     let active = true;
+
+    const loadPdfResponse = async (url) => {
+      if (!url) return null;
+      // Always use the configured Axios client so protected PDF URLs receive
+      // the same cookie/Bearer authentication as the rest of the ATS API.
+      return api.get(url, { responseType: "arraybuffer" }).then((response) => response.data);
+    };
+
     const load = async () => {
       if (!reportId || !revisedResume) return;
       setLoading(true);
       setError("");
+
       try {
         const [originalResponse, revisedResponse] = await Promise.all([
           originalPdfUrl
-            ? fetch(originalPdfUrl).then((r) => r.arrayBuffer())
-            : api.get(`/api/resume/ats-original/${reportId}`, { responseType: "arraybuffer" }).then((r) => r.data),
-          api.get(`/api/resume/ats-preview/${reportId}`, { responseType: "arraybuffer" }).then((r) => r.data),
+            ? loadPdfResponse(originalPdfUrl)
+            : api.get(`/api/resume/ats-original/${reportId}`, { responseType: "arraybuffer" }).then((response) => response.data),
+          api.get(`/api/resume/ats-preview/${reportId}`, { responseType: "arraybuffer" }).then((response) => response.data),
         ]);
-        const [originalPdf, revisedPdf] = await Promise.all([readPdf(originalResponse), readPdf(revisedResponse)]);
+
+        const [originalPdf, revisedPdf] = await Promise.all([
+          readPdf(originalResponse),
+          readPdf(revisedResponse),
+        ]);
+
         if (active) {
           setOriginal(originalPdf);
           setRevised(revisedPdf);
         }
       } catch (err) {
-        if (active) setError(err.response?.data?.message || err.message || "Unable to load the PDF comparison.");
+        if (!active) return;
+        const serverMessage = err?.response?.data?.message;
+        setError(
+          serverMessage ||
+          err?.message ||
+          "Unable to load the PDF comparison.",
+        );
       } finally {
         if (active) setLoading(false);
       }
     };
+
     load();
     return () => { active = false; };
   }, [reportId, originalPdfUrl, revisedResume]);
@@ -162,9 +229,10 @@ const AtsPdfDiffViewer = ({ reportId, originalPdfUrl, originalText = "", revised
   }, [original, revised]);
 
   const syncScroll = (source, target) => {
-    if (syncing.current) return;
+    if (!source || !target || syncing.current) return;
     syncing.current = true;
-    const ratio = source.scrollHeight > source.clientHeight ? source.scrollTop / (source.scrollHeight - source.clientHeight) : 0;
+    const denominator = source.scrollHeight - source.clientHeight;
+    const ratio = denominator > 0 ? source.scrollTop / denominator : 0;
     target.scrollTop = ratio * Math.max(0, target.scrollHeight - target.clientHeight);
     requestAnimationFrame(() => { syncing.current = false; });
   };
@@ -186,7 +254,7 @@ const AtsPdfDiffViewer = ({ reportId, originalPdfUrl, originalText = "", revised
         <div>
           <div className="ats-pdf-diff__eyebrow"><span /> PDF CHANGE VIEW</div>
           <h3>See changes directly on the resume</h3>
-          <p>Highlights are positioned over the actual text on each PDF page.</p>
+          <p>Both documents are rendered as real PDF pages, with change highlights positioned from PDF text coordinates.</p>
         </div>
         <div className="ats-pdf-diff__actions">
           <button type="button" className={`ats-pdf-diff__toggle ${showChanges ? "is-active" : ""}`} onClick={() => setShowChanges((value) => !value)}>
@@ -199,17 +267,41 @@ const AtsPdfDiffViewer = ({ reportId, originalPdfUrl, originalText = "", revised
       </div>
 
       {loading && <div className="ats-pdf-diff__state">Preparing synchronized PDF previews…</div>}
-      {error && <div className="ats-pdf-diff__error">{error}{originalText ? " Text fallback is available below." : ""}</div>}
+      {error && (
+        <div className="ats-pdf-diff__error">
+          <strong>PDF preview could not be loaded.</strong>
+          <span>{error}</span>
+          {originalText && <small>The ATS analysis is still available; the PDF preview endpoint needs to return an authenticated PDF.</small>}
+        </div>
+      )}
 
       {!loading && original && revised && (
         <div className="ats-pdf-diff__grid">
-          {[{ label: "ORIGINAL", pages: leftPages, tone: "removed", ref: leftScrollRef }, { label: "AI REVISED", pages: rightPages, tone: "added", ref: rightScrollRef }].map(({ label, pages, tone, ref }, paneIndex) => (
+          {[
+            { label: "ORIGINAL", pages: leftPages, tone: "removed", ref: leftScrollRef },
+            { label: "AI REVISED", pages: rightPages, tone: "added", ref: rightScrollRef },
+          ].map(({ label, pages, tone, ref }, paneIndex) => (
             <div className="ats-pdf-diff__pane" key={label}>
-              <div className="ats-pdf-diff__pane-head"><span className={tone}>{label === "ORIGINAL" ? "−" : "+"}</span><strong>{label}</strong><small>{pages.length} {pages.length === 1 ? "page" : "pages"}</small></div>
-              <div className="ats-pdf-diff__scroll" ref={ref} onScroll={(event) => syncScroll(event.currentTarget, paneIndex === 0 ? rightScrollRef.current : leftScrollRef.current)}>
+              <div className="ats-pdf-diff__pane-head">
+                <span className={tone}>{label === "ORIGINAL" ? "−" : "+"}</span>
+                <strong>{label}</strong>
+                <small>{pages.length} {pages.length === 1 ? "page" : "pages"}</small>
+              </div>
+              <div
+                className="ats-pdf-diff__scroll"
+                ref={ref}
+                onScroll={(event) => syncScroll(event.currentTarget, paneIndex === 0 ? rightScrollRef.current : leftScrollRef.current)}
+              >
                 <div className="ats-pdf-diff__document">
                   {pages.map((page) => (
-                    <PdfPage key={page.pageNumber} page={page} scale={scale} tone={tone} changed={showChanges ? page.items : []} onChangeClick={jumpBoth} />
+                    <PdfPage
+                      key={page.pageNumber}
+                      page={page}
+                      scale={scale}
+                      tone={tone}
+                      changed={showChanges ? page.items : []}
+                      onChangeClick={jumpBoth}
+                    />
                   ))}
                 </div>
               </div>
