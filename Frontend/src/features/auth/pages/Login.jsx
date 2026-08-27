@@ -84,7 +84,22 @@ const Login = () => {
         <Field label="Password" htmlFor="password" required>
           <TextInput id="password" name="password" type="password" autoComplete="current-password" placeholder="Enter your password" value={password} onChange={handlePasswordChange} required disabled={submitting} />
         </Field>
-        <div className="auth-form__options"><label className="auth-form__checkbox-label"><input type="checkbox" className="auth-form__checkbox" checked={rememberMe} onChange={(e) => setRememberMe(e.target.checked)} /><span>Remember email</span></label></div>
+        <div className="auth-form__options">
+          <label className="auth-form__checkbox-label" htmlFor="remember-email">
+            <input
+              id="remember-email"
+              type="checkbox"
+              className="auth-form__checkbox"
+              checked={rememberMe}
+              onChange={(e) => setRememberMe(e.target.checked)}
+              disabled={submitting}
+            />
+            <span className="auth-form__checkbox-text">
+              <span className="auth-form__checkbox-title">Remember my email</span>
+              <span className="auth-form__checkbox-hint">Save it for next time</span>
+            </span>
+          </label>
+        </div>
         <Button type="submit" size="lg" variant="primary" loading={submitting} disabled={submitting || !email.trim() || !password} className="auth-form__submit">{submitting ? "Authenticating…" : "Sign in"}</Button>
       </form>
       <p className="auth-form__switch">Don't have an account yet? <Link to="/register">Create an account</Link></p>
