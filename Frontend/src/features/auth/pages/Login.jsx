@@ -94,10 +94,7 @@ const Login = () => {
               onChange={(e) => setRememberMe(e.target.checked)}
               disabled={submitting}
             />
-            <span className="auth-form__checkbox-text">
-              <span className="auth-form__checkbox-title">Remember my email</span>
-              <span className="auth-form__checkbox-hint">Save it for next time</span>
-            </span>
+            <span>Remember email</span>
           </label>
         </div>
         <Button type="submit" size="lg" variant="primary" loading={submitting} disabled={submitting || !email.trim() || !password} className="auth-form__submit">{submitting ? "Authenticating…" : "Sign in"}</Button>
