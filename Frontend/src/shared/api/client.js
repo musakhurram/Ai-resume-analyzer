@@ -21,4 +21,27 @@ api.interceptors.request.use((config) => {
   return config;
 });
 
+// Preview is a protected PDF endpoint. If a deployment is running an older
+// backend without /ats-preview/:id, retry through the existing authenticated
+// download endpoint instead of exposing a public PDF URL or failing the UI.
+api.interceptors.response.use(
+  (response) => response,
+  async (error) => {
+    const config = error?.config;
+    const status = error?.response?.status;
+    const url = String(config?.url || "");
+
+    if (status === 404 && config && !config._atsPreviewFallback && /\/api\/resume\/ats-preview\/[^/]+(?:$|[?#])/.test(url)) {
+      const fallbackConfig = {
+        ...config,
+        url: url.replace("/ats-preview/", "/ats-download/"),
+        _atsPreviewFallback: true,
+      };
+      return api.request(fallbackConfig);
+    }
+
+    return Promise.reject(error);
+  },
+);
+
 export default api;
