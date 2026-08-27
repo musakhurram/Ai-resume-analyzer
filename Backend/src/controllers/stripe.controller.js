@@ -18,13 +18,7 @@ async function stripeRequest(path, params = {}, method = "POST") {
     throw error;
   }
 
-  const options = {
-    method,
-    headers: {
-      Authorization: `Bearer ${env.STRIPE_SECRET_KEY}`,
-    },
-  };
-
+  const options = { method, headers: { Authorization: `Bearer ${env.STRIPE_SECRET_KEY}` } };
   if (method !== "GET") {
     options.headers["Content-Type"] = "application/x-www-form-urlencoded";
     options.body = new URLSearchParams(params);
@@ -32,13 +26,11 @@ async function stripeRequest(path, params = {}, method = "POST") {
 
   const response = await fetch(`https://api.stripe.com/v1/${path}`, options);
   const data = await response.json();
-
   if (!response.ok) {
     const error = new Error(data?.error?.message || "Stripe request failed");
     error.statusCode = response.status >= 400 && response.status < 500 ? 400 : 502;
     throw error;
   }
-
   return data;
 }
 
@@ -140,7 +132,9 @@ async function stripeWebhookController(req, res, next) {
     }
 
     const event = JSON.parse(req.body.toString("utf8"));
-    if (event.type === "checkout.session.completed") await creditCompletedCheckout(event.data.object);
+    if (["checkout.session.completed", "checkout.session.async_payment_succeeded"].includes(event.type)) {
+      await creditCompletedCheckout(event.data.object);
+    }
     return res.status(200).json({ received: true });
   } catch (err) {
     next(err);
