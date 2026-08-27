@@ -7,7 +7,7 @@
   display: block;
   width: 100%;
   max-width: 340px;
-  min-height: 44px;
+  min-height: 48px;
   margin: 0 auto;
 
   &__visual {
@@ -18,7 +18,7 @@
     justify-content: center;
     gap: var(--space-3);
     width: 100%;
-    height: 44px;
+    height: 48px;
     background: #ffffff;
     border-radius: var(--radius-full);
     border: 1px solid transparent;
@@ -28,7 +28,12 @@
     font-weight: 500;
     color: #1f1f1f;
     pointer-events: none;
-    transition: filter var(--duration-fast) var(--ease), border-color var(--duration-fast) var(--ease);
+    transition:
+      transform var(--duration-fast) var(--ease),
+      box-shadow var(--duration-fast) var(--ease),
+      filter var(--duration-fast) var(--ease),
+      border-color var(--duration-fast) var(--ease),
+      background-color var(--duration-fast) var(--ease);
   }
 
   &__real {
@@ -52,16 +57,46 @@
     }
   }
 
+  &:hover &__visual {
+    transform: translateY(-1px);
+  }
+
+  &:active &__visual {
+    transform: translateY(0);
+  }
+
+  &:focus-within &__visual {
+    outline: 3px solid rgba(66, 133, 244, 0.16);
+    outline-offset: 2px;
+  }
+
   // .is-disabled lives on __real, which comes *after* __visual in the DOM,
   // so target the preceding sibling directly.
   &:has(.google-signin-btn__real.is-disabled) &__visual {
     filter: grayscale(0.4);
     opacity: 0.6;
+    transform: none;
   }
 }
 
-// Give the custom visual the same subtle outline expected from Google's
-// standard light-mode button, while keeping the existing dark-mode design.
+// Refined light-mode treatment: a crisp Google-style outline with a soft,
+// layered shadow so the white button feels lifted from the warm page surface.
 [data-theme="light"] .google-signin-btn__visual {
   border-color: #dadce0;
+  box-shadow:
+    0 1px 2px rgba(60, 64, 67, 0.10),
+    0 3px 8px rgba(60, 64, 67, 0.10);
+}
+
+[data-theme="light"] .google-signin-btn:hover .google-signin-btn__visual {
+  border-color: #c9cdd1;
+  box-shadow:
+    0 2px 4px rgba(60, 64, 67, 0.12),
+    0 7px 16px rgba(60, 64, 67, 0.12);
+}
+
+[data-theme="light"] .google-signin-btn:active .google-signin-btn__visual {
+  box-shadow:
+    0 1px 2px rgba(60, 64, 67, 0.10),
+    0 3px 7px rgba(60, 64, 67, 0.10);
 }
