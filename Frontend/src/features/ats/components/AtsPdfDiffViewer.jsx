@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import * as pdfjsLib from "pdfjs-dist";
-import api from "../../../shared/api/client";
+import { getAtsOriginalPdf, getAtsPreviewPdf } from "../services/ats.api";
 import "./AtsPdfDiffViewer.scss";
 
 pdfjsLib.GlobalWorkerOptions.workerSrc = new URL(
@@ -156,13 +156,6 @@ const AtsPdfDiffViewer = ({ reportId, originalPdfUrl, originalText = "", revised
   useEffect(() => {
     let active = true;
 
-    const loadPdfResponse = async (url) => {
-      if (!url) return null;
-      // Always use the configured Axios client so protected PDF URLs receive
-      // the same cookie/Bearer authentication as the rest of the ATS API.
-      return api.get(url, { responseType: "arraybuffer" }).then((response) => response.data);
-    };
-
     const load = async () => {
       if (!reportId || !revisedResume) return;
       setLoading(true);
@@ -170,10 +163,8 @@ const AtsPdfDiffViewer = ({ reportId, originalPdfUrl, originalText = "", revised
 
       try {
         const [originalResponse, revisedResponse] = await Promise.all([
-          originalPdfUrl
-            ? loadPdfResponse(originalPdfUrl)
-            : api.get(`/api/resume/ats-original/${reportId}`, { responseType: "arraybuffer" }).then((response) => response.data),
-          api.get(`/api/resume/ats-preview/${reportId}`, { responseType: "arraybuffer" }).then((response) => response.data),
+          getAtsOriginalPdf(reportId, originalPdfUrl),
+          getAtsPreviewPdf(reportId),
         ]);
 
         const [originalPdf, revisedPdf] = await Promise.all([
