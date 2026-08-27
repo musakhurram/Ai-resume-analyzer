@@ -51,6 +51,12 @@ const userSchema = new mongoose.Schema(
       type: String,
       default: null,
     },
+    // Keep every processed Checkout Session ID so an old webhook replay
+    // cannot grant the same purchase twice after a later purchase occurred.
+    processedStripeCheckoutSessionIds: {
+      type: [String],
+      default: [],
+    },
   },
   { timestamps: true },
 );
