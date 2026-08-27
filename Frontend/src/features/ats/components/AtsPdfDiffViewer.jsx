@@ -67,17 +67,16 @@ function PdfPage({ page, scale, changed, tone, onChangeClick }) {
       try {
         const dpr = Math.min(window.devicePixelRatio || 1, 2);
         const viewport = page.viewport.clone({ scale });
-        const outputViewport = page.viewport.clone({ scale: scale * dpr });
         const context = canvas.getContext("2d", { alpha: false });
         if (!context) throw new Error("Your browser could not create a PDF canvas.");
-        canvas.width = Math.ceil(outputViewport.width);
-        canvas.height = Math.ceil(outputViewport.height);
+        canvas.width = Math.ceil(viewport.width * dpr);
+        canvas.height = Math.ceil(viewport.height * dpr);
         canvas.style.width = `${viewport.width}px`;
         canvas.style.height = `${viewport.height}px`;
         context.setTransform(dpr, 0, 0, dpr, 0, 0);
         context.fillStyle = "#ffffff";
         context.fillRect(0, 0, viewport.width, viewport.height);
-        renderTask = page.page.render({ canvasContext: context, viewport, outputScale: dpr, intent: "display" });
+        renderTask = page.page.render({ canvasContext: context, viewport, intent: "display" });
         await renderTask.promise;
         if (!cancelled) setRendered(true);
       } catch (error) {
@@ -90,7 +89,7 @@ function PdfPage({ page, scale, changed, tone, onChangeClick }) {
 
   const viewport = page.viewport.clone({ scale });
   return (
-    <div className="ats-pdf-page" style={{ width: viewport.width, height: viewport.height }}>
+    <div className="ats-pdf-page" data-page-number={page.pageNumber} style={{ width: viewport.width, height: viewport.height }}>
       <canvas ref={canvasRef} className="ats-pdf-canvas" />
       {renderError && <div className="ats-pdf-page__error">{renderError}</div>}
       {rendered && changed.map((item, index) => {
@@ -110,14 +109,13 @@ const AtsPdfDiffViewer = ({ reportId, originalPdfUrl, originalText = "", revised
   const [revised, setRevised] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
-  const [scale, setScale] = useState(1.05);
+  const [scale, setScale] = useState(1);
   const [showChanges, setShowChanges] = useState(true);
   const [fitWidth, setFitWidth] = useState(true);
-  const [pageIndex, setPageIndex] = useState(0);
   const [paneWidth, setPaneWidth] = useState(0);
   const leftScrollRef = useRef(null);
   const rightScrollRef = useRef(null);
-  const paneRef = useRef(null);
+  const gridRef = useRef(null);
   const syncing = useRef(false);
 
   useEffect(() => {
@@ -128,7 +126,7 @@ const AtsPdfDiffViewer = ({ reportId, originalPdfUrl, originalText = "", revised
       try {
         const [originalResponse, revisedResponse] = await Promise.all([getAtsOriginalPdf(reportId, originalPdfUrl), getAtsPreviewPdf(reportId)]);
         const [originalPdf, revisedPdf] = await Promise.all([readPdf(originalResponse), readPdf(revisedResponse)]);
-        if (active) { setOriginal(originalPdf); setRevised(revisedPdf); setPageIndex(0); }
+        if (active) { setOriginal(originalPdf); setRevised(revisedPdf); }
       } catch (err) {
         if (!active) return;
         setError(err?.response?.data?.message || err?.message || "Unable to load the PDF comparison.");
@@ -139,9 +137,12 @@ const AtsPdfDiffViewer = ({ reportId, originalPdfUrl, originalText = "", revised
   }, [reportId, originalPdfUrl, revisedResume]);
 
   useEffect(() => {
-    const element = paneRef.current;
+    const element = gridRef.current;
     if (!element) return undefined;
-    const update = () => setPaneWidth(element.clientWidth);
+    const update = () => {
+      const pane = element.querySelector(".ats-pdf-diff__pane");
+      setPaneWidth(pane?.clientWidth || 0);
+    };
     update();
     const observer = new ResizeObserver(update);
     observer.observe(element);
@@ -150,8 +151,9 @@ const AtsPdfDiffViewer = ({ reportId, originalPdfUrl, originalText = "", revised
 
   const effectiveScale = useMemo(() => {
     if (!fitWidth || !paneWidth || !original?.pages?.[0]) return scale;
-    const available = Math.max(280, paneWidth - 40);
-    return Math.max(0.65, Math.min(1.45, available / original.pages[0].viewport.width));
+    const horizontalPadding = 48;
+    const available = Math.max(280, paneWidth - horizontalPadding);
+    return Math.max(0.55, Math.min(1.25, available / original.pages[0].viewport.width));
   }, [fitWidth, paneWidth, scale, original]);
 
   const leftPages = useMemo(() => {
@@ -178,24 +180,13 @@ const AtsPdfDiffViewer = ({ reportId, originalPdfUrl, originalText = "", revised
   };
 
   const jumpBoth = (pageNumber, top) => {
-    const pages = original?.pages || [];
-    const targetPage = Math.max(0, pageNumber - 1);
     const target = (ref) => {
       const container = ref.current;
       if (!container) return;
-      const page = container.querySelector(`[data-page-number="${targetPage + 1}"]`);
+      const page = container.querySelector(`[data-page-number="${pageNumber}"]`);
       if (page) container.scrollTo({ top: Math.max(0, page.offsetTop + top - 220), behavior: "smooth" });
     };
-    target(leftScrollRef); target(rightScrollRef); setPageIndex(targetPage);
-  };
-
-  const scrollToPage = (index) => {
-    setPageIndex(index);
-    [leftScrollRef, rightScrollRef].forEach((ref) => {
-      const container = ref.current;
-      const page = container?.querySelector(`[data-page-number="${index + 1}"]`);
-      if (container && page) container.scrollTo({ top: page.offsetTop - 12, behavior: "smooth" });
-    });
+    target(leftScrollRef); target(rightScrollRef);
   };
 
   if (!revisedResume) return null;
@@ -208,18 +199,16 @@ const AtsPdfDiffViewer = ({ reportId, originalPdfUrl, originalText = "", revised
           <button type="button" className={`ats-pdf-diff__toggle ${showChanges ? "is-active" : ""}`} onClick={() => setShowChanges((value) => !value)}>{showChanges ? "Hide changes" : "Show changes"}</button>
           <button type="button" className={`ats-pdf-diff__toggle ${fitWidth ? "is-active" : ""}`} onClick={() => setFitWidth((value) => !value)}>{fitWidth ? "Fit width" : "Free zoom"}</button>
           <button type="button" onClick={() => { setFitWidth(false); setScale((value) => Math.min(1.7, value + 0.1)); }}>+</button>
-          <button type="button" onClick={() => { setFitWidth(false); setScale((value) => Math.max(0.65, value - 0.1)); }}>−</button>
+          <button type="button" onClick={() => { setFitWidth(false); setScale((value) => Math.max(0.55, value - 0.1)); }}>−</button>
           <button type="button" className="ats-pdf-diff__download" disabled={downloading} onClick={() => onDownload(reportId, revisedResume?.contact?.fullName)}>Download PDF</button>
         </div>
       </div>
-
-      {original && revised && <div className="ats-pdf-diff__pager"><button type="button" disabled={pageIndex === 0} onClick={() => scrollToPage(pageIndex - 1)}>‹</button><span>Page {Math.min(pageIndex + 1, Math.max(original.pages.length, revised.pages.length))} of {Math.max(original.pages.length, revised.pages.length)}</span><button type="button" disabled={pageIndex >= Math.max(original.pages.length, revised.pages.length) - 1} onClick={() => scrollToPage(pageIndex + 1)}>›</button></div>}
 
       {loading && <div className="ats-pdf-diff__state">Preparing synchronized PDF previews…</div>}
       {error && <div className="ats-pdf-diff__error"><strong>PDF preview could not be loaded.</strong><span>{error}</span>{originalText && <small>The ATS analysis is still available; the PDF preview endpoint needs to return an authenticated PDF.</small>}</div>}
 
       {!loading && original && revised && (
-        <div className="ats-pdf-diff__grid" ref={paneRef}>
+        <div className="ats-pdf-diff__grid" ref={gridRef}>
           {[{ label: "ORIGINAL", pages: leftPages, tone: "removed", ref: leftScrollRef }, { label: "AI REVISED", pages: rightPages, tone: "added", ref: rightScrollRef }].map(({ label, pages, tone, ref }, paneIndex) => (
             <div className="ats-pdf-diff__pane" key={label}>
               <div className="ats-pdf-diff__pane-head"><span className={tone}>{label === "ORIGINAL" ? "−" : "+"}</span><strong>{label}</strong><small>{pages.length} {pages.length === 1 ? "page" : "pages"}</small></div>
