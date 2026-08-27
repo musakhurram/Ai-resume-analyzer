@@ -105,7 +105,7 @@ const Pricing = () => {
   }, [checkoutState, sessionId]);
 
   const handleUpgrade = async (plan) => {
-    if (plan === "free" || plan === billing.plan) return;
+    if (plan === "free") return;
     setError("");
     setLoadingPlan(plan);
     try {
@@ -141,6 +141,7 @@ const Pricing = () => {
       <div className="pricing-grid">
         {PLANS.map((plan) => {
           const isCurrent = billing.plan === plan.id;
+          const isFree = plan.id === "free";
           const isLoading = loadingPlan === plan.id;
           return (
             <article key={plan.id} className={`pricing-card ${plan.popular ? "pricing-card--popular" : ""} ${isCurrent ? "pricing-card--current" : ""}`}>
@@ -162,9 +163,13 @@ const Pricing = () => {
                 type="button"
                 className={`pricing-card__button ${isCurrent ? "pricing-card__button--current" : ""}`}
                 onClick={() => handleUpgrade(plan.id)}
-                disabled={isCurrent || Boolean(loadingPlan) || confirming}
+                disabled={isFree || Boolean(loadingPlan) || confirming}
               >
-                {isCurrent ? "Current Plan" : isLoading ? "Opening checkout…" : plan.cta}
+                {isFree && isCurrent
+                  ? "Current Free Plan"
+                  : isCurrent
+                    ? isLoading ? "Opening checkout…" : `Buy More ${plan.name} Credits`
+                    : isLoading ? "Opening checkout…" : plan.cta}
               </button>
             </article>
           );
