@@ -6,6 +6,7 @@ const navItems = [
   { to: "/analyze/ats-score", alias: ["/analyze/ats-score", "/ats-score", "/ats"], label: "ATS Score Scanner", icon: <svg viewBox="0 0 20 20" fill="none"><path d="M7.5 10.833l1.667 1.667 3.333-3.333" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" /><rect x="3.333" y="3.333" width="13.334" height="13.334" rx="2.5" stroke="currentColor" strokeWidth="1.6" /></svg> },
   { to: "/new", alias: ["/", "/new", "/app", "/review"], label: "JD Match Review", icon: <svg viewBox="0 0 20 20" fill="none"><path d="M10 4.167v11.666M4.167 10h11.666" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" /></svg> },
   { to: "/reports", alias: ["/reports", "/ats/reports", "/reports/"], label: "Past Reviews", icon: <svg viewBox="0 0 20 20" fill="none"><path d="M6.667 3.333H13.333L16.667 6.667V15.833A1.667 1.667 0 0 1 15 17.5H5A1.667 1.667 0 0 1 3.333 15.833V5A1.667 1.667 0 0 1 5 3.333H6.667Z" stroke="currentColor" strokeWidth="1.6" strokeLinejoin="round" /><path d="M7.5 10.833h5M7.5 14.167h5M7.5 7.5h2.5" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" /></svg> },
+  { to: "/pricing", alias: ["/pricing"], label: "Upgrade to Pro", icon: <svg viewBox="0 0 20 20" fill="none"><path d="m10 2.8 1.85 4.65 4.95.35-3.78 3.12 1.2 4.78L10 13.05l-4.22 2.65 1.2-4.78L3.2 7.8l4.95-.35L10 2.8Z" stroke="currentColor" strokeWidth="1.5" strokeLinejoin="round" /></svg> },
 ];
 
 const Sidebar = ({ open, onNavigate, onClose }) => {

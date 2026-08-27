@@ -8,6 +8,7 @@ import Reports from "./features/interview/pages/Reports";
 import ReportDetail from "./features/interview/pages/ReportDetail";
 import AtsAnalyzer from "./features/ats/pages/AtsAnalyzer";
 import AtsReportDetail from "./features/ats/pages/AtsReportDetail";
+import Pricing from "./features/billing/pages/Pricing";
 
 export const router = createBrowserRouter([
   { path: "/login", element: <Login /> },
@@ -26,6 +27,7 @@ export const router = createBrowserRouter([
       { path: "/reports/:id", element: <ReportDetail /> },
       { path: "/ats/reports", element: <Navigate to="/reports" replace /> },
       { path: "/ats/reports/:id", element: <AtsReportDetail /> },
+      { path: "/pricing", element: <Pricing /> },
     ],
   },
   { path: "*", element: <Navigate to="/" replace /> },
