@@ -5,6 +5,7 @@ import FileDropzone from "../../../shared/components/FileDropzone";
 import Button from "../../../shared/components/Button";
 import Callout from "../../../shared/components/Callout";
 import { submitReview } from "../services/interview.api";
+import { getBillingStatus } from "../../billing/services/billing.api";
 import { rememberResumeName } from "../../../shared/utils/resumeLabel";
 import "./NewReview.scss";
 
@@ -112,11 +113,20 @@ const NewReview = () => {
   const [formError, setFormError] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [activeStepIdx, setActiveStepIdx] = useState(0);
+  const [billing, setBilling] = useState({ plan: "free", planLabel: "Free", resumeCredits: 3 });
 
   const wordCount = jobDescription.trim() ? jobDescription.trim().split(/\s+/).length : 0;
-  const canSubmit = jobDescription.trim().length > 0 && resume && !submitting;
+  const credits = Number(billing.resumeCredits) || 0;
+  const canSubmit = jobDescription.trim().length > 0 && resume && credits > 0 && !submitting;
 
-  // Step cycling animation during submission
+  useEffect(() => {
+    let active = true;
+    getBillingStatus()
+      .then((status) => active && setBilling(status))
+      .catch(() => {});
+    return () => { active = false; };
+  }, []);
+
   useEffect(() => {
     if (!submitting) {
       setActiveStepIdx(0);
@@ -137,6 +147,10 @@ const NewReview = () => {
     e?.preventDefault();
     setFormError("");
 
+    if (credits <= 0) {
+      setFormError(`You've used all generations on the ${billing.planLabel || "Free"} plan. Open Plans & Billing to continue.`);
+      return;
+    }
     if (!jobDescription.trim()) {
       setFormError("Add the target job description before running a review.");
       return;
@@ -156,6 +170,8 @@ const NewReview = () => {
       } else {
         navigate("/reports");
       }
+      setBilling((current) => ({ ...current, resumeCredits: Math.max(0, Number(current.resumeCredits || 0) - 1) }));
+      window.dispatchEvent(new Event("billing:updated"));
     } catch (err) {
       setFormError(
         err.response?.data?.message ||
@@ -176,7 +192,6 @@ const NewReview = () => {
 
   return (
     <div className="new-review" onKeyDown={handleKeyDown}>
-      {/* Studio Header */}
       <header className="page-header">
         <div className="glow-pill">
           <span className="glow-pill__dot" />
@@ -196,7 +211,6 @@ const NewReview = () => {
       )}
 
       <form className="new-review__form" onSubmit={handleSubmit}>
-        {/* Section 1: Job Description */}
         <section className="new-review__section glass-panel">
           <div className="new-review__section-head">
             <span className="new-review__badge-step">01</span>
@@ -205,54 +219,26 @@ const NewReview = () => {
               <p>Paste the full job posting—including seniority, responsibilities, and required stack.</p>
             </div>
           </div>
-
-          {/* Preset Buttons */}
           <div className="new-review__presets-bar">
             <span className="new-review__presets-label">Quick Presets:</span>
             <div className="new-review__presets-list">
               {SAMPLE_JDS.map((preset, idx) => (
-                <button
-                  key={idx}
-                  type="button"
-                  className="new-review__preset-btn"
-                  onClick={() => handleApplyPreset(preset.text)}
-                >
+                <button key={idx} type="button" className="new-review__preset-btn" onClick={() => handleApplyPreset(preset.text)}>
                   <span>{preset.title}</span>
                   <span className="new-review__preset-comp">@{preset.company}</span>
                 </button>
               ))}
             </div>
           </div>
-
           <Field htmlFor="jobDescription">
-            <TextArea
-              id="jobDescription"
-              name="jobDescription"
-              placeholder="Paste complete job description requirements here (or select a preset above)…"
-              rows={9}
-              value={jobDescription}
-              onChange={(e) => setJobDescription(e.target.value)}
-              required
-            />
+            <TextArea id="jobDescription" name="jobDescription" placeholder="Paste complete job description requirements here (or select a preset above)…" rows={9} value={jobDescription} onChange={(e) => setJobDescription(e.target.value)} required />
           </Field>
-
           <div className="new-review__field-meta">
-            <span className="new-review__counter">
-              {wordCount} words {wordCount >= 50 ? "· Good detail" : "· Add at least 50 words for a more accurate review"}
-            </span>
-            {jobDescription && (
-              <button
-                type="button"
-                className="new-review__clear-btn"
-                onClick={() => setJobDescription("")}
-              >
-                Clear text
-              </button>
-            )}
+            <span className="new-review__counter">{wordCount} words {wordCount >= 50 ? "· Good detail" : "· Add at least 50 words for a more accurate review"}</span>
+            {jobDescription && <button type="button" className="new-review__clear-btn" onClick={() => setJobDescription("")}>Clear text</button>}
           </div>
         </section>
 
-        {/* Section 2: Resume PDF */}
         <section className="new-review__section glass-panel">
           <div className="new-review__section-head">
             <span className="new-review__badge-step">02</span>
@@ -264,7 +250,6 @@ const NewReview = () => {
           <FileDropzone file={resume} onChange={setResume} error={fileError} onError={setFileError} />
         </section>
 
-        {/* Section 3: About You */}
         <section className="new-review__section glass-panel">
           <div className="new-review__section-head">
             <span className="new-review__badge-step">03</span>
@@ -274,43 +259,23 @@ const NewReview = () => {
             </div>
           </div>
           <Field htmlFor="selfDescription">
-            <TextArea
-              id="selfDescription"
-              name="selfDescription"
-              placeholder="e.g., Transitioning from backend to AI infrastructure; lead with my high-concurrency distributed systems projects..."
-              rows={4}
-              value={selfDescription}
-              onChange={(e) => setSelfDescription(e.target.value)}
-            />
+            <TextArea id="selfDescription" name="selfDescription" placeholder="e.g., Transitioning from backend to AI infrastructure; lead with my high-concurrency distributed systems projects..." rows={4} value={selfDescription} onChange={(e) => setSelfDescription(e.target.value)} />
           </Field>
         </section>
 
-        {/* Actions Bar */}
         <div className="new-review__actions-bar glass-panel">
           <div className="new-review__actions-info">
             <span className="new-review__engine-status">
               <span className="new-review__engine-dot" />
-              {submitting ? (
-                <span className="new-review__synthesis-step">{SYNTHESIS_STEPS[activeStepIdx]}</span>
-              ) : (
-                "Ready to run"
-              )}
+              {submitting ? <span className="new-review__synthesis-step">{SYNTHESIS_STEPS[activeStepIdx]}</span> : `${billing.planLabel || "Free"} · ${credits} generation${credits === 1 ? "" : "s"} remaining`}
             </span>
             <p className="new-review__note">
-              {submitting
-                ? "Analysis in progress — this usually takes about 15 seconds…"
-                : "Tip: Press Ctrl+Enter / ⌘+Enter anytime to run review"}
+              {submitting ? "Analysis in progress — this usually takes about 15 seconds…" : credits > 0 ? "One generation is used each time you run an AI review." : "No generations remaining. Upgrade from Plans & Billing to continue."}
             </p>
           </div>
 
-          <Button
-            type="submit"
-            size="lg"
-            loading={submitting}
-            disabled={!canSubmit}
-            className="new-review__submit-btn"
-          >
-            {submitting ? "Analyzing…" : "Run review"}
+          <Button type="submit" size="lg" loading={submitting} disabled={!canSubmit} className="new-review__submit-btn">
+            {submitting ? "Analyzing…" : credits > 0 ? "Run review" : "No generations left"}
           </Button>
         </div>
       </form>
@@ -319,5 +284,3 @@ const NewReview = () => {
 };
 
 export default NewReview;
-
-
