@@ -15,7 +15,7 @@ export const router = createBrowserRouter([
   {
     element: <Protected><AppShell /></Protected>,
     children: [
-      { path: "/", element: <NewReview /> },
+      { path: "/", element: <Navigate to="/analyze/ats-score" replace /> },
       { path: "/new", element: <NewReview /> },
       { path: "/app", element: <NewReview /> },
       { path: "/review", element: <NewReview /> },
