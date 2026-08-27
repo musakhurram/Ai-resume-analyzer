@@ -137,6 +137,8 @@ function renderAtsHtmlTemplate(resume) {
       -webkit-print-color-adjust: exact;
       print-color-adjust: exact;
       hyphens: manual;
+      overflow-wrap: break-word;
+      word-break: break-word;
     }
     a {
       color: #1a1a1a;
@@ -193,28 +195,44 @@ function renderAtsHtmlTemplate(resume) {
     .item:last-child {
       margin-bottom: 0;
     }
+    /* Two-column "title left / date right" rows deliberately use CSS table
+       layout instead of flexbox. Chromium's print/PDF pipeline has a known
+       flexbox min-content bug: a flex child that contains a nested inline
+       element (our .item-role span) can refuse to shrink/wrap during
+       pagination and instead overflow straight past the printable area,
+       getting physically clipped at the page edge rather than wrapping.
+       display:table + a "width:1%" shrink-to-fit date cell has no such
+       ambiguity in any rendering engine and is the standard safe pattern
+       for this layout in generated PDFs. */
     .item-header {
-      display: flex;
-      justify-content: space-between;
-      align-items: baseline;
-      gap: 8pt;
+      display: table;
+      width: 100%;
+      table-layout: auto;
       margin-bottom: calc(1pt * var(--s));
     }
     .item-title-group {
+      display: table-cell;
       font-weight: 700;
       font-size: calc(10.2pt * var(--s));
       color: #0f172a;
+      overflow-wrap: break-word;
+      word-break: break-word;
+      vertical-align: baseline;
     }
     .item-role {
       font-weight: 600;
       color: #334155;
     }
     .item-date {
+      display: table-cell;
+      width: 1%;
       font-size: calc(9.3pt * var(--s));
       font-weight: 600;
       color: #475569;
       white-space: nowrap;
-      flex-shrink: 0;
+      text-align: right;
+      padding-left: 8pt;
+      vertical-align: baseline;
     }
     .item-location {
       font-size: calc(8.9pt * var(--s));
@@ -457,12 +475,22 @@ const mmToPx = (mm) => mm * PX_PER_MM;
 // second page (better than illegibly small text).
 const MARGIN_STEPS_MM = [15, 13, 11, 10];
 const MIN_FONT_SCALE = 0.72;
+// Light resumes (few entries, students/early-career) are scaled UP toward
+// this ceiling instead of being left tiny in the top third of the page with
+// a wall of dead white space below.
+const MAX_FONT_SCALE = 1.18;
+// Only grow the layout if the un-scaled content leaves at least this much of
+// the printable height empty — a near-full page is left alone rather than
+// being stretched for a marginal gain.
+const GROW_TRIGGER_RATIO = 0.82;
 const MAX_FIT_ATTEMPTS = 8;
 
 /**
  * Sets the viewport to the printable content area for a given margin, then
- * iteratively shrinks --s until the rendered content fits within one
- * printable page height (or the scale floor is hit).
+ * adjusts --s so the rendered content uses the printable page height as
+ * fully as possible: shrinking oversized resumes down to MIN_FONT_SCALE so
+ * everything still fits on one page, and growing light/short resumes up to
+ * MAX_FONT_SCALE so they don't look sparse with a mostly-empty page.
  */
 async function fitToOnePage(page, marginMm) {
   const printableWidthPx = PAGE_WIDTH_IN * PX_PER_IN - 2 * mmToPx(marginMm);
@@ -470,31 +498,59 @@ async function fitToOnePage(page, marginMm) {
 
   await page.setViewport({
     width: Math.round(printableWidthPx),
-    height: Math.round(printableHeightPx) + 400, // headroom so nothing clips during measurement
+    // Generous headroom so nothing clips during measurement even if the
+    // content would otherwise span more than one printable page.
+    height: Math.round(printableHeightPx) * 2,
   });
 
+  const setScale = (s) =>
+    page.evaluate((val) => {
+      document.documentElement.style.setProperty("--s", String(val));
+    }, s);
+  const measure = () => page.evaluate(() => document.documentElement.scrollHeight);
+
   let scale = 1;
-  await page.evaluate((s) => {
-    document.documentElement.style.setProperty("--s", String(s));
-  }, scale);
+  await setScale(scale);
+  let contentHeight = await measure();
 
-  let contentHeight = await page.evaluate(() => document.documentElement.scrollHeight);
-
-  let attempts = 0;
-  while (
-    contentHeight > printableHeightPx &&
-    scale > MIN_FONT_SCALE &&
-    attempts < MAX_FIT_ATTEMPTS
-  ) {
-    const ratio = printableHeightPx / contentHeight;
-    // Small safety buffer (0.985) so the search converges from above rather
-    // than oscillating just over the limit due to sub-pixel layout rounding.
-    scale = Math.max(MIN_FONT_SCALE, scale * ratio * 0.985);
-    await page.evaluate((s) => {
-      document.documentElement.style.setProperty("--s", String(s));
-    }, scale);
-    contentHeight = await page.evaluate(() => document.documentElement.scrollHeight);
-    attempts += 1;
+  if (contentHeight > printableHeightPx) {
+    // Shrink to fit.
+    let attempts = 0;
+    while (
+      contentHeight > printableHeightPx &&
+      scale > MIN_FONT_SCALE &&
+      attempts < MAX_FIT_ATTEMPTS
+    ) {
+      const ratio = printableHeightPx / contentHeight;
+      // Small safety buffer (0.985) so the search converges from above
+      // rather than oscillating just over the limit from rounding.
+      scale = Math.max(MIN_FONT_SCALE, scale * ratio * 0.985);
+      await setScale(scale);
+      contentHeight = await measure();
+      attempts += 1;
+    }
+  } else if (contentHeight < printableHeightPx * GROW_TRIGGER_RATIO) {
+    // Grow to fill the page for light resumes, without overshooting onto a
+    // second page.
+    let attempts = 0;
+    let lastGoodScale = scale;
+    while (scale < MAX_FONT_SCALE && attempts < MAX_FIT_ATTEMPTS) {
+      const ratio = printableHeightPx / contentHeight;
+      const nextScale = Math.min(MAX_FONT_SCALE, scale * ratio * 0.97);
+      if (nextScale <= scale) break;
+      await setScale(nextScale);
+      const nextHeight = await measure();
+      if (nextHeight > printableHeightPx) {
+        // Overshot onto a second page — back off and stop.
+        await setScale(lastGoodScale);
+        contentHeight = await measure();
+        break;
+      }
+      scale = nextScale;
+      contentHeight = nextHeight;
+      lastGoodScale = scale;
+      attempts += 1;
+    }
   }
 
   return { fits: contentHeight <= printableHeightPx, scale, contentHeight, printableHeightPx };
