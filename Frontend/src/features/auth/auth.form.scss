@@ -34,7 +34,6 @@
   &__options {
     display: flex;
     align-items: center;
-    justify-content: space-between;
     margin-top: -0.35rem;
     font-size: 0.8125rem;
   }
@@ -42,31 +41,18 @@
   &__checkbox-label {
     display: inline-flex;
     align-items: center;
-    gap: 0.7rem;
-    padding: 0.45rem 0.65rem 0.45rem 0.45rem;
-    margin-left: -0.45rem;
-    border: 1px solid transparent;
-    border-radius: var(--radius-sm);
+    gap: 0.5rem;
     color: var(--ink-secondary);
     cursor: pointer;
     user-select: none;
-    transition:
-      color var(--duration-fast) var(--ease),
-      background-color var(--duration-fast) var(--ease),
-      border-color var(--duration-fast) var(--ease),
-      box-shadow var(--duration-fast) var(--ease);
+    transition: color var(--duration-fast) var(--ease);
 
     &:hover {
       color: var(--ink);
-      background: var(--surface-2);
-      border-color: var(--border);
     }
 
     &:focus-within {
       color: var(--ink);
-      background: var(--surface-2);
-      border-color: var(--border-strong);
-      box-shadow: 0 0 0 3px rgba(66, 133, 244, 0.08);
     }
   }
 
@@ -75,57 +61,39 @@
     -webkit-appearance: none;
     position: relative;
     flex: 0 0 auto;
-    width: 19px;
-    height: 19px;
+    width: 16px;
+    height: 16px;
     margin: 0;
-    border-radius: 6px;
     border: 1px solid var(--border-strong);
+    border-radius: 4px;
     background: var(--surface-1);
-    box-shadow:
-      0 1px 2px rgba(0, 0, 0, 0.06),
-      inset 0 0 0 1px rgba(255, 255, 255, 0.45);
     cursor: pointer;
     display: grid;
     place-content: center;
-    transition:
-      background-color var(--duration-fast) var(--ease),
-      border-color var(--duration-fast) var(--ease),
-      box-shadow var(--duration-fast) var(--ease),
-      transform var(--duration-fast) var(--ease);
+    transition: background-color var(--duration-fast) var(--ease), border-color var(--duration-fast) var(--ease), box-shadow var(--duration-fast) var(--ease);
 
     &::after {
       content: "";
-      width: 8px;
-      height: 4px;
-      border-left: 2px solid #fff;
-      border-bottom: 2px solid #fff;
+      width: 7px;
+      height: 3.5px;
+      border-left: 1.5px solid #fff;
+      border-bottom: 1.5px solid #fff;
       transform: rotate(-45deg) scale(0);
-      transform-origin: center;
       transition: transform var(--duration-fast) var(--ease);
     }
 
     &:hover {
       border-color: var(--accent);
-      box-shadow:
-        0 2px 6px rgba(0, 0, 0, 0.1),
-        0 0 0 3px rgba(66, 133, 244, 0.08);
     }
 
     &:focus-visible {
-      outline: 3px solid rgba(66, 133, 244, 0.16);
+      outline: 2px solid rgba(66, 133, 244, 0.2);
       outline-offset: 2px;
-    }
-
-    &:active {
-      transform: scale(0.93);
     }
 
     &:checked {
       background: var(--accent);
       border-color: var(--accent);
-      box-shadow:
-        0 2px 6px rgba(0, 0, 0, 0.12),
-        0 0 0 2px rgba(66, 133, 244, 0.08);
 
       &::after {
         transform: rotate(-45deg) scale(1);
@@ -136,26 +104,6 @@
       cursor: not-allowed;
       opacity: 0.55;
     }
-  }
-
-  &__checkbox-text {
-    display: flex;
-    flex-direction: column;
-    gap: 0.12rem;
-    line-height: 1.2;
-  }
-
-  &__checkbox-title {
-    font-size: 0.8125rem;
-    font-weight: 600;
-    letter-spacing: -0.005em;
-    color: inherit;
-  }
-
-  &__checkbox-hint {
-    font-size: 0.6875rem;
-    color: var(--ink-faint);
-    line-height: 1.2;
   }
 
   // Password strength meter
