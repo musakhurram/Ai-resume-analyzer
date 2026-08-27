@@ -1,30 +1,22 @@
 const userModel = require("../models/user.model");
 
-// Plan limits are intentionally server-side so changing frontend values cannot
-// grant additional AI generations. Environment overrides use NEW variable names
-// so an older STRIPE_PRO_CREDITS value cannot silently change the new plans.
-const PRO_GENERATIONS = Number(process.env.STRIPE_PRO_GENERATIONS) || 20;
-const PREMIUM_GENERATIONS = Number(process.env.STRIPE_PREMIUM_GENERATIONS) || 50;
+// Resume Analyzer app-level AI tokens. These are usage units owned by the app,
+// not raw tokenizer units reported by an AI provider.
+const PRO_TOKENS = Number(process.env.STRIPE_PRO_TOKENS) || 25000;
+const PREMIUM_TOKENS = Number(process.env.STRIPE_PREMIUM_TOKENS) || 75000;
+
+const TOKEN_COSTS = {
+  atsAnalysis: 500,
+  jdMatch: 750,
+  resumeOptimization: 2000,
+  atsResumeGeneration: 2500,
+  interviewPreparation: 1000,
+};
 
 const PLAN_CONFIG = {
-  free: {
-    label: "Free",
-    creditsPerPurchase: 3,
-    generations: 3,
-    description: "3 AI generations to try the complete workflow",
-  },
-  pro: {
-    label: "Pro",
-    creditsPerPurchase: PRO_GENERATIONS,
-    generations: PRO_GENERATIONS,
-    description: `${PRO_GENERATIONS} AI generations for regular job searching`,
-  },
-  premium: {
-    label: "Premium",
-    creditsPerPurchase: PREMIUM_GENERATIONS,
-    generations: PREMIUM_GENERATIONS,
-    description: `${PREMIUM_GENERATIONS} AI generations for intensive applications`,
-  },
+  free: { label: "Free", tokensPerPurchase: 3000, tokens: 3000, description: "3,000 AI tokens to explore Resume Analyzer" },
+  pro: { label: "Pro", tokensPerPurchase: PRO_TOKENS, tokens: PRO_TOKENS, description: `${PRO_TOKENS.toLocaleString()} AI tokens for regular job searching` },
+  premium: { label: "Premium", tokensPerPurchase: PREMIUM_TOKENS, tokens: PREMIUM_TOKENS, description: `${PREMIUM_TOKENS.toLocaleString()} AI tokens for intensive applications` },
 };
 
 function normalizePlan(plan) {
@@ -35,95 +27,87 @@ function getPlanConfig(plan) {
   return PLAN_CONFIG[normalizePlan(plan)];
 }
 
-async function ensureFreeCredits(userId) {
-  // Existing accounts created before the 3-generation Free plan have no
-  // freeCreditsGranted field. Give them the new allowance exactly once.
-  return userModel.findOneAndUpdate(
-    {
-      _id: userId,
-      plan: "free",
-      $or: [
-        { freeCreditsGranted: { $exists: false } },
-        { freeCreditsGranted: false },
-      ],
-    },
-    {
-      $set: { resumeCredits: 3, freeCreditsGranted: true },
-    },
-    { new: true, projection: { plan: 1, resumeCredits: 1 } },
-  );
+async function ensureTokenBalance(userId) {
+  const user = await userModel.findById(userId).select("plan aiTokens resumeCredits freeTokensGranted");
+  if (!user) return null;
+
+  // Migrate old credit balances once. One old credit maps to 1,000 app tokens.
+  if (user.aiTokens === undefined || user.aiTokens === null) {
+    const legacyCredits = Number(user.resumeCredits);
+    user.aiTokens = Number.isFinite(legacyCredits)
+      ? Math.max(0, Math.floor(legacyCredits * 1000))
+      : user.plan === "free" ? PLAN_CONFIG.free.tokens : 0;
+    user.freeTokensGranted = user.plan === "free";
+    await user.save();
+  }
+  return user;
 }
 
-async function consumeResumeCredit(userId) {
+async function consumeAiTokens(userId, operation, customCost) {
   if (!userId) {
-    const error = new Error("Authentication is required to use AI resume generations");
+    const error = new Error("Authentication is required to use AI features");
     error.statusCode = 401;
     throw error;
   }
 
-  await ensureFreeCredits(userId);
+  const cost = Number(customCost || TOKEN_COSTS[operation]);
+  if (!Number.isInteger(cost) || cost <= 0) {
+    const error = new Error("Invalid AI token cost");
+    error.statusCode = 500;
+    throw error;
+  }
 
+  await ensureTokenBalance(userId);
   const user = await userModel.findOneAndUpdate(
-    { _id: userId, resumeCredits: { $gt: 0 } },
-    { $inc: { resumeCredits: -1 } },
-    { new: true, projection: { plan: 1, resumeCredits: 1 } },
+    { _id: userId, aiTokens: { $gte: cost } },
+    { $inc: { aiTokens: -cost } },
+    { new: true, projection: { plan: 1, aiTokens: 1 } },
   );
 
   if (!user) {
-    const existingUser = await userModel.findById(userId).select("plan resumeCredits");
+    const existingUser = await userModel.findById(userId).select("plan aiTokens");
     if (!existingUser) {
       const error = new Error("User not found");
       error.statusCode = 404;
       throw error;
     }
-
-    const plan = normalizePlan(existingUser.plan);
-    const error = new Error(
-      plan === "free"
-        ? "You have used all 3 free AI generations. Upgrade to Pro or Premium to continue."
-        : `You have no AI generations remaining on the ${getPlanConfig(plan).label} plan. Purchase another plan pack to continue.`,
-    );
+    const available = Number(existingUser.aiTokens) || 0;
+    const error = new Error(`Not enough AI tokens. This feature needs ${cost.toLocaleString()} tokens, but you have ${available.toLocaleString()} remaining. Upgrade or purchase more tokens to continue.`);
     error.statusCode = 402;
-    error.code = "INSUFFICIENT_CREDITS";
-    error.plan = plan;
-    error.resumeCredits = Number(existingUser.resumeCredits) || 0;
+    error.code = "INSUFFICIENT_AI_TOKENS";
+    error.plan = normalizePlan(existingUser.plan);
+    error.aiTokens = available;
+    error.requiredTokens = cost;
     throw error;
   }
 
-  return user;
+  return { plan: normalizePlan(user.plan), aiTokens: Number(user.aiTokens) || 0, cost };
 }
 
-async function refundResumeCredit(userId) {
-  if (!userId) return null;
-  return userModel.findByIdAndUpdate(
-    userId,
-    { $inc: { resumeCredits: 1 } },
-    { new: true, projection: { plan: 1, resumeCredits: 1 } },
-  );
+async function refundAiTokens(userId, operation, customCost) {
+  const cost = Number(customCost || TOKEN_COSTS[operation]);
+  if (!userId || !Number.isInteger(cost) || cost <= 0) return null;
+  return userModel.findByIdAndUpdate(userId, { $inc: { aiTokens: cost } }, { new: true, projection: { plan: 1, aiTokens: 1 } });
 }
+
+// Compatibility aliases for controllers not yet migrated to named token costs.
+const consumeResumeCredit = (userId) => consumeAiTokens(userId, "interviewPreparation");
+const refundResumeCredit = (userId) => refundAiTokens(userId, "interviewPreparation");
 
 async function getBillingSnapshot(userId) {
-  let user = await ensureFreeCredits(userId);
-  if (!user) user = await userModel.findById(userId).select("plan resumeCredits");
+  const user = await ensureTokenBalance(userId);
   if (!user) return null;
-
   const plan = normalizePlan(user.plan);
   const config = getPlanConfig(plan);
   return {
     plan,
     planLabel: config.label,
-    resumeCredits: Number(user.resumeCredits) || 0,
-    creditsPerPurchase: config.creditsPerPurchase,
-    generations: config.generations,
+    aiTokens: Number(user.aiTokens) || 0,
+    tokensPerPurchase: config.tokensPerPurchase,
+    planTokens: config.tokens,
     description: config.description,
+    tokenCosts: TOKEN_COSTS,
   };
 }
 
-module.exports = {
-  PLAN_CONFIG,
-  normalizePlan,
-  getPlanConfig,
-  consumeResumeCredit,
-  refundResumeCredit,
-  getBillingSnapshot,
-};
+module.exports = { PLAN_CONFIG, TOKEN_COSTS, normalizePlan, getPlanConfig, consumeAiTokens, refundAiTokens, getBillingSnapshot, consumeResumeCredit, refundResumeCredit };
