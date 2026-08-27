@@ -19,10 +19,6 @@ function getPlanConfig(plan) {
   return PLAN_CONFIG[normalizePlan(plan)];
 }
 
-/**
- * Atomically consumes one AI resume credit. Keeping the decrement on the
- * server prevents users from bypassing limits by changing frontend state.
- */
 async function consumeResumeCredit(userId) {
   if (!userId) {
     const error = new Error("Authentication is required to use AI resume credits");
@@ -31,17 +27,9 @@ async function consumeResumeCredit(userId) {
   }
 
   const user = await userModel.findOneAndUpdate(
-    {
-      _id: userId,
-      resumeCredits: { $gt: 0 },
-    },
-    {
-      $inc: { resumeCredits: -1 },
-    },
-    {
-      new: true,
-      projection: { plan: 1, resumeCredits: 1 },
-    },
+    { _id: userId, resumeCredits: { $gt: 0 } },
+    { $inc: { resumeCredits: -1 } },
+    { new: true, projection: { plan: 1, resumeCredits: 1 } },
   );
 
   if (!user) {
@@ -68,11 +56,6 @@ async function consumeResumeCredit(userId) {
   return user;
 }
 
-/**
- * Refund a reserved credit when an AI operation fails before a successful
- * response. The increment is bounded at zero and never creates credits for
- * a missing user.
- */
 async function refundResumeCredit(userId) {
   if (!userId) return null;
   return userModel.findByIdAndUpdate(
@@ -91,6 +74,7 @@ async function getBillingSnapshot(userId) {
     plan,
     planLabel: config.label,
     resumeCredits: Number(user.resumeCredits) || 0,
+    creditsPerPurchase: config.creditsPerPurchase,
   };
 }
 
