@@ -9,6 +9,7 @@ const {
 } = require("../services/atsAi.service");
 const { normalizeAnalysis } = require("../services/atsScoring.service");
 const { generateAtsPdfBuffer } = require("../services/atsPdf.service");
+const { consumeResumeCredit, refundResumeCredit } = require("../services/credit.service");
 const atsReportModel = require("../models/atsReport.model");
 
 function getAuthenticatedUserId(req) {
@@ -33,11 +34,6 @@ const SECTION_LABELS = {
   atsCompatibility: "ATS Compatibility",
 };
 
-/**
- * Build a targeted optimization plan from the actual weakest scoring areas.
- * Experience is deliberately prioritized because it carries the largest
- * non-parser weight in the scoring model.
- */
 function buildTargetedOptimization(originalAnalysis, requestedSections = "all") {
   const requested = String(requestedSections || "all").toLowerCase();
   const allowed = Object.keys(SECTION_LABELS).filter((key) => key !== "atsCompatibility");
@@ -55,8 +51,6 @@ function buildTargetedOptimization(originalAnalysis, requestedSections = "all") 
     }))
     .sort((a, b) => a.score - b.score);
 
-  // Only aggressively rewrite sections that actually need work. Keeping strong
-  // sections out of the rewrite reduces the chance of accidental regressions.
   const weak = ranked.filter((item) => item.score < 90).slice(0, 3);
   const targets = weak.length ? weak : ranked.slice(0, 2);
   const targetSections = targets.map((item) => item.section);
@@ -102,8 +96,6 @@ async function optimizeRevision({ originalText, originalAnalysis, suggestions, s
   const targeted = buildTargetedOptimization(originalAnalysis, sections);
   const combinedSuggestions = [...targeted.suggestions, ...(suggestions || []).slice(0, 4)];
 
-  // Pass 1: rewrite only the weakest sections rather than broadly rewriting
-  // the entire resume. This protects already-strong sections from regressions.
   let bestResume = await reviseResumeForAts({
     resumeText: originalText,
     suggestions: combinedSuggestions,
@@ -115,8 +107,6 @@ async function optimizeRevision({ originalText, originalAnalysis, suggestions, s
     resumeText: resumeJsonToText(bestResume),
   }));
 
-  // Pass 2: if the generated resume does not beat the original, give the model
-  // the exact regression data and focus it on the lowest-scoring areas.
   if (bestAnalysis.overallScore <= originalAnalysis.overallScore) {
     const qaFeedback = buildRevisionQaFeedback(bestAnalysis);
     const retryResume = await reviseResumeForAts({
@@ -142,7 +132,12 @@ async function optimizeRevision({ originalText, originalAnalysis, suggestions, s
 }
 
 async function atsAnalyzeController(req, res, next) {
+  const userId = getAuthenticatedUserId(req);
+  let creditReserved = false;
+
   try {
+    if (!userId) return res.status(401).json({ message: "Please sign in to use AI resume analysis." });
+
     let resumeContent = "";
     let fileName = req.file?.originalname || "resume.pdf";
     if (req.file?.buffer) {
@@ -158,12 +153,15 @@ async function atsAnalyzeController(req, res, next) {
     }
     if (!resumeContent.trim()) return res.status(400).json({ message: "Please upload a resume PDF or paste your resume text to analyze." });
 
+    await consumeResumeCredit(userId);
+    creditReserved = true;
+
     const rawAnalysis = await analyzeResumeForAts({ resumeText: resumeContent });
     const analysisResult = normalizeAnalysis(rawAnalysis);
     const requestedCategory = String(req.body.category || "general").toLowerCase();
     const category = ["general", "job-targeted", "optimized"].includes(requestedCategory) ? requestedCategory : "general";
     const atsReport = await atsReportModel.create({
-      user: getAuthenticatedUserId(req),
+      user: userId,
       rawResumeText: resumeContent,
       resumeFileName: fileName,
       title: String(req.body.title || getDefaultTitle(fileName, analysisResult)).trim(),
@@ -171,20 +169,27 @@ async function atsAnalyzeController(req, res, next) {
       analysis: analysisResult,
       revisedResume: null,
     });
+
+    creditReserved = false;
     return res.status(201).json({ message: "Resume analyzed successfully for ATS compatibility", id: atsReport._id, atsReport });
   } catch (error) {
+    if (creditReserved) await refundResumeCredit(userId).catch(() => {});
     next(error);
   }
 }
 
 async function atsReviseController(req, res, next) {
+  const userId = getAuthenticatedUserId(req);
+  let creditReserved = false;
+
   try {
+    if (!userId) return res.status(401).json({ message: "Please sign in to use AI resume optimization." });
+
     const { id, sections = "all", customNotes = "" } = req.body;
     if (!id) return res.status(400).json({ message: "Analysis session ID is required for revision." });
     const report = await atsReportModel.findById(id);
     if (!report) return res.status(404).json({ message: "Analysis session not found. Please re-run the ATS analysis." });
-    const userId = getAuthenticatedUserId(req);
-    if (userId && report.user && String(report.user) !== String(userId)) return res.status(403).json({ message: "You do not have access to this ATS report." });
+    if (report.user && String(report.user) !== String(userId)) return res.status(403).json({ message: "You do not have access to this ATS report." });
 
     const suggestions = [];
     if (report.analysis?.topSuggestions?.length) suggestions.push(...report.analysis.topSuggestions);
@@ -193,6 +198,9 @@ async function atsReviseController(req, res, next) {
     }
     if (customNotes) suggestions.push({ section: "User Request", suggestion: customNotes, reasoning: "User custom focus instruction" });
 
+    await consumeResumeCredit(userId);
+    creditReserved = true;
+
     const optimized = await optimizeRevision({
       originalText: report.rawResumeText,
       originalAnalysis: report.analysis,
@@ -200,14 +208,16 @@ async function atsReviseController(req, res, next) {
       sections,
     });
 
+    const previousScore = Number(report.analysis?.overallScore) || 0;
     report.revisedResume = optimized.resume;
     report.category = "optimized";
     await report.save();
     generateAtsPdfBuffer(optimized.resume, String(report._id)).catch((err) => console.warn("Background PDF cache warming notice:", err.message));
 
+    creditReserved = false;
     return res.status(200).json({
-      message: optimized.analysis.overallScore > report.analysis.overallScore
-        ? `Resume revised successfully — QA score improved from ${report.analysis.overallScore} to ${optimized.analysis.overallScore}`
+      message: optimized.analysis.overallScore > previousScore
+        ? `Resume revised successfully — QA score improved from ${previousScore} to ${optimized.analysis.overallScore}`
         : "Resume revised successfully with targeted optimization; the best generated version was retained",
       id: report._id,
       revisedResume: optimized.resume,
@@ -215,18 +225,26 @@ async function atsReviseController(req, res, next) {
       atsReport: report,
     });
   } catch (error) {
+    if (creditReserved) await refundResumeCredit(userId).catch(() => {});
     next(error);
   }
 }
 
 async function atsDownloadController(req, res, next) {
+  const userId = getAuthenticatedUserId(req);
+  let creditReserved = false;
+
   try {
+    if (!userId) return res.status(401).json({ message: "Please sign in to download an ATS resume." });
+
     const report = await atsReportModel.findById(req.params.id);
     if (!report) return res.status(404).json({ message: "Resume report not found." });
-    const userId = getAuthenticatedUserId(req);
-    if (userId && report.user && String(report.user) !== String(userId)) return res.status(403).json({ message: "You do not have access to this ATS report." });
+    if (report.user && String(report.user) !== String(userId)) return res.status(403).json({ message: "You do not have access to this ATS report." });
     let revisedResume = report.revisedResume;
     if (!revisedResume) {
+      await consumeResumeCredit(userId);
+      creditReserved = true;
+
       const optimized = await optimizeRevision({
         originalText: report.rawResumeText,
         originalAnalysis: report.analysis,
@@ -242,8 +260,10 @@ async function atsDownloadController(req, res, next) {
     const safeName = (revisedResume.contact?.fullName || "ATS-Optimized-Resume").replace(/[^a-zA-Z0-9_-]/g, "_");
     res.setHeader("Content-Type", "application/pdf");
     res.setHeader("Content-Disposition", `attachment; filename="${safeName}_ATS_Resume.pdf"`);
+    creditReserved = false;
     return res.status(200).send(pdfBuffer);
   } catch (error) {
+    if (creditReserved) await refundResumeCredit(userId).catch(() => {});
     next(error);
   }
 }
@@ -253,7 +273,8 @@ async function getAtsReportByIdController(req, res, next) {
     const report = await atsReportModel.findById(req.params.id);
     if (!report) return res.status(404).json({ message: "ATS report not found" });
     const userId = getAuthenticatedUserId(req);
-    if (userId && report.user && String(report.user) !== String(userId)) return res.status(403).json({ message: "You do not have access to this ATS report." });
+    if (!userId) return res.status(401).json({ message: "Authentication is required to view ATS reports." });
+    if (report.user && String(report.user) !== String(userId)) return res.status(403).json({ message: "You do not have access to this ATS report." });
     return res.status(200).json({ message: "ATS report fetched successfully", atsReport: report });
   } catch (error) {
     next(error);
