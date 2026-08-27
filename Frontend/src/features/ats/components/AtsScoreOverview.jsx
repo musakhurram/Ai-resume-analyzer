@@ -45,7 +45,7 @@ const AtsScoreOverview = ({ analysis, fileName, onFixClick, hasRevised }) => {
 
           <div className="ats-score-overview__chips">
             <div className="ats-score-overview__chip">
-              <span className="ats-score-overview__chip-label">ATS Friendly Score:</span>
+              <span className="ats-score-overview__chip-label">ATS Friendly:</span>
               <span className="ats-score-overview__chip-val">{atsFriendlyScore}/100</span>
             </div>
             <div className="ats-score-overview__chip">
