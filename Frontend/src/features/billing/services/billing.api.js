@@ -1,7 +1,7 @@
 import api from "../../../shared/api/client";
 
-export async function createCheckoutSession() {
-  const response = await api.post("/api/stripe/create-checkout-session");
+export async function createCheckoutSession(plan) {
+  const response = await api.post("/api/stripe/create-checkout-session", { plan });
   return response.data;
 }
 
