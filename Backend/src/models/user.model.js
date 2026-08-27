@@ -39,20 +39,24 @@ const userSchema = new mongoose.Schema(
     },
     plan: {
       type: String,
-      enum: ["free", "pro"],
+      enum: ["free", "pro", "premium"],
       default: "free",
     },
+    // Each AI operation consumes one generation/credit.
+    // New accounts start with the 3 free generations included in the Free plan.
     resumeCredits: {
       type: Number,
-      default: 0,
+      default: 3,
       min: 0,
+    },
+    freeCreditsGranted: {
+      type: Boolean,
+      default: true,
     },
     lastStripeCheckoutSessionId: {
       type: String,
       default: null,
     },
-    // Keep every processed Checkout Session ID so an old webhook replay
-    // cannot grant the same purchase twice after a later purchase occurred.
     processedStripeCheckoutSessionIds: {
       type: [String],
       default: [],
