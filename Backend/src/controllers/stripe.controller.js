@@ -1,9 +1,11 @@
 const crypto = require("crypto");
 const userModel = require("../models/user.model");
 const env = require("../config/env");
+const { getBillingSnapshot, normalizePlan, getPlanConfig } = require("../services/credit.service");
 
 const PRO_CREDITS = Number(process.env.STRIPE_PRO_CREDITS) || 10;
 const PRO_PRICE_CENTS = Number(process.env.STRIPE_PRO_PRICE_CENTS) || 999;
+const PRO_PLAN = "pro";
 
 function getClientUrl() {
   return String(env.CLIENT_URL || "http://localhost:5173").split(",")[0].trim().replace(/\/$/, "");
@@ -41,38 +43,60 @@ async function stripeRequest(path, params = {}, method = "POST") {
 }
 
 async function creditCompletedCheckout(session) {
-  if (!session || session.payment_status !== "paid") {
+  if (!session || session.mode !== "payment" || session.payment_status !== "paid") {
     return { credited: false, reason: "Payment has not been completed" };
   }
 
   const userId = session.metadata?.userId;
-  const credits = Number(session.metadata?.credits) || PRO_CREDITS;
+  const plan = normalizePlan(session.metadata?.plan || PRO_PLAN);
+  const credits = Number(session.metadata?.credits) || getPlanConfig(plan).creditsPerPurchase;
 
   if (!userId) {
     return { credited: false, reason: "Checkout session has no user metadata" };
   }
 
-  const user = await userModel.findById(userId);
+  if (plan !== PRO_PLAN || credits <= 0) {
+    return { credited: false, reason: "Checkout session contains an invalid plan" };
+  }
+
+  // Atomic idempotency: webhook delivery and success-page confirmation can
+  // arrive at the same time, but only one may consume this session.
+  const user = await userModel.findOneAndUpdate(
+    {
+      _id: userId,
+      $or: [
+        { lastStripeCheckoutSessionId: { $exists: false } },
+        { lastStripeCheckoutSessionId: null },
+        { lastStripeCheckoutSessionId: { $ne: session.id } },
+      ],
+    },
+    {
+      $set: {
+        plan,
+        lastStripeCheckoutSessionId: session.id,
+      },
+      $inc: { resumeCredits: credits },
+    },
+    { new: true, projection: { plan: 1, resumeCredits: 1 } },
+  );
+
   if (!user) {
-    return { credited: false, reason: "User not found" };
+    const existingUser = await userModel.findById(userId).select("plan resumeCredits lastStripeCheckoutSessionId");
+    if (!existingUser) return { credited: false, reason: "User not found" };
+
+    return {
+      credited: false,
+      alreadyCredited: existingUser.lastStripeCheckoutSessionId === session.id,
+      resumeCredits: Number(existingUser.resumeCredits) || 0,
+    };
   }
 
-  // Webhooks and the success-page confirmation may both run, so credit once.
-  if (user.lastStripeCheckoutSessionId === session.id) {
-    return { credited: false, alreadyCredited: true, resumeCredits: Number(user.resumeCredits) || 0 };
-  }
-
-  user.plan = "pro";
-  user.resumeCredits = (Number(user.resumeCredits) || 0) + credits;
-  user.lastStripeCheckoutSessionId = session.id;
-  await user.save();
-
-  return { credited: true, resumeCredits: user.resumeCredits };
+  return { credited: true, resumeCredits: Number(user.resumeCredits) || 0 };
 }
 
 async function createCheckoutSessionController(req, res, next) {
   try {
-    const user = await userModel.findById(req.user.id);
+    const user = await userModel.findById(req.user.id).select("_id plan resumeCredits");
     if (!user) return res.status(404).json({ message: "User not found" });
 
     const clientUrl = getClientUrl();
@@ -84,12 +108,19 @@ async function createCheckoutSessionController(req, res, next) {
       "line_items[0][price_data][product_data][description]": `${PRO_CREDITS} additional AI resume analysis credits`,
       "line_items[0][quantity]": "1",
       "metadata[userId]": String(user._id),
+      "metadata[plan]": PRO_PLAN,
       "metadata[credits]": String(PRO_CREDITS),
       success_url: `${clientUrl}/pricing?checkout=success&session_id={CHECKOUT_SESSION_ID}`,
       cancel_url: `${clientUrl}/pricing?checkout=cancelled`,
     });
 
-    return res.status(200).json({ url: session.url, sessionId: session.id });
+    return res.status(200).json({
+      url: session.url,
+      sessionId: session.id,
+      plan: PRO_PLAN,
+      credits: PRO_CREDITS,
+      currentCredits: Number(user.resumeCredits) || 0,
+    });
   } catch (err) {
     next(err);
   }
@@ -144,19 +175,19 @@ async function confirmCheckoutSessionController(req, res, next) {
     const session = await stripeRequest(`checkout/sessions/${encodeURIComponent(sessionId)}`, {}, "GET");
     const sessionUserId = session.metadata?.userId;
 
-    // Never allow one logged-in user to confirm another user's checkout.
     if (!sessionUserId || String(sessionUserId) !== String(req.user.id)) {
       return res.status(403).json({ message: "Checkout session does not belong to this user" });
     }
 
     const result = await creditCompletedCheckout(session);
-    const user = await userModel.findById(req.user.id).select("plan resumeCredits");
+    const billing = await getBillingSnapshot(req.user.id);
 
     return res.status(200).json({
       confirmed: session.payment_status === "paid",
       credited: result.credited || result.alreadyCredited === true,
-      plan: user?.plan || "free",
-      resumeCredits: Number(user?.resumeCredits) || 0,
+      plan: billing?.plan || "free",
+      planLabel: billing?.planLabel || "Free",
+      resumeCredits: billing?.resumeCredits || 0,
     });
   } catch (err) {
     next(err);
@@ -165,9 +196,9 @@ async function confirmCheckoutSessionController(req, res, next) {
 
 async function getBillingStatusController(req, res, next) {
   try {
-    const user = await userModel.findById(req.user.id).select("plan resumeCredits");
-    if (!user) return res.status(404).json({ message: "User not found" });
-    return res.status(200).json({ plan: user.plan || "free", resumeCredits: Number(user.resumeCredits) || 0 });
+    const billing = await getBillingSnapshot(req.user.id);
+    if (!billing) return res.status(404).json({ message: "User not found" });
+    return res.status(200).json(billing);
   } catch (err) {
     next(err);
   }
