@@ -8,6 +8,7 @@ const atsRouter = express.Router();
 
 atsRouter.post("/ats-analyze", authUser, aiGenerationLimiter, upload.single("resume"), atsController.atsAnalyzeController);
 atsRouter.post("/ats-revise", authUser, aiGenerationLimiter, atsController.atsReviseController);
+atsRouter.put("/ats-revision/:id", authUser, atsController.atsManualRevisionController);
 atsRouter.get("/ats-download/:id", authUser, atsController.atsDownloadController);
 atsRouter.get("/ats-preview/:id", authUser, atsController.atsPreviewController);
 atsRouter.get("/ats-original/:id", authUser, atsController.atsOriginalController);
