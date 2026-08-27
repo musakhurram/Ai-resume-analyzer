@@ -36,7 +36,7 @@ const Pricing = () => {
               plan: result.plan,
               planLabel: result.planLabel,
               resumeCredits: result.resumeCredits,
-              creditsPerPurchase: purchaseCredits,
+              creditsPerPurchase: result.creditsPerPurchase || DEFAULT_PURCHASE_CREDITS,
             });
             window.dispatchEvent(new Event("billing:updated"));
           }
