@@ -21,12 +21,14 @@
     height: 44px;
     background: #ffffff;
     border-radius: var(--radius-full);
+    border: 1px solid transparent;
+    box-sizing: border-box;
     font-family: var(--font-body);
     font-size: 0.95rem;
     font-weight: 500;
     color: #1f1f1f;
     pointer-events: none;
-    transition: filter var(--duration-fast) var(--ease);
+    transition: filter var(--duration-fast) var(--ease), border-color var(--duration-fast) var(--ease);
   }
 
   &__real {
@@ -56,4 +58,10 @@
     filter: grayscale(0.4);
     opacity: 0.6;
   }
+}
+
+// Give the custom visual the same subtle outline expected from Google's
+// standard light-mode button, while keeping the existing dark-mode design.
+[data-theme="light"] .google-signin-btn__visual {
+  border-color: #dadce0;
 }
