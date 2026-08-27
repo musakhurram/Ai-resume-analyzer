@@ -10,6 +10,7 @@ const Pricing = () => {
   const [billing, setBilling] = useState({ plan: "free", planLabel: "Free", resumeCredits: 0, creditsPerPurchase: DEFAULT_PURCHASE_CREDITS });
   const [loading, setLoading] = useState(false);
   const [confirming, setConfirming] = useState(false);
+  const [paymentConfirmed, setPaymentConfirmed] = useState(false);
   const [error, setError] = useState("");
 
   const checkoutState = searchParams.get("checkout");
@@ -32,6 +33,7 @@ const Pricing = () => {
               resumeCredits: result.resumeCredits,
               creditsPerPurchase: result.creditsPerPurchase || DEFAULT_PURCHASE_CREDITS,
             });
+            setPaymentConfirmed(Boolean(result.confirmed));
             window.dispatchEvent(new Event("billing:updated"));
           }
         } else {
@@ -40,6 +42,7 @@ const Pricing = () => {
         }
       } catch (err) {
         if (active) {
+          setPaymentConfirmed(false);
           setError(err.response?.data?.message || "Unable to confirm your payment yet. Please refresh in a moment.");
         }
       } finally {
@@ -75,7 +78,11 @@ const Pricing = () => {
 
       {checkoutState === "success" && (
         <div className="pricing-page__notice pricing-page__notice--success">
-          {confirming ? "Confirming your payment…" : `${planLabel} activated. Your credits are ready.`}
+          {confirming
+            ? "Confirming your payment…"
+            : paymentConfirmed
+              ? `${planLabel} activated. Your credits are ready.`
+              : "Payment is still processing. Your credits will appear here once Stripe confirms the payment."}
         </div>
       )}
       {checkoutState === "cancelled" && (
