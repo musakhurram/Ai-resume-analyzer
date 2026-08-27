@@ -1,5 +1,11 @@
 const userModel = require("../models/user.model");
 
+// Plan limits are intentionally server-side so changing frontend values cannot
+// grant additional AI generations. Environment overrides use NEW variable names
+// so an older STRIPE_PRO_CREDITS value cannot silently change the new plans.
+const PRO_GENERATIONS = Number(process.env.STRIPE_PRO_GENERATIONS) || 20;
+const PREMIUM_GENERATIONS = Number(process.env.STRIPE_PREMIUM_GENERATIONS) || 50;
+
 const PLAN_CONFIG = {
   free: {
     label: "Free",
@@ -9,15 +15,15 @@ const PLAN_CONFIG = {
   },
   pro: {
     label: "Pro",
-    creditsPerPurchase: Number(process.env.STRIPE_PRO_CREDITS) || 20,
-    generations: Number(process.env.STRIPE_PRO_CREDITS) || 20,
-    description: "20 AI generations for regular job searching",
+    creditsPerPurchase: PRO_GENERATIONS,
+    generations: PRO_GENERATIONS,
+    description: `${PRO_GENERATIONS} AI generations for regular job searching`,
   },
   premium: {
     label: "Premium",
-    creditsPerPurchase: Number(process.env.STRIPE_PREMIUM_CREDITS) || 50,
-    generations: Number(process.env.STRIPE_PREMIUM_CREDITS) || 50,
-    description: "50 AI generations for intensive applications",
+    creditsPerPurchase: PREMIUM_GENERATIONS,
+    generations: PREMIUM_GENERATIONS,
+    description: `${PREMIUM_GENERATIONS} AI generations for intensive applications`,
   },
 };
 
