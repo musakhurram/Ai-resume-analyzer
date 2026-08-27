@@ -6,30 +6,12 @@ const atsController = require("../controllers/atsAnalyze.controller");
 
 const atsRouter = express.Router();
 
-// Attaches req.user when a valid token is present, while preserving guest analysis.
-function optionalAuth(req, res, next) {
-  let token = req.cookies?.token;
-  if (!token && req.headers.authorization) {
-    token = req.headers.authorization.startsWith("Bearer ")
-      ? req.headers.authorization.split(" ")[1]
-      : req.headers.authorization;
-  }
-  if (!token) return next();
-
-  const jwt = require("jsonwebtoken");
-  const env = require("../config/env");
-  try {
-    req.user = jwt.verify(token, env.JWT_SECRET);
-  } catch {
-    // Ignore invalid token for optional-auth endpoints.
-  }
-  next();
-}
-
-atsRouter.post("/ats-analyze", optionalAuth, aiGenerationLimiter, upload.single("resume"), atsController.atsAnalyzeController);
-atsRouter.post("/ats-revise", optionalAuth, aiGenerationLimiter, atsController.atsReviseController);
-atsRouter.get("/ats-download/:id", optionalAuth, atsController.atsDownloadController);
-atsRouter.get("/ats-report/:id", optionalAuth, atsController.getAtsReportByIdController);
+// AI resume operations are account-bound so credit limits cannot be bypassed
+// through guest requests or by sending a different client-side plan value.
+atsRouter.post("/ats-analyze", authUser, aiGenerationLimiter, upload.single("resume"), atsController.atsAnalyzeController);
+atsRouter.post("/ats-revise", authUser, aiGenerationLimiter, atsController.atsReviseController);
+atsRouter.get("/ats-download/:id", authUser, atsController.atsDownloadController);
+atsRouter.get("/ats-report/:id", authUser, atsController.getAtsReportByIdController);
 
 // History is account-specific and must never expose another user's reports.
 atsRouter.get("/ats-reports", authUser, atsController.listAtsReportsController);
