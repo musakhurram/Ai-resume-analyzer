@@ -17,12 +17,6 @@ const Pricing = () => {
   const purchaseCredits = Number(billing.creditsPerPurchase) || DEFAULT_PURCHASE_CREDITS;
   const planLabel = billing.planLabel || (billing.plan === "pro" ? "Pro" : "Free");
 
-  const refreshBilling = async () => {
-    const status = await getBillingStatus();
-    setBilling(status);
-    return status;
-  };
-
   useEffect(() => {
     let active = true;
 
@@ -41,7 +35,8 @@ const Pricing = () => {
             window.dispatchEvent(new Event("billing:updated"));
           }
         } else {
-          await refreshBilling();
+          const status = await getBillingStatus();
+          if (active) setBilling(status);
         }
       } catch (err) {
         if (active) {
