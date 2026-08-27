@@ -51,7 +51,7 @@
   &__status-card.is-empty { opacity: 0.92; }
   &__status-header { display: flex; align-items: center; gap: 0.4rem; }
   &__status-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--severity-low); box-shadow: 0 0 8px var(--severity-low); flex-shrink: 0; }
-  &__status-card.is-empty &__status-dot { background: var(--ink-faint); box-shadow: none; }
+  &__status-card.is-empty .sidebar__status-dot { background: var(--ink-faint); box-shadow: none; }
   &__status-title { font-size: 0.75rem; font-weight: 650; color: var(--ink); }
   &__status-desc { margin: 0; font-family: var(--font-mono); font-size: 0.68rem; font-weight: 600; color: var(--accent); line-height: 1.4; }
   &__status-meta { margin: 0.1rem 0 0; font-size: 0.64rem; color: var(--ink-faint); line-height: 1.45; }
