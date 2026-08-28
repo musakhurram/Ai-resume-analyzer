@@ -18,6 +18,21 @@ const SwapIcon = () => (
   </svg>
 );
 
+const TargetIcon = () => (
+  <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+    <circle cx="12" cy="12" r="7.2" stroke="currentColor" strokeWidth="1.8" />
+    <circle cx="12" cy="12" r="2.6" stroke="currentColor" strokeWidth="1.8" />
+    <path d="M12 2v3M12 19v3M2 12h3M19 12h3" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
+  </svg>
+);
+
+const SparkleIcon = () => (
+  <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+    <path d="M12 2.5 13.8 8l5.7 1.8-5.7 1.8-1.8 5.9-1.8-5.9-5.7-1.8L10.2 8z" stroke="currentColor" strokeWidth="1.55" strokeLinejoin="round" />
+    <path d="m19 15 .8 2.2L22 18l-2.2.8L19 21l-.8-2.2L16 18l2.2-.8z" fill="currentColor" />
+  </svg>
+);
+
 const PdfIcon = ({ accent = false }) => (
   <svg viewBox="0 0 28 32" fill="none" aria-hidden="true" className={accent ? "is-accent" : ""}>
     <path d="M6 1.5h11l5.5 5.5v23.5H6z" stroke="currentColor" strokeWidth="1.7" strokeLinejoin="round" />
@@ -61,14 +76,10 @@ const EmptyPane = ({ revised = false }) => (
 const AtsBeforeAfterPreview = ({ reportId, originalText, originalPdfUrl, revisedResume, loading, error, onRevise, onDownload, downloading }) => {
   const [selectedSection, setSelectedSection] = useState("all");
   const [customNotes, setCustomNotes] = useState("");
-  const [showIntro, setShowIntro] = useState(true);
-
-  useEffect(() => {
-    if (revisedResume) setShowIntro(false);
-  }, [revisedResume]);
 
   const handleRunRevise = () => onRevise({ sections: selectedSection, customNotes });
   const candidateName = revisedResume?.contact?.fullName || "ATS-Resume";
+  const hasRevision = Boolean(revisedResume);
 
   return (
     <div className="ats-preview-modal glass-panel">
@@ -81,7 +92,7 @@ const AtsBeforeAfterPreview = ({ reportId, originalText, originalPdfUrl, revised
           <div className="ats-preview-toolbar__section-picker">
             <label htmlFor="sectionSelect" className="sr-only">Rewrite scope</label>
             <div className="ats-select-wrap">
-              <span className="ats-control-icon ats-control-icon--target" aria-hidden="true">⌾</span>
+              <span className="ats-control-icon ats-control-icon--target"><TargetIcon /></span>
               <select id="sectionSelect" value={selectedSection} onChange={(e) => setSelectedSection(e.target.value)} className="ats-toolbar-select" disabled={loading}>
                 {SECTIONS_AVAILABLE.map((section) => <option key={section.id} value={section.id}>{section.label}</option>)}
               </select>
@@ -91,72 +102,76 @@ const AtsBeforeAfterPreview = ({ reportId, originalText, originalPdfUrl, revised
           <div className="ats-preview-toolbar__custom-notes">
             <label htmlFor="rewriteFocus" className="sr-only">Optional rewrite focus</label>
             <div className="ats-input-wrap">
-              <span className="ats-control-icon ats-control-icon--sparkle" aria-hidden="true">✣</span>
+              <span className="ats-control-icon ats-control-icon--sparkle"><SparkleIcon /></span>
               <input id="rewriteFocus" type="text" placeholder="Optional rewrite focus (e.g. emphasize cloud, leadership,...)" value={customNotes} onChange={(e) => setCustomNotes(e.target.value)} className="ats-toolbar-input" disabled={loading} />
             </div>
           </div>
           <Button variant="primary" size="sm" loading={loading} onClick={handleRunRevise} className="ats-toolbar-btn">
-            <span className="ats-generate-icon" aria-hidden="true">✣</span>
-            {revisedResume ? "Re-generate" : "Generate Revision"}
+            <span className="ats-generate-icon" aria-hidden="true"><SparkleIcon /></span>
+            {hasRevision ? "Re-generate" : "Generate Revision"}
           </Button>
         </div>
       </section>
 
-      <section className="ats-preview-hero">
-        <div className="ats-preview-hero__copy">
-          <div className="glow-pill"><span className="glow-pill__dot" /><span>AI REVISION STUDIO</span></div>
-          <h2 className="ats-preview-modal__title">PDF-to-PDF comparison</h2>
-          <p className="ats-preview-modal__desc">Generate an AI revision to see additions and replacements highlighted at their actual locations inside your resume.</p>
-        </div>
-        <HeroComparisonVisual />
-      </section>
-
-      {error && <Callout tone="error" title="Revision Issue">{error}</Callout>}
-
-      {showIntro && !revisedResume && !loading && (
+      {!hasRevision && (
         <>
-          <section className="ats-preview-benefits">
-            <div className="ats-preview-benefits__intro">
-              <span className="ats-benefits-arrow"><SwapIcon /></span>
-              <h3>See exactly what changed</h3>
-              <p>Compare your original resume with the AI revision side by side. Additions and replacements stay highlighted in context so you can review every improvement before downloading.</p>
+          <section className="ats-preview-hero">
+            <div className="ats-preview-hero__copy">
+              <div className="glow-pill"><span className="glow-pill__dot" /><span>AI REVISION STUDIO</span></div>
+              <h2 className="ats-preview-modal__title">PDF-to-PDF comparison</h2>
+              <p className="ats-preview-modal__desc">Generate an AI revision to see additions and replacements highlighted at their actual locations inside your resume.</p>
             </div>
-            <div className="ats-preview-benefit">
-              <FeatureIcon type="check" />
-              <div><strong>Exact changes</strong><small>Additions &amp; replacements<br />shown in context</small></div>
-            </div>
-            <div className="ats-preview-benefit">
-              <FeatureIcon type="eye" />
-              <div><strong>Side-by-side view</strong><small>Original vs AI revision<br />in one place</small></div>
-            </div>
-            <div className="ats-preview-benefit">
-              <FeatureIcon type="shield" />
-              <div><strong>ATS-friendly output</strong><small>Optimized content<br />that gets noticed</small></div>
-            </div>
+            <HeroComparisonVisual />
           </section>
 
-          <section className="ats-preview-placeholder-panes" aria-label="Resume comparison preview">
-            <div className="ats-placeholder-pane">
-              <div className="ats-placeholder-pane__head">
-                <div className="ats-placeholder-pane__title ats-placeholder-pane__title--original"><PdfIcon /> <span>Original Resume</span></div>
-                <div className="ats-placeholder-pane__tools"><button type="button" aria-label="Zoom out">−</button><button type="button" aria-label="Zoom in">+</button><span>100%⌄</span><button type="button" aria-label="Fullscreen">⛶</button></div>
-              </div>
-              <EmptyPane />
-            </div>
-            <div className="ats-placeholder-pane">
-              <div className="ats-placeholder-pane__head">
-                <div className="ats-placeholder-pane__title ats-placeholder-pane__title--revised"><PdfIcon accent /> <span>AI Revised Resume</span></div>
-                <div className="ats-placeholder-pane__tools"><button type="button" aria-label="Zoom out">−</button><button type="button" aria-label="Zoom in">+</button><span>100%⌄</span><button type="button" aria-label="Fullscreen">⛶</button></div>
-              </div>
-              <EmptyPane revised />
-            </div>
-          </section>
+          {error && <Callout tone="error" title="Revision Issue">{error}</Callout>}
 
-          <section className="ats-preview-highlight-note">
-            <div className="ats-preview-highlight-note__icon">✣</div>
-            <div><strong>Highlights will appear here</strong><p>Once you generate the revision, you'll see additions in green, removals in red, and edits in yellow.</p></div>
-            <div className="ats-preview-highlight-note__sparkles" aria-hidden="true">✦<br />＋</div>
-          </section>
+          {!loading && (
+            <>
+              <section className="ats-preview-benefits">
+                <div className="ats-preview-benefits__intro">
+                  <span className="ats-benefits-arrow"><SwapIcon /></span>
+                  <h3>See exactly what changed</h3>
+                  <p>Compare your original resume with the AI revision side by side. Additions and replacements stay highlighted in context so you can review every improvement before downloading.</p>
+                </div>
+                <div className="ats-preview-benefit">
+                  <FeatureIcon type="check" />
+                  <div><strong>Exact changes</strong><small>Additions &amp; replacements<br />shown in context</small></div>
+                </div>
+                <div className="ats-preview-benefit">
+                  <FeatureIcon type="eye" />
+                  <div><strong>Side-by-side view</strong><small>Original vs AI revision<br />in one place</small></div>
+                </div>
+                <div className="ats-preview-benefit">
+                  <FeatureIcon type="shield" />
+                  <div><strong>ATS-friendly output</strong><small>Optimized content<br />that gets noticed</small></div>
+                </div>
+              </section>
+
+              <section className="ats-preview-placeholder-panes" aria-label="Resume comparison preview">
+                <div className="ats-placeholder-pane">
+                  <div className="ats-placeholder-pane__head">
+                    <div className="ats-placeholder-pane__title ats-placeholder-pane__title--original"><PdfIcon /> <span>Original Resume</span></div>
+                    <div className="ats-placeholder-pane__tools"><button type="button" aria-label="Zoom out">−</button><button type="button" aria-label="Zoom in">+</button><span>100%⌄</span><button type="button" aria-label="Fullscreen">⛶</button></div>
+                  </div>
+                  <EmptyPane />
+                </div>
+                <div className="ats-placeholder-pane">
+                  <div className="ats-placeholder-pane__head">
+                    <div className="ats-placeholder-pane__title ats-placeholder-pane__title--revised"><PdfIcon accent /> <span>AI Revised Resume</span></div>
+                    <div className="ats-placeholder-pane__tools"><button type="button" aria-label="Zoom out">−</button><button type="button" aria-label="Zoom in">+</button><span>100%⌄</span><button type="button" aria-label="Fullscreen">⛶</button></div>
+                  </div>
+                  <EmptyPane revised />
+                </div>
+              </section>
+
+              <section className="ats-preview-highlight-note">
+                <div className="ats-preview-highlight-note__icon"><SparkleIcon /></div>
+                <div><strong>Highlights will appear here</strong><p>Once you generate the revision, you'll see additions in green, removals in red, and edits in yellow.</p></div>
+                <div className="ats-preview-highlight-note__sparkles" aria-hidden="true"><SparkleIcon /></div>
+              </section>
+            </>
+          )}
         </>
       )}
 
@@ -168,15 +183,18 @@ const AtsBeforeAfterPreview = ({ reportId, originalText, originalPdfUrl, revised
         </div>
       )}
 
-      {revisedResume && !loading && (
-        <AtsPdfDiffViewer
-          reportId={reportId}
-          originalPdfUrl={originalPdfUrl}
-          originalText={originalText}
-          revisedResume={revisedResume}
-          onDownload={onDownload}
-          downloading={downloading}
-        />
+      {hasRevision && !loading && (
+        <>
+          {error && <Callout tone="error" title="Revision Issue">{error}</Callout>}
+          <AtsPdfDiffViewer
+            reportId={reportId}
+            originalPdfUrl={originalPdfUrl}
+            originalText={originalText}
+            revisedResume={revisedResume}
+            onDownload={onDownload}
+            downloading={downloading}
+          />
+        </>
       )}
     </div>
   );
