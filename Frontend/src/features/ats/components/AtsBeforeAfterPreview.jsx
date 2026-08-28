@@ -26,39 +26,55 @@ const AtsBeforeAfterPreview = ({ reportId, originalText, originalPdfUrl, revised
 
   return (
     <div className="ats-preview-modal glass-panel">
-      <div className="ats-preview-modal__header">
-        <div className="ats-preview-modal__titles">
-          <div className="glow-pill"><span className="glow-pill__dot" /><span>AI REVISION STUDIO</span></div>
-          <h2 className="ats-preview-modal__title">See exactly what changed</h2>
-          <p className="ats-preview-modal__desc">The comparison is rendered from the actual PDF pages. Added and replaced content is highlighted directly over its position in the document.</p>
-        </div>
-        {revisedResume && <Button variant="primary" size="md" loading={downloading} onClick={() => onDownload(reportId, candidateName)}>Download ATS PDF</Button>}
-      </div>
-
-      {error && <Callout tone="error" title="Revision Issue">{error}</Callout>}
-
       <div className="ats-preview-toolbar">
+        <div className="ats-preview-toolbar__label-row">
+          <span className="ats-toolbar-label">Rewrite controls</span>
+          <span className="ats-toolbar-hint">Choose what the AI should improve</span>
+        </div>
         <div className="ats-preview-toolbar__row">
           <div className="ats-preview-toolbar__section-picker">
-            <label htmlFor="sectionSelect" className="ats-toolbar-label">Scope:</label>
+            <label htmlFor="sectionSelect" className="ats-toolbar-label">Scope</label>
             <select id="sectionSelect" value={selectedSection} onChange={(e) => setSelectedSection(e.target.value)} className="ats-toolbar-select" disabled={loading}>
               {SECTIONS_AVAILABLE.map((section) => <option key={section.id} value={section.id}>{section.label}</option>)}
             </select>
           </div>
           <div className="ats-preview-toolbar__custom-notes">
-            <input type="text" placeholder="Optional rewrite focus (e.g. emphasize cloud, leadership)..." value={customNotes} onChange={(e) => setCustomNotes(e.target.value)} className="ats-toolbar-input" disabled={loading} />
+            <label htmlFor="rewriteFocus" className="ats-toolbar-label">Rewrite focus <span>Optional</span></label>
+            <input id="rewriteFocus" type="text" placeholder="e.g. emphasize cloud, leadership, measurable impact..." value={customNotes} onChange={(e) => setCustomNotes(e.target.value)} className="ats-toolbar-input" disabled={loading} />
           </div>
-          <Button variant="secondary" size="sm" loading={loading} onClick={handleRunRevise} className="ats-toolbar-btn">
+          <Button variant="primary" size="sm" loading={loading} onClick={handleRunRevise} className="ats-toolbar-btn">
             {revisedResume ? "Re-generate" : "Generate Revision"}
           </Button>
         </div>
       </div>
 
+      <div className="ats-preview-modal__header">
+        <div className="ats-preview-modal__titles">
+          <div className="glow-pill"><span className="glow-pill__dot" /><span>AI REVISION STUDIO</span></div>
+          <h2 className="ats-preview-modal__title">PDF-to-PDF comparison</h2>
+          <p className="ats-preview-modal__desc">Generate an AI revision to see additions and replacements highlighted at their actual locations inside your resume.</p>
+        </div>
+        {revisedResume && <Button variant="secondary" size="sm" loading={downloading} onClick={() => onDownload(reportId, candidateName)}>Download ATS PDF</Button>}
+      </div>
+
+      {error && <Callout tone="error" title="Revision Issue">{error}</Callout>}
+
       {showIntro && !revisedResume && !loading && (
         <div className="ats-preview-empty">
-          <div className="ats-preview-empty__icon">↔</div>
-          <h3>PDF-to-PDF comparison</h3>
-          <p>Generate an AI revision to see additions and replacements highlighted at their actual locations inside the resume.</p>
+          <div className="ats-preview-empty__visual" aria-hidden="true">
+            <div className="ats-preview-empty__page ats-preview-empty__page--original"><span /><span /><span /><span /><span /></div>
+            <div className="ats-preview-empty__swap">↔</div>
+            <div className="ats-preview-empty__page ats-preview-empty__page--revised"><span /><span /><span /><span /><span /></div>
+          </div>
+          <div className="ats-preview-empty__copy">
+            <h3>See exactly what changed</h3>
+            <p>Compare your original resume with the AI revision side by side. Additions and replacements stay highlighted in context so you can review every improvement before downloading.</p>
+          </div>
+          <div className="ats-preview-empty__features">
+            <div className="ats-preview-empty__feature"><span>✓</span><div><strong>Exact changes</strong><small>Additions & replacements in context</small></div></div>
+            <div className="ats-preview-empty__feature"><span>◉</span><div><strong>Side-by-side view</strong><small>Original vs AI revision</small></div></div>
+            <div className="ats-preview-empty__feature"><span>◇</span><div><strong>ATS-friendly output</strong><small>Optimized content structure</small></div></div>
+          </div>
         </div>
       )}
 
