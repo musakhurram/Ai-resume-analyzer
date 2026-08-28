@@ -1,4 +1,4 @@
-/* ATS results + PDF Studio visual refresh. Kept separate so the feature's existing layout rules remain intact. */
+/* ATS results + PDF Studio visual refresh. */
 .ats-analyzer-container--results { max-width: 1380px; gap: 18px; padding: 18px 22px 34px; }
 .ats-results-nav { position: sticky; top: 74px; z-index: 15; min-height: 58px; padding: 8px 10px; border: 1px solid color-mix(in srgb, var(--border-subtle) 82%, var(--accent) 18%); border-radius: 16px; background: color-mix(in srgb, var(--surface-card) 94%, transparent); backdrop-filter: blur(16px) saturate(125%); box-shadow: 0 12px 32px rgba(0,0,0,.10); }
 .ats-back-btn { min-height: 38px; padding: 0 12px; border: 1px solid transparent; }
@@ -12,17 +12,31 @@
 .ats-audit-section__title { letter-spacing: -.015em; }
 .ats-preview-wrapper { min-width: 0; animation: atsStudioEnter .22s ease-out; }
 @keyframes atsStudioEnter { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
-.ats-preview-modal { display: flex; flex-direction: column; border: 1px solid color-mix(in srgb, var(--border-subtle) 78%, var(--accent) 22%); background: color-mix(in srgb, var(--surface-card) 98%, var(--accent) 2%); box-shadow: 0 18px 48px rgba(0,0,0,.10); }
-.ats-preview-modal__header { display: flex; align-items: center; padding: 4px 4px 10px; }
-.ats-preview-modal__title { font-size: clamp(1.35rem, 2.4vw, 1.8rem); letter-spacing: -.035em; }
-.ats-preview-modal__desc { max-width: 800px; font-size: .8rem; }
 
-/* Prevent the revision action from being pushed outside the card. */
-.ats-preview-toolbar { position: static !important; top: auto !important; z-index: auto !important; width: 100%; max-width: 100%; box-sizing: border-box; overflow: hidden; border: 1px solid var(--border-subtle); background: var(--surface-2); box-shadow: inset 0 1px 0 rgba(255,255,255,.04); }
-.ats-preview-toolbar__row { display: grid !important; grid-template-columns: minmax(0, .78fr) minmax(0, 1.42fr) max-content !important; align-items: end !important; gap: 10px !important; width: 100%; max-width: 100%; min-width: 0; box-sizing: border-box; }
-.ats-preview-toolbar__section-picker, .ats-preview-toolbar__custom-notes { min-width: 0 !important; width: auto; }
-.ats-toolbar-select, .ats-toolbar-input { width: 100%; min-width: 0; max-width: 100%; box-sizing: border-box; overflow: hidden; text-overflow: ellipsis; }
-.ats-toolbar-btn { width: max-content !important; max-width: 100%; min-width: 132px; min-height: 40px; padding-inline: 14px !important; white-space: nowrap; justify-self: end; }
+.ats-preview-modal { display: flex; flex-direction: column; gap: 16px; min-width: 0; padding: 20px; border: 1px solid color-mix(in srgb, var(--border-subtle) 78%, var(--accent) 22%); border-radius: 20px; background: color-mix(in srgb, var(--surface-card) 98%, var(--accent) 2%); box-shadow: 0 18px 48px rgba(0,0,0,.10); }
+.ats-preview-modal__header { display: flex; align-items: center; gap: 18px; padding: 2px 2px 4px; min-width: 0; }
+.ats-preview-modal__titles { min-width: 0; flex: 1 1 auto; }
+.ats-preview-modal__title { font-size: clamp(1.35rem, 2.4vw, 1.8rem); letter-spacing: -.035em; margin: 8px 0 5px; }
+.ats-preview-modal__desc { max-width: 800px; font-size: .82rem; line-height: 1.5; margin: 0; }
+.glow-pill { display: inline-flex; align-items: center; gap: 7px; min-height: 24px; padding: 4px 9px; border: 1px solid color-mix(in srgb, var(--accent) 28%, transparent); border-radius: 999px; background: color-mix(in srgb, var(--accent) 8%, transparent); color: var(--accent); font-size: .66rem; font-weight: 800; letter-spacing: .08em; }
+.glow-pill__dot { width: 6px; height: 6px; border-radius: 50%; background: var(--accent); box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 12%, transparent); }
+
+/* Compact, self-contained control surface. The grid always keeps the action inside the card. */
+.ats-preview-toolbar { position: static !important; width: 100%; max-width: 100%; min-width: 0; box-sizing: border-box; overflow: visible; padding: 14px; border: 1px solid color-mix(in srgb, var(--border-subtle) 88%, var(--accent) 12%); border-radius: 15px; background: linear-gradient(180deg, color-mix(in srgb, var(--surface-2) 94%, var(--accent) 6%), var(--surface-2)); box-shadow: inset 0 1px 0 rgba(255,255,255,.035); }
+.ats-preview-toolbar__label-row { display: flex; align-items: baseline; gap: 9px; margin-bottom: 10px; min-width: 0; }
+.ats-toolbar-label { color: var(--ink); font-size: .73rem; font-weight: 750; letter-spacing: .01em; }
+.ats-toolbar-hint { color: var(--muted); font-size: .7rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.ats-preview-toolbar__row { display: grid !important; grid-template-columns: minmax(190px, .78fr) minmax(260px, 1.35fr) minmax(155px, auto) !important; align-items: end !important; gap: 11px !important; width: 100%; max-width: 100%; min-width: 0; box-sizing: border-box; }
+.ats-preview-toolbar__section-picker, .ats-preview-toolbar__custom-notes { display: flex; flex-direction: column; gap: 6px; min-width: 0 !important; width: auto; }
+.ats-toolbar-select, .ats-toolbar-input { width: 100% !important; min-width: 0 !important; max-width: 100% !important; min-height: 42px; box-sizing: border-box; border: 1px solid var(--border-subtle); border-radius: 10px; background-color: var(--surface-solid); color: var(--ink); padding: 9px 12px; font: inherit; font-size: .82rem; line-height: 1.2; }
+.ats-toolbar-input { overflow: hidden; text-overflow: ellipsis; }
+/* Hard reset native select decoration so only one controlled chevron is ever rendered. */
+.ats-toolbar-select { appearance: none !important; -webkit-appearance: none !important; -moz-appearance: none !important; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' fill='none'%3E%3Cpath d='M4.5 6.5 8 10l3.5-3.5' stroke='%239aa3a8' stroke-width='1.7' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E") !important; background-repeat: no-repeat !important; background-position: right 12px center !important; background-size: 16px 16px !important; padding-right: 40px !important; cursor: pointer; }
+.ats-toolbar-select::-ms-expand { display: none; }
+.ats-toolbar-select:focus, .ats-toolbar-input:focus { border-color: var(--accent); box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 12%, transparent); outline: none; }
+.ats-toolbar-btn { width: 100% !important; max-width: 100% !important; min-width: 0 !important; min-height: 42px; padding-inline: 15px !important; white-space: nowrap; justify-self: stretch; flex-shrink: 1; box-sizing: border-box; }
+.ats-preview-modal__actions { flex-shrink: 0; }
+.ats-preview-modal__download-btn { min-height: 40px; width: auto !important; min-width: 0; padding: 0 14px !important; display: inline-flex !important; align-items: center !important; justify-content: center !important; white-space: nowrap; }
 
 .ats-preview-panes--split { gap: 16px; }
 .ats-pane { overflow: hidden; border: 1px solid color-mix(in srgb, var(--border-subtle) 75%, var(--accent) 25%); background: var(--surface-2); box-shadow: 0 14px 36px rgba(0,0,0,.10); }
@@ -38,14 +52,21 @@
   .ats-analyzer-container--results { padding: 12px 14px 28px; }
   .ats-results-nav { position: static; }
   .ats-preview-toolbar__row { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) !important; }
-  .ats-toolbar-btn { grid-column: 1 / -1; width: 100% !important; justify-self: stretch; }
+  .ats-toolbar-btn { grid-column: 1 / -1; }
+  .ats-preview-modal__header { align-items: flex-start; }
 }
 @media (max-width: 760px) {
   .ats-preview-toolbar__row { grid-template-columns: 1fr !important; }
-  .ats-toolbar-btn { grid-column: auto; width: 100% !important; }
+  .ats-toolbar-btn { grid-column: auto; }
 }
 @media (max-width: 640px) {
   .ats-analyzer-container--results { padding: 10px 10px 24px; }
+  .ats-preview-modal { padding: 12px; gap: 12px; border-radius: 15px; }
+  .ats-preview-modal__header { flex-direction: column; }
+  .ats-preview-modal__actions { width: 100%; }
+  .ats-preview-modal__download-btn { width: auto !important; }
+  .ats-preview-toolbar { padding: 12px; }
+  .ats-preview-toolbar__label-row { flex-direction: column; gap: 2px; }
   .ats-main-tabs { width: 100%; }
   .ats-main-tab { flex: 1; justify-content: center; }
   .ats-results-nav__actions { width: 100%; }
