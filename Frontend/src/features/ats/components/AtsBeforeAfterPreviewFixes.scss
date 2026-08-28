@@ -1,9 +1,11 @@
-/* Final UI guardrails for AI Revision Studio. Loaded after the main studio stylesheet. */
+/* Final presentation polish for AI Revision Studio. Loaded after the main studio stylesheet. */
+
 .ats-preview-modal .ats-preview-toolbar__row > * {
   min-width: 0 !important;
   box-sizing: border-box;
 }
 
+/* ---------- Controls ---------- */
 .ats-preview-modal .ats-control-icon {
   width: 24px !important;
   height: 24px !important;
@@ -25,7 +27,7 @@
 
 .ats-preview-modal .ats-toolbar-select {
   padding-left: 52px !important;
-  padding-right: 50px !important;
+  padding-right: 48px !important;
   text-overflow: ellipsis;
   overflow: hidden;
 }
@@ -50,33 +52,54 @@
   text-overflow: ellipsis;
 }
 
-.ats-preview-modal .ats-generate-icon {
-  width: 20px !important;
-  height: 20px !important;
-  margin: 0 8px 0 0 !important;
-  display: inline-grid !important;
-  place-items: center !important;
-  flex: 0 0 20px !important;
-  line-height: 0 !important;
-  font-size: 0 !important;
-}
-
-.ats-preview-modal .ats-generate-icon svg {
-  width: 20px !important;
-  height: 20px !important;
-  display: block !important;
+/* Make the CTA feel like a deliberate action, not a third oversized input. */
+.ats-preview-modal .ats-preview-toolbar__row {
+  grid-template-columns: minmax(220px, .9fr) minmax(280px, 1.35fr) 190px !important;
+  gap: 12px !important;
 }
 
 .ats-preview-modal .ats-toolbar-btn {
+  width: 190px !important;
+  max-width: 190px !important;
+  min-width: 190px !important;
+  height: 52px !important;
+  min-height: 52px !important;
+  justify-self: end !important;
+  align-self: center !important;
   display: inline-flex !important;
   align-items: center !important;
   justify-content: center !important;
   gap: 0 !important;
   overflow: hidden !important;
+  padding: 0 14px !important;
+  border-radius: 12px !important;
+  white-space: nowrap !important;
+  font-size: .86rem !important;
+  line-height: 1 !important;
+  box-shadow: 0 8px 24px color-mix(in srgb, var(--accent) 12%, transparent) !important;
 }
 
-.ats-preview-modal .ats-toolbar-btn > * {
-  min-width: 0;
+.ats-preview-modal .ats-toolbar-btn:hover:not(:disabled) {
+  transform: translateY(-1px);
+}
+
+.ats-preview-modal .ats-toolbar-btn > * { min-width: 0; }
+
+.ats-preview-modal .ats-generate-icon {
+  width: 19px !important;
+  height: 19px !important;
+  margin: 0 7px 0 0 !important;
+  display: inline-grid !important;
+  place-items: center !important;
+  flex: 0 0 19px !important;
+  line-height: 0 !important;
+  font-size: 0 !important;
+}
+
+.ats-preview-modal .ats-generate-icon svg {
+  width: 19px !important;
+  height: 19px !important;
+  display: block !important;
 }
 
 .ats-preview-modal .ats-toolbar-info {
@@ -96,23 +119,145 @@
   display: block !important;
 }
 
-/* Before generation: keep the reference hero and empty comparison visible. */
-.ats-preview-modal .ats-preview-hero,
-.ats-preview-modal .ats-preview-benefits,
-.ats-preview-modal .ats-preview-placeholder-panes,
-.ats-preview-modal .ats-preview-highlight-note {
-  min-width: 0;
-  max-width: 100%;
-  box-sizing: border-box;
+/* ---------- Hero: cleaner proportions and stronger visual hierarchy ---------- */
+.ats-preview-modal .ats-preview-hero {
+  display: grid !important;
+  grid-template-columns: minmax(0, 1.12fr) minmax(330px, .88fr) !important;
+  align-items: center !important;
+  gap: 22px !important;
+  min-height: 250px !important;
+  padding: 18px 24px 22px !important;
+  overflow: hidden !important;
 }
 
-@media (max-width: 980px) {
+.ats-preview-modal .ats-preview-hero__copy {
+  min-width: 0 !important;
+  max-width: 680px;
+  padding-left: 4px;
+}
+
+.ats-preview-modal .glow-pill {
+  min-height: 28px !important;
+  padding: 5px 11px !important;
+  font-size: .66rem !important;
+}
+
+.ats-preview-modal .ats-preview-modal__title {
+  margin: 14px 0 8px !important;
+  max-width: 680px;
+  font-size: clamp(2rem, 3vw, 2.75rem) !important;
+  line-height: 1.04 !important;
+  letter-spacing: -.045em !important;
+}
+
+.ats-preview-modal .ats-preview-modal__desc {
+  max-width: 610px !important;
+  font-size: .96rem !important;
+  line-height: 1.55 !important;
+}
+
+.ats-preview-modal .ats-studio-hero-visual {
+  height: 220px !important;
+  width: 100% !important;
+  max-width: 430px;
+  justify-self: end;
+  overflow: hidden;
+}
+
+/* Smaller document cards create the same compact visual rhythm as the reference. */
+.ats-preview-modal .ats-hero-page {
+  top: 18px !important;
+  width: 145px !important;
+  height: 184px !important;
+  padding: 24px 19px !important;
+  border-radius: 12px !important;
+  gap: 9px !important;
+}
+
+.ats-preview-modal .ats-hero-page--original { left: 9% !important; }
+.ats-preview-modal .ats-hero-page--revised { right: 7% !important; }
+
+.ats-preview-modal .ats-hero-line { height: 6px !important; }
+
+.ats-preview-modal .ats-hero-swap {
+  width: 60px !important;
+  height: 60px !important;
+  left: 50% !important;
+  top: 50% !important;
+}
+
+.ats-preview-modal .ats-hero-swap svg {
+  width: 27px !important;
+  height: 27px !important;
+}
+
+.ats-preview-modal .ats-hero-dots {
+  width: 68px !important;
+  height: 128px !important;
+  background-size: 9px 9px !important;
+  opacity: .45 !important;
+}
+
+.ats-preview-modal .ats-hero-dots--left { left: 0 !important; top: 45px !important; }
+.ats-preview-modal .ats-hero-dots--right { right: 0 !important; top: 52px !important; }
+
+/* ---------- Benefits: less visual noise ---------- */
+.ats-preview-modal .ats-preview-benefits {
+  grid-template-columns: 1.28fr repeat(3, 1fr) !important;
+}
+
+.ats-preview-modal .ats-preview-benefits__intro,
+.ats-preview-modal .ats-preview-benefit {
+  padding: 19px 21px !important;
+}
+
+.ats-preview-modal .ats-preview-benefit {
+  gap: 12px !important;
+}
+
+.ats-preview-modal .ats-preview-benefit svg {
+  width: 31px !important;
+  height: 31px !important;
+}
+
+/* ---------- Responsive ---------- */
+@media (max-width: 1100px) {
+  .ats-preview-modal .ats-preview-toolbar__row {
+    grid-template-columns: minmax(210px, .9fr) minmax(260px, 1.2fr) 175px !important;
+  }
+
+  .ats-preview-modal .ats-toolbar-btn {
+    width: 175px !important;
+    min-width: 175px !important;
+    max-width: 175px !important;
+  }
+
+  .ats-preview-modal .ats-preview-hero {
+    grid-template-columns: minmax(0, 1fr) minmax(300px, .8fr) !important;
+  }
+}
+
+@media (max-width: 900px) {
   .ats-preview-modal .ats-preview-toolbar__row {
     grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) !important;
   }
 
   .ats-preview-modal .ats-toolbar-btn {
     grid-column: 1 / -1;
+    justify-self: end !important;
+    width: 180px !important;
+    min-width: 180px !important;
+    max-width: 180px !important;
+  }
+
+  .ats-preview-modal .ats-preview-hero {
+    grid-template-columns: 1fr !important;
+    gap: 6px !important;
+  }
+
+  .ats-preview-modal .ats-studio-hero-visual {
+    justify-self: center;
+    width: min(100%, 430px) !important;
   }
 }
 
@@ -123,5 +268,40 @@
 
   .ats-preview-modal .ats-toolbar-btn {
     grid-column: auto;
+    justify-self: stretch !important;
+    width: 100% !important;
+    min-width: 0 !important;
+    max-width: none !important;
+  }
+
+  .ats-preview-modal .ats-preview-hero {
+    min-height: 0 !important;
+    padding: 18px 16px !important;
+  }
+
+  .ats-preview-modal .ats-preview-modal__title {
+    font-size: 2rem !important;
+  }
+
+  .ats-preview-modal .ats-studio-hero-visual {
+    height: 185px !important;
+    transform: scale(.88);
+    transform-origin: center;
+    margin: -8px 0;
+  }
+
+  .ats-preview-modal .ats-preview-benefits {
+    grid-template-columns: 1fr !important;
+  }
+
+  .ats-preview-modal .ats-preview-benefits__intro,
+  .ats-preview-modal .ats-preview-benefit {
+    border-left: 0 !important;
+    border-right: 0 !important;
+    border-bottom: 1px solid #293a32;
+  }
+
+  .ats-preview-modal .ats-preview-benefit:last-child {
+    border-bottom: 0;
   }
 }
