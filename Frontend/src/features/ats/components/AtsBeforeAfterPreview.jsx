@@ -3,6 +3,7 @@ import Button from "../../../shared/components/Button";
 import Callout from "../../../shared/components/Callout";
 import AtsPdfDiffViewer from "./AtsPdfDiffViewer";
 import "./AtsBeforeAfterPreview.scss";
+import "./AtsBeforeAfterPreviewFixes.scss";
 
 const SECTIONS_AVAILABLE = [
   { id: "all", label: "All Sections (Full Rewrite)" },
