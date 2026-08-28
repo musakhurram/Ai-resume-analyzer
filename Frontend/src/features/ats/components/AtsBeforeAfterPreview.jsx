@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import Button from "../../../shared/components/Button";
 import Callout from "../../../shared/components/Callout";
 import AtsPdfDiffViewer from "./AtsPdfDiffViewer";
@@ -12,24 +12,34 @@ const SECTIONS_AVAILABLE = [
   { id: "education", label: "Education & Details" },
 ];
 
+const iconStyle = { display: "block", width: "22px", height: "22px", flex: "0 0 22px" };
+
 const SwapIcon = () => (
-  <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+  <svg viewBox="0 0 24 24" fill="none" aria-hidden="true" style={iconStyle}>
     <path d="M4 8h15m0 0-4-4m4 4-4 4M20 16H5m0 0 4 4m-4-4 4-4" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
   </svg>
 );
 
 const TargetIcon = () => (
-  <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+  <svg viewBox="0 0 24 24" fill="none" aria-hidden="true" style={iconStyle}>
     <circle cx="12" cy="12" r="7.2" stroke="currentColor" strokeWidth="1.8" />
     <circle cx="12" cy="12" r="2.6" stroke="currentColor" strokeWidth="1.8" />
     <path d="M12 2v3M12 19v3M2 12h3M19 12h3" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
   </svg>
 );
 
-const SparkleIcon = () => (
-  <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+const SparkleIcon = ({ size = 22 }) => (
+  <svg viewBox="0 0 24 24" fill="none" aria-hidden="true" style={{ display: "block", width: `${size}px`, height: `${size}px`, flex: `0 0 ${size}px` }}>
     <path d="M12 2.5 13.8 8l5.7 1.8-5.7 1.8-1.8 5.9-1.8-5.9-5.7-1.8L10.2 8z" stroke="currentColor" strokeWidth="1.55" strokeLinejoin="round" />
     <path d="m19 15 .8 2.2L22 18l-2.2.8L19 21l-.8-2.2L16 18l2.2-.8z" fill="currentColor" />
+  </svg>
+);
+
+const InfoIcon = () => (
+  <svg viewBox="0 0 18 18" fill="none" aria-hidden="true" style={{ display: "block", width: "16px", height: "16px" }}>
+    <circle cx="9" cy="9" r="7" stroke="currentColor" strokeWidth="1.5" />
+    <path d="M9 8v4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
+    <circle cx="9" cy="5.5" r=".8" fill="currentColor" />
   </svg>
 );
 
@@ -86,7 +96,7 @@ const AtsBeforeAfterPreview = ({ reportId, originalText, originalPdfUrl, revised
       <section className="ats-preview-toolbar" aria-label="AI revision controls">
         <div className="ats-preview-toolbar__label-row">
           <span className="ats-toolbar-label">Scope</span>
-          <span className="ats-toolbar-info" title="Choose which resume sections the AI should improve">ⓘ</span>
+          <span className="ats-toolbar-info" title="Choose which resume sections the AI should improve"><InfoIcon /></span>
         </div>
         <div className="ats-preview-toolbar__row">
           <div className="ats-preview-toolbar__section-picker">
@@ -107,7 +117,7 @@ const AtsBeforeAfterPreview = ({ reportId, originalText, originalPdfUrl, revised
             </div>
           </div>
           <Button variant="primary" size="sm" loading={loading} onClick={handleRunRevise} className="ats-toolbar-btn">
-            <span className="ats-generate-icon" aria-hidden="true"><SparkleIcon /></span>
+            <span className="ats-generate-icon" aria-hidden="true"><SparkleIcon size={20} /></span>
             {hasRevision ? "Re-generate" : "Generate Revision"}
           </Button>
         </div>
@@ -166,9 +176,9 @@ const AtsBeforeAfterPreview = ({ reportId, originalText, originalPdfUrl, revised
               </section>
 
               <section className="ats-preview-highlight-note">
-                <div className="ats-preview-highlight-note__icon"><SparkleIcon /></div>
+                <div className="ats-preview-highlight-note__icon"><SparkleIcon size={26} /></div>
                 <div><strong>Highlights will appear here</strong><p>Once you generate the revision, you'll see additions in green, removals in red, and edits in yellow.</p></div>
-                <div className="ats-preview-highlight-note__sparkles" aria-hidden="true"><SparkleIcon /></div>
+                <div className="ats-preview-highlight-note__sparkles" aria-hidden="true"><SparkleIcon size={24} /></div>
               </section>
             </>
           )}
