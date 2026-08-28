@@ -124,6 +124,40 @@ button {
   cursor: pointer;
 }
 
+// Consistent native <select> styling — custom chevron, touch-friendly height,
+// matches the pill/menu language used by SortDropdown so every dropdown in
+// the app reads as the same component family.
+select {
+  appearance: none;
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  cursor: pointer;
+  min-height: 40px;
+  padding-right: 2.1rem;
+  background-repeat: no-repeat;
+  background-position: right 0.7rem center;
+  background-size: 13px;
+}
+
+select::-ms-expand {
+  display: none;
+}
+
+select option {
+  background: var(--bg-raised);
+  color: var(--ink);
+}
+
+[data-theme="dark"] select {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' fill='none'%3E%3Cpath d='M4.5 6.5 8 10l3.5-3.5' stroke='%239aa3a8' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+}
+
+[data-theme="light"] select {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' fill='none'%3E%3Cpath d='M4.5 6.5 8 10l3.5-3.5' stroke='%23666f74' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+}
+
+
+
 h1,
 h2,
 h3,

@@ -240,3 +240,21 @@
     }
   }
 }
+
+@media (max-width: 480px) {
+  .dropzone {
+    &__file-card {
+      flex-wrap: wrap;
+    }
+
+    &__file-actions {
+      width: 100%;
+      justify-content: flex-end;
+    }
+
+    &__action-btn {
+      min-height: 34px;
+      padding: 0.3rem 0.75rem;
+    }
+  }
+}

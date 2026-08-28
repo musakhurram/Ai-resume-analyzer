@@ -131,3 +131,14 @@
     transform: rotate(360deg);
   }
 }
+
+// Slightly taller tap targets on touch devices, without changing desktop density
+@media (hover: none) and (pointer: coarse) {
+  .btn--sm {
+    height: 36px;
+  }
+
+  .btn--md {
+    height: 40px;
+  }
+}

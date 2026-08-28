@@ -141,11 +141,13 @@ const AtsAnalyzer = () => {
         <div className="ats-main-tabs">
           <button type="button" className={`ats-main-tab ${activeTab === "audit" ? "is-active" : ""}`} onClick={() => setActiveTab("audit")}>
             <svg viewBox="0 0 16 16" fill="none" width="14" height="14"><path d="M2 4h12M2 8h12M2 12h8" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" /></svg>
-            Comprehensive Audit
+            <span className="ats-main-tab__label ats-main-tab__label--full">Comprehensive Audit</span>
+            <span className="ats-main-tab__label ats-main-tab__label--short">Audit</span>
           </button>
           <button type="button" className={`ats-main-tab ${activeTab === "studio" ? "is-active" : ""}`} onClick={() => setActiveTab("studio")}>
             <svg viewBox="0 0 16 16" fill="none" width="14" height="14"><path d="M8 2.5l1.5 3.5 3.8.3-2.9 2.5.9 3.7L8 10.7l-3.3 1.8.9-3.7-2.9-2.5 3.8-.3L8 2.5z" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round" /></svg>
-            AI Rewrite & PDF Studio
+            <span className="ats-main-tab__label ats-main-tab__label--full">AI Rewrite & PDF Studio</span>
+            <span className="ats-main-tab__label ats-main-tab__label--short">Studio</span>
             {revisedResume && <span className="ats-tab-dot" />}
           </button>
         </div>
