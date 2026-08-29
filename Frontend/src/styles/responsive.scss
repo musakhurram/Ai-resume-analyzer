@@ -1,0 +1,51 @@
+/* App-wide responsive safety net. Feature styles remain the source of truth for visual design. */
+
+@media (max-width: 1100px) {
+  .app-shell__content { padding-left: var(--space-5); padding-right: var(--space-5); }
+}
+
+@media (max-width: 900px) {
+  .app-shell__content { width: 100%; min-width: 0; }
+  .app-shell__content > *,
+  .app-shell__content section,
+  .app-shell__content article,
+  .app-shell__content form,
+  .app-shell__content [class*="grid"],
+  .app-shell__content [class*="row"] { min-width: 0; max-width: 100%; }
+}
+
+@media (max-width: 768px) {
+  body { font-size: 14px; }
+  .app-shell__content { padding: var(--space-4) var(--space-3); overflow-wrap: anywhere; }
+  .app-shell__content h1 { font-size: clamp(1.45rem, 7vw, 1.8rem); }
+  .app-shell__content h2 { font-size: clamp(1.2rem, 5vw, 1.5rem); }
+
+  .app-shell__content h1,
+  .app-shell__content h2,
+  .app-shell__content h3,
+  .app-shell__content h4,
+  .app-shell__content p,
+  .app-shell__content li,
+  .app-shell__content span,
+  .app-shell__content a { overflow-wrap: anywhere; }
+
+  input, textarea, select { max-width: 100%; min-width: 0; }
+  button { touch-action: manipulation; }
+  .glass-panel { max-width: 100%; }
+}
+
+@media (max-width: 480px) {
+  .app-shell__content { padding: 1rem 0.75rem; }
+  .glass-panel { border-radius: var(--radius-md); }
+
+  .app-shell__content [class*="actions"],
+  .app-shell__content [class*="buttons"],
+  .app-shell__content [class*="toolbar"] { flex-wrap: wrap; }
+
+  .app-shell__content [class*="actions"] > button,
+  .app-shell__content [class*="buttons"] > button { max-width: 100%; }
+}
+
+@media (max-width: 360px) {
+  .app-shell__content { padding-left: 0.625rem; padding-right: 0.625rem; }
+}
