@@ -43,9 +43,10 @@
     align-items: center;
     justify-content: center;
     flex-shrink: 0;
-    border-radius: var(--radius-sm);
+    border-radius: 8px;
     background: var(--accent);
     color: var(--on-accent);
+    box-shadow: 0 4px 14px color-mix(in srgb, var(--accent) 18%, transparent);
 
     svg {
       width: 18px;
@@ -55,13 +56,30 @@
   }
 
   &__mobile-brand-text {
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+    line-height: 1.05;
+    white-space: nowrap;
+    overflow: hidden;
+  }
+
+  &__mobile-brand-name {
     color: var(--ink);
     font-family: var(--font-display);
     font-size: 0.82rem;
+    font-weight: 800;
+    letter-spacing: -0.02em;
+  }
+
+  &__mobile-brand-sub {
+    color: var(--ink-faint);
+    font-family: var(--font-mono);
+    font-size: 0.55rem;
     font-weight: 700;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
+    letter-spacing: 0.09em;
+    text-transform: uppercase;
+    margin-top: 2px;
   }
 
   &__context { display: flex; align-items: center; gap: 0.5rem; font-size: 0.8125rem; }
@@ -86,7 +104,7 @@
     height: 58px;
     padding-top: env(safe-area-inset-top, 0px);
     box-sizing: content-box;
-    gap: 0.5rem;
+    gap: 0.6rem;
 
     &__menu { display: inline-flex; width: 40px; height: 40px; }
     &__mobile-brand { display: inline-flex; }
@@ -94,8 +112,8 @@
     &__user-meta { display: none; }
     &__logout-label { display: none; }
     &__logout { width: 40px; height: 40px; padding: 0; align-items: center; justify-content: center; }
-    &__actions { gap: 0.5rem; }
-    &__account { gap: 0.5rem; padding-left: 0.5rem; }
+    &__actions { gap: 0.45rem; }
+    &__account { gap: 0.4rem; padding-left: 0.4rem; }
   }
 }
 
@@ -107,18 +125,15 @@
   }
 
   .topbar__mobile-brand {
-    flex: 1;
+    flex: 1 1 auto;
     min-width: 0;
-  }
-
-  .topbar__mobile-brand-text {
-    font-size: 0.76rem;
-    max-width: 120px;
+    max-width: 118px;
+    gap: 0.42rem;
   }
 
   .topbar__mobile-brand-mark {
-    width: 28px;
-    height: 28px;
+    width: 29px;
+    height: 29px;
   }
 
   .topbar__mobile-brand-mark svg {
@@ -126,13 +141,17 @@
     height: 17px;
   }
 
+  .topbar__mobile-brand-name { font-size: 0.78rem; }
+  .topbar__mobile-brand-sub { font-size: 0.51rem; }
   .topbar__avatar { width: 32px; height: 32px; }
-  .topbar__actions { gap: 0.35rem; }
-  .topbar__account { gap: 0.35rem; padding-left: 0.35rem; }
+  .topbar__actions { gap: 0.3rem; }
+  .topbar__account { gap: 0.3rem; padding-left: 0.3rem; }
 }
 
 @media (max-width: 360px) {
-  .topbar__mobile-brand-text { max-width: 92px; }
+  .topbar__mobile-brand { max-width: 104px; }
+  .topbar__mobile-brand-sub { display: none; }
+  .topbar__mobile-brand-name { font-size: 0.74rem; }
   .topbar__menu, .topbar__logout { width: 38px; height: 38px; }
   .topbar__mobile-brand-mark { width: 27px; height: 27px; }
 }
