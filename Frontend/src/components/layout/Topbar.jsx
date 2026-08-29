@@ -24,11 +24,17 @@ const Topbar = ({ theme, onToggleTheme, user, onLogout, onMenuClick }) => {
         className="topbar__menu"
         onClick={onMenuClick}
         aria-label="Open navigation menu"
+        aria-expanded={false}
       >
-        <svg viewBox="0 0 20 20" fill="none">
+        <svg viewBox="0 0 20 20" fill="none" aria-hidden="true">
           <path d="M3 5h14M3 10h14M3 15h14" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
         </svg>
       </button>
+
+      <div className="topbar__mobile-brand" aria-label="AI Resume Analyzer">
+        <span className="topbar__mobile-brand-mark">R</span>
+        <span className="topbar__mobile-brand-text">Resume Analyzer</span>
+      </div>
 
       <div className="topbar__context">
         <span className="topbar__badge">Workspace</span>
@@ -57,15 +63,10 @@ const Topbar = ({ theme, onToggleTheme, user, onLogout, onMenuClick }) => {
             className="topbar__logout"
             onClick={onLogout}
             title="Sign out of your account"
+            aria-label="Sign out of your account"
           >
             <svg viewBox="0 0 16 16" fill="none" className="topbar__logout-icon" aria-hidden="true">
-              <path
-                d="M6 13.5H3.5a1 1 0 01-1-1v-9a1 1 0 011-1H6M10.5 11l3-3-3-3M13.5 8H6"
-                stroke="currentColor"
-                strokeWidth="1.4"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              />
+              <path d="M6 13.5H3.5a1 1 0 01-1-1v-9a1 1 0 011-1H6M10.5 11l3-3-3-3M13.5 8H6" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round" />
             </svg>
             <span className="topbar__logout-label">Sign out</span>
           </button>
@@ -76,5 +77,3 @@ const Topbar = ({ theme, onToggleTheme, user, onLogout, onMenuClick }) => {
 };
 
 export default Topbar;
-
-
