@@ -1,4 +1,4 @@
-const { generateAtsPdfBuffer } = require("../services/atsPdf.service");
+const { generateAtsPdfBufferSafe } = require("../services/atsPdf.safe.service");
 const atsReportModel = require("../models/atsReport.model");
 
 function getAuthenticatedUserId(req) {
@@ -24,7 +24,7 @@ async function atsManualRevisionPdfController(req, res, next) {
       return res.status(404).json({ message: "Generate the AI revision before previewing it." });
     }
 
-    const pdfBuffer = await generateAtsPdfBuffer(report.revisedResume, getRevisionPdfCacheKey(report));
+    const pdfBuffer = await generateAtsPdfBufferSafe(report.revisedResume, getRevisionPdfCacheKey(report));
     res.setHeader("Content-Type", "application/pdf");
     res.setHeader("Cache-Control", "private, no-store, max-age=0, must-revalidate");
     return res.status(200).send(pdfBuffer);
