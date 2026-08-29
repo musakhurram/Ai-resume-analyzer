@@ -36,16 +36,11 @@ export async function listAtsReports({ search = "", sort = "recent", limit = 50 
 }
 
 export async function getAtsPreviewPdf(id) {
-  try {
-    const response = await api.get(`/api/resume/ats-preview/${id}`, { responseType: "arraybuffer", headers: { Accept: "application/pdf" } });
-    return response.data;
-  } catch (error) {
-    if (error?.response?.status === 404) {
-      const response = await api.get(`/api/resume/ats-download/${id}`, { responseType: "arraybuffer", headers: { Accept: "application/pdf" } });
-      return response.data;
-    }
-    throw error;
-  }
+  const response = await api.get(`/api/resume/ats-revision-pdf/${id}`, {
+    responseType: "arraybuffer",
+    headers: { Accept: "application/pdf" },
+  });
+  return response.data;
 }
 
 export async function getAtsOriginalPdf(id, originalPdfUrl = "") {
@@ -63,12 +58,17 @@ export async function getAtsOriginalPdf(id, originalPdfUrl = "") {
 }
 
 export async function downloadAtsPdf(id, candidateName = "ATS-Resume") {
-  const response = await api.get(`/api/resume/ats-download/${id}`, { responseType: "blob", headers: { Accept: "application/pdf" } });
+  const response = await api.get(`/api/resume/ats-revision-pdf/${id}`, {
+    responseType: "blob",
+    headers: { Accept: "application/pdf" },
+  });
   const blob = new Blob([response.data], { type: "application/pdf" });
   const url = window.URL.createObjectURL(blob);
   const link = document.createElement("a");
   link.href = url;
   link.download = `${(candidateName || "ATS-Resume").replace(/[^a-zA-Z0-9_-]/g, "_")}_ATS_Optimized.pdf`;
   document.body.appendChild(link);
-  link.click(); link.remove(); window.URL.revokeObjectURL(url);
+  link.click();
+  link.remove();
+  window.URL.revokeObjectURL(url);
 }
