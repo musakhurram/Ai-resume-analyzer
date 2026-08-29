@@ -1,3 +1,4 @@
+const mongoose = require("mongoose");
 const userModel = require("../models/user.model");
 
 // App-level AI tokens. These are usage units owned by Resume Analyzer,
@@ -22,12 +23,17 @@ const PLAN_CONFIG = {
 function normalizePlan(plan) { return Object.prototype.hasOwnProperty.call(PLAN_CONFIG, plan) ? plan : "free"; }
 function getPlanConfig(plan) { return PLAN_CONFIG[normalizePlan(plan)]; }
 
+function toMongoUserId(userId) {
+  if (userId && mongoose.isValidObjectId(userId)) return new mongoose.Types.ObjectId(String(userId));
+  return userId;
+}
+
 async function ensureTokenBalance(userId) {
   // Read the raw MongoDB document so Mongoose schema defaults cannot hide a
-  // missing aiTokens field. An unset field may otherwise look like 3,000 in a
-  // Mongoose document while MongoDB's $gte query cannot match it.
+  // missing aiTokens field. JWT ids are strings, but MongoDB _id is an ObjectId.
+  const mongoUserId = toMongoUserId(userId);
   const rawUser = await userModel.collection.findOne(
-    { _id: userId },
+    { _id: mongoUserId },
     { projection: { plan: 1, aiTokens: 1, resumeCredits: 1, freeTokensGranted: 1 } },
   );
   if (!rawUser) return null;
@@ -40,25 +46,19 @@ async function ensureTokenBalance(userId) {
     let startingTokens;
 
     if (plan === "free") {
-      // The current Free allowance is exactly 3,000 app-level AI tokens.
       startingTokens = 3000;
     } else if (Number.isFinite(legacyCredits) && legacyCredits >= 0) {
-      // Preserve balances from the old credit system for paid/legacy accounts.
       startingTokens = Math.floor(legacyCredits * 1000);
     } else {
-      // If a paid account predates aiTokens and has no legacy balance, initialize
-      // it to the current plan allowance rather than leaving the field unset.
       startingTokens = getPlanConfig(plan).tokens;
     }
 
     await userModel.collection.updateOne(
-      { _id: userId, aiTokens: { $exists: false } },
+      { _id: mongoUserId, aiTokens: { $exists: false } },
       { $set: { aiTokens: startingTokens } },
     );
   }
 
-  // Fetch through Mongoose after persistence so callers receive the same shape
-  // as before, but now the balance is guaranteed to exist in MongoDB.
   return userModel.findById(userId).select("plan aiTokens resumeCredits freeTokensGranted");
 }
 
@@ -118,7 +118,6 @@ async function getBillingSnapshot(userId) {
   const plan = normalizePlan(user.plan);
   const config = getPlanConfig(plan);
   const aiTokens = Number(user.aiTokens) || 0;
-  // Backward-compatible field for the existing JD Match review UI. JD Match costs 750 tokens.
   const resumeCredits = Math.floor(aiTokens / TOKEN_COSTS.jdMatch);
   return { plan, planLabel: config.label, aiTokens, resumeCredits, tokensPerPurchase: config.tokensPerPurchase, planTokens: config.tokens, description: config.description, tokenCosts: TOKEN_COSTS };
 }
