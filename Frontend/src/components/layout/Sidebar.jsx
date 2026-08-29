@@ -48,7 +48,7 @@ const Sidebar = ({ open, onNavigate, onClose }) => {
   const used = hasBalance ? Math.max(0, allowance - tokens) : 0;
   const tokenLabel = hasBalance ? `${tokens.toLocaleString()} AI token${tokens === 1 ? "" : "s"} remaining` : "Token balance unavailable";
 
-  return <aside className={`sidebar ${open ? "is-open" : ""}`} aria-label="Main sidebar">
+  return <aside id="main-navigation" className={`sidebar ${open ? "is-open" : ""}`} aria-label="Main sidebar" aria-hidden={!open && typeof window !== "undefined" && window.innerWidth <= 900}>
     <div className="sidebar__header"><Link to="/analyze/ats-score" className="sidebar__brand" onClick={onNavigate}><div className="sidebar__mark"><LogoMark className="sidebar__logo-svg" /></div><div className="sidebar__brand-text"><span className="sidebar__wordmark">Resume Analyzer</span><span className="sidebar__tagline">Interview Studio</span></div></Link>{open && <button type="button" className="sidebar__close-btn" onClick={onClose || onNavigate} aria-label="Close sidebar">×</button>}</div>
     <nav className="sidebar__nav" aria-label="Primary Navigation"><p className="sidebar__section-title">Navigation</p>{navItems.map((item) => { const isActive = item.alias.some((p) => location.pathname === p || (p !== "/" && location.pathname.startsWith(p))); return <NavLink key={item.to} to={item.to} className={`sidebar__link ${isActive ? "is-active" : ""}`} onClick={onNavigate}><span className="sidebar__link-icon">{item.icon}</span><span className="sidebar__link-text">{item.label}</span></NavLink>; })}</nav>
     <div className="sidebar__footer">
