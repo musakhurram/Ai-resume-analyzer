@@ -180,18 +180,7 @@ const AtsBeforeAfterPreview = ({
     <div className="ats-cmp">
       {/* --- toolbar --- */}
       <div className="ats-cmp-toolbar">
-        <div className="ats-cmp-toolbar__field ats-cmp-toolbar__field--scope">
-          <label className="ats-cmp-toolbar__label">Scope</label>
-          <div className="ats-cmp-select">
-            <IconTarget />
-            <select value={sections} onChange={(e) => setSections(e.target.value)}>
-              {SECTION_OPTIONS.map((opt) => <option key={opt.value} value={opt.value}>{opt.label}</option>)}
-            </select>
-            <span className="ats-cmp-chevron" aria-hidden="true">
-              <svg viewBox="0 0 16 16" fill="none" width="12" height="12"><path d="M4 6l4 4 4-4" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" /></svg>
-            </span>
-          </div>
-        </div>
+  
 
         <div className="ats-cmp-toolbar__field ats-cmp-toolbar__field--notes">
           <label className="ats-cmp-toolbar__label">Focus</label>
