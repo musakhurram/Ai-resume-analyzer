@@ -1,5 +1,17 @@
 const PDFDocument = require("pdfkit");
 
+function normalizeResumeData(input) {
+  if (!input) return {};
+  if (typeof input === "string") {
+    try {
+      return JSON.parse(input);
+    } catch (_) {
+      return { summary: input };
+    }
+  }
+  return typeof input === "object" ? input : {};
+}
+
 function addWrapped(doc, text, options = {}) {
   const value = String(text ?? "").trim();
   if (!value) return;
@@ -13,14 +25,41 @@ function addWrapped(doc, text, options = {}) {
 function compactEstimate(resume = {}) {
   const contact = resume.contact || {};
   const textParts = [resume.summary];
-  (resume.skills || []).forEach((s) => textParts.push(s?.category, Array.isArray(s?.items) ? s.items.join(", ") : s?.items));
-  (resume.experience || []).forEach((e) => textParts.push(e?.company, e?.title, e?.location, e?.dates, ...(e?.bullets || [])));
-  (resume.education || []).forEach((e) => textParts.push(e?.degree, e?.institution, e?.dates, e?.details));
-  (resume.projects || []).forEach((p) => textParts.push(p?.name, p?.role, p?.dates, ...(p?.bullets || [])));
-  (resume.certifications || []).forEach((c) => textParts.push(c?.name, c?.issuer, c?.date));
+  (Array.isArray(resume.skills) ? resume.skills : []).forEach((s) => {
+    textParts.push(s?.category, Array.isArray(s?.items) ? s.items.join(", ") : s?.items);
+  });
+  (Array.isArray(resume.experience) ? resume.experience : []).forEach((e) => {
+    textParts.push(e?.company, e?.title, e?.location, e?.dates);
+    if (Array.isArray(e?.bullets)) {
+      textParts.push(...e.bullets);
+    } else if (e?.bullets) {
+      textParts.push(String(e.bullets));
+    }
+  });
+  (Array.isArray(resume.education) ? resume.education : []).forEach((e) => {
+    textParts.push(e?.degree, e?.institution, e?.dates, e?.details);
+  });
+  (Array.isArray(resume.projects) ? resume.projects : []).forEach((p) => {
+    textParts.push(p?.name, p?.role, p?.dates);
+    if (Array.isArray(p?.bullets)) {
+      textParts.push(...p.bullets);
+    } else if (p?.bullets) {
+      textParts.push(String(p.bullets));
+    }
+  });
+  (Array.isArray(resume.certifications) ? resume.certifications : []).forEach((c) => {
+    textParts.push(c?.name, c?.issuer, c?.date);
+  });
   textParts.push(contact.fullName, contact.email, contact.phone, contact.location, contact.linkedin, contact.github, contact.website);
   const chars = textParts.filter(Boolean).reduce((n, value) => n + String(value).length, 0);
-  const sections = [resume.summary, resume.skills?.length, resume.experience?.length, resume.education?.length, resume.projects?.length, resume.certifications?.length].filter(Boolean).length;
+  const sections = [
+    resume.summary,
+    Array.isArray(resume.skills) && resume.skills.length,
+    Array.isArray(resume.experience) && resume.experience.length,
+    Array.isArray(resume.education) && resume.education.length,
+    Array.isArray(resume.projects) && resume.projects.length,
+    Array.isArray(resume.certifications) && resume.certifications.length,
+  ].filter(Boolean).length;
   const estimatedLines = Math.ceil(chars / 92) + sections * 2 + 7;
   const estimatedHeight = 72 + estimatedLines * 10.2;
   return Math.min(1, Math.max(0.76, 680 / estimatedHeight));
@@ -54,13 +93,14 @@ function itemHeader(doc, title, dates) {
   }
 }
 
-function generateAtsPdfBuffer(resume = {}, cacheKey = null) {
+function generateAtsPdfBuffer(rawResume = {}, cacheKey = null) {
   // PDFKit is used directly so this works in Vercel serverless without Chromium.
   // The generated ATS resume is intentionally constrained to ONE page. We use
   // a vertical-only scale when the content is dense so wrapping width stays
   // unchanged and the resume remains readable and ATS-friendly.
   return new Promise((resolve, reject) => {
     try {
+      const resume = normalizeResumeData(rawResume);
       const doc = new PDFDocument({
         size: "LETTER",
         margins: { top: 30, bottom: 30, left: 40, right: 40 },
@@ -69,7 +109,7 @@ function generateAtsPdfBuffer(resume = {}, cacheKey = null) {
       const chunks = [];
       doc.on("data", (chunk) => chunks.push(chunk));
       doc.on("end", () => resolve(Buffer.concat(chunks)));
-      doc.on("error", reject);
+      doc.on("error", (err) => reject(err));
 
       // Scale only the vertical axis. This preserves the normal text wrapping
       // width while ensuring dense but valid CV content stays on one page.
@@ -121,6 +161,12 @@ function generateAtsPdfBuffer(resume = {}, cacheKey = null) {
               doc.font("Helvetica").fontSize(8.15).fillColor(text);
               addWrapped(doc, `• ${bullet}`, { x: 49, width: contentWidth - 9, lineGap: 0.3 });
             });
+          } else if (exp.bullets) {
+            const lines = String(exp.bullets).split("\n").filter(Boolean);
+            lines.forEach((b) => {
+              doc.font("Helvetica").fontSize(8.15).fillColor(text);
+              addWrapped(doc, `• ${b.replace(/^[•\s*-]+/, "")}`, { x: 49, width: contentWidth - 9, lineGap: 0.3 });
+            });
           }
           doc.moveDown(0.12);
         });
@@ -148,6 +194,12 @@ function generateAtsPdfBuffer(resume = {}, cacheKey = null) {
             project.bullets.forEach((bullet) => {
               doc.font("Helvetica").fontSize(8.15).fillColor(text);
               addWrapped(doc, `• ${bullet}`, { x: 49, width: contentWidth - 9, lineGap: 0.3 });
+            });
+          } else if (project.bullets) {
+            const lines = String(project.bullets).split("\n").filter(Boolean);
+            lines.forEach((b) => {
+              doc.font("Helvetica").fontSize(8.15).fillColor(text);
+              addWrapped(doc, `• ${b.replace(/^[•\s*-]+/, "")}`, { x: 49, width: contentWidth - 9, lineGap: 0.3 });
             });
           }
           doc.moveDown(0.12);
