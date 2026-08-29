@@ -23,30 +23,43 @@ function normalizePlan(plan) { return Object.prototype.hasOwnProperty.call(PLAN_
 function getPlanConfig(plan) { return PLAN_CONFIG[normalizePlan(plan)]; }
 
 async function ensureTokenBalance(userId) {
-  const user = await userModel.findById(userId).select("plan aiTokens resumeCredits freeTokensGranted");
-  if (!user) return null;
+  // Read the raw MongoDB document so Mongoose schema defaults cannot hide a
+  // missing aiTokens field. An unset field may otherwise look like 3,000 in a
+  // Mongoose document while MongoDB's $gte query cannot match it.
+  const rawUser = await userModel.collection.findOne(
+    { _id: userId },
+    { projection: { plan: 1, aiTokens: 1, resumeCredits: 1, freeTokensGranted: 1 } },
+  );
+  if (!rawUser) return null;
 
-  const plan = normalizePlan(user.plan);
-  const currentTokens = Number(user.aiTokens);
-  const legacyCredits = Number(user.resumeCredits);
+  const plan = normalizePlan(rawUser.plan);
+  const hasStoredTokens = Object.prototype.hasOwnProperty.call(rawUser, "aiTokens") && Number.isFinite(Number(rawUser.aiTokens));
 
-  // Old accounts have resumeCredits but no real AI-token balance. Convert the
-  // remaining balance once. A legacy credit is intentionally worth 1,000 app tokens.
-  // The old Free plan is upgraded to the new 3,000-token starter allowance.
-  if (Number.isFinite(legacyCredits) && legacyCredits >= 0 && user.freeTokensGranted !== true && (plan === "free" || !Number.isFinite(currentTokens) || currentTokens === 3000)) {
-    user.aiTokens = plan === "free" ? 3000 : Math.floor(legacyCredits * 1000);
-    user.freeTokensGranted = plan === "free";
-    await user.save();
-    return user;
+  if (!hasStoredTokens) {
+    const legacyCredits = Number(rawUser.resumeCredits);
+    let startingTokens;
+
+    if (plan === "free") {
+      // The current Free allowance is exactly 3,000 app-level AI tokens.
+      startingTokens = 3000;
+    } else if (Number.isFinite(legacyCredits) && legacyCredits >= 0) {
+      // Preserve balances from the old credit system for paid/legacy accounts.
+      startingTokens = Math.floor(legacyCredits * 1000);
+    } else {
+      // If a paid account predates aiTokens and has no legacy balance, initialize
+      // it to the current plan allowance rather than leaving the field unset.
+      startingTokens = getPlanConfig(plan).tokens;
+    }
+
+    await userModel.collection.updateOne(
+      { _id: userId, aiTokens: { $exists: false } },
+      { $set: { aiTokens: startingTokens } },
+    );
   }
 
-  // New accounts are created without a token balance and receive their Free allowance once.
-  if ((!Number.isFinite(currentTokens) || currentTokens < 0) && plan === "free") {
-    user.aiTokens = 3000;
-    user.freeTokensGranted = true;
-    await user.save();
-  }
-  return user;
+  // Fetch through Mongoose after persistence so callers receive the same shape
+  // as before, but now the balance is guaranteed to exist in MongoDB.
+  return userModel.findById(userId).select("plan aiTokens resumeCredits freeTokensGranted");
 }
 
 async function consumeAiTokens(userId, operation, customCost) {
@@ -62,7 +75,13 @@ async function consumeAiTokens(userId, operation, customCost) {
     throw error;
   }
 
-  await ensureTokenBalance(userId);
+  const ensuredUser = await ensureTokenBalance(userId);
+  if (!ensuredUser) {
+    const error = new Error("User not found");
+    error.statusCode = 404;
+    throw error;
+  }
+
   const user = await userModel.findOneAndUpdate(
     { _id: userId, aiTokens: { $gte: cost } },
     { $inc: { aiTokens: -cost } },
