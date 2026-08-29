@@ -28,28 +28,33 @@ const AppShell = () => {
     };
   }, [navOpen]);
 
+  const closeNavigation = () => setNavOpen(false);
+
   return (
     <div className={`app-shell${navOpen ? " is-nav-open" : ""}`}>
       <Sidebar
         open={navOpen}
-        onNavigate={() => setNavOpen(false)}
-        onClose={() => setNavOpen(false)}
+        onNavigate={closeNavigation}
+        onClose={closeNavigation}
       />
-      {navOpen && (
-        <button
-          type="button"
-          className="app-shell__scrim"
-          aria-label="Close navigation"
-          onClick={() => setNavOpen(false)}
-        />
-      )}
+
+      <button
+        type="button"
+        className={`app-shell__scrim${navOpen ? " is-visible" : ""}`}
+        aria-label="Close navigation"
+        aria-hidden={!navOpen}
+        tabIndex={navOpen ? 0 : -1}
+        onClick={closeNavigation}
+      />
+
       <div className="app-shell__main">
         <Topbar
           theme={theme}
           onToggleTheme={toggleTheme}
           user={user}
           onLogout={handleLogout}
-          onMenuClick={() => setNavOpen(true)}
+          onMenuClick={() => setNavOpen((open) => !open)}
+          navOpen={navOpen}
         />
         <main className="app-shell__content">
           <Outlet />
