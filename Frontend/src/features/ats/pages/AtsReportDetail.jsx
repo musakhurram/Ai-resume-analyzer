@@ -80,10 +80,12 @@ const AtsReportDetail = () => {
         <Link className="ats-back-btn" to="/reports">← Back to Past Reviews</Link>
         <div className="ats-main-tabs">
           <button type="button" className={`ats-main-tab ${activeView === "audit" ? "is-active" : ""}`} onClick={() => setActiveView("audit")}>
-            Comprehensive Audit
+            <span className="ats-main-tab__label--full">Comprehensive Audit</span>
+            <span className="ats-main-tab__label--short">Audit</span>
           </button>
           <button type="button" className={`ats-main-tab ${activeView === "studio" ? "is-active" : ""}`} onClick={() => setActiveView("studio")}>
-            AI Rewrite & PDF Studio
+            <span className="ats-main-tab__label--full">AI Rewrite &amp; PDF Studio</span>
+            <span className="ats-main-tab__label--short">AI Studio</span>
             {revisedResume && <span className="ats-tab-dot" />}
           </button>
         </div>
