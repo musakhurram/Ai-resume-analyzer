@@ -9,7 +9,7 @@
   padding: var(--space-5) var(--space-4);
   border-right: 1px solid var(--border);
   background: var(--surface-solid, var(--bg-raised));
-  z-index: 30;
+  z-index: 1000;
   transition: transform var(--duration-med) var(--ease);
 
   &__header {
@@ -28,8 +28,20 @@
   &__tagline { font-family: var(--font-mono); font-size: 0.625rem; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: var(--ink-faint); }
 
   &__close-btn {
-    display: none; align-items: center; justify-content: center; width: 36px; height: 36px;
-    flex-shrink: 0; border-radius: var(--radius-sm); color: var(--ink-muted); background: var(--surface-2);
+    display: none;
+    align-items: center;
+    justify-content: center;
+    width: 36px;
+    height: 36px;
+    flex-shrink: 0;
+    border-radius: var(--radius-sm);
+    color: var(--ink-muted);
+    background: var(--surface-2);
+    cursor: pointer;
+    font-size: 1.25rem;
+    line-height: 1;
+    padding: 0;
+    border: 1px solid var(--border);
     &:hover { color: var(--ink); background: var(--surface-3); }
   }
 
@@ -66,19 +78,26 @@
 @media (max-width: 900px) {
   .sidebar {
     position: fixed;
-    inset: 0 auto 0 0;
+    left: 0;
+    right: auto;
+    top: 0;
+    bottom: 0;
     width: min(82vw, 300px);
     max-width: 300px;
     height: 100dvh;
     overflow-y: auto;
     overscroll-behavior: contain;
-    transform: translate3d(-105%, 0, 0);
+    transform: translateX(-110%);
+    transition: transform 260ms cubic-bezier(.22, 1, .36, 1);
     box-shadow: var(--shadow-lg);
-    background: var(--bg-raised);
+    background: var(--surface-solid, var(--bg-raised));
     will-change: transform;
     -webkit-overflow-scrolling: touch;
 
-    &.is-open { transform: translate3d(0, 0, 0); }
+    &.is-open {
+      transform: translateX(0);
+    }
+
     &__close-btn { display: inline-flex; }
     &__link { min-height: 46px; }
     &__footer { padding-bottom: env(safe-area-inset-bottom, 0px); }
