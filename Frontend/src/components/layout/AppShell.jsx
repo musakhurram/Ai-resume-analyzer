@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Outlet } from "react-router";
 import Sidebar from "./Sidebar";
 import Topbar from "./Topbar";
@@ -11,8 +11,25 @@ const AppShell = () => {
   const { user, handleLogout } = useAuth();
   const [navOpen, setNavOpen] = useState(false);
 
+  useEffect(() => {
+    if (!navOpen) return undefined;
+
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+
+    const handleKeyDown = (event) => {
+      if (event.key === "Escape") setNavOpen(false);
+    };
+
+    window.addEventListener("keydown", handleKeyDown);
+    return () => {
+      document.body.style.overflow = previousOverflow;
+      window.removeEventListener("keydown", handleKeyDown);
+    };
+  }, [navOpen]);
+
   return (
-    <div className="app-shell">
+    <div className={`app-shell${navOpen ? " is-nav-open" : ""}`}>
       <Sidebar
         open={navOpen}
         onNavigate={() => setNavOpen(false)}
@@ -43,4 +60,3 @@ const AppShell = () => {
 };
 
 export default AppShell;
-
