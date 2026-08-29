@@ -12,6 +12,40 @@
   .app-shell__content form,
   .app-shell__content [class*="grid"],
   .app-shell__content [class*="row"] { min-width: 0; max-width: 100%; }
+
+  /* Report audit columns must become a true single-column stack. */
+  .ats-audit-grid {
+    display: grid !important;
+    grid-template-columns: minmax(0, 1fr) !important;
+    width: 100% !important;
+    min-width: 0 !important;
+  }
+
+  .ats-audit-col,
+  .ats-audit-col--side,
+  .ats-audit-col--main,
+  .ats-audit-section,
+  .ats-section-feedback,
+  .ats-issues-wrap,
+  .ats-issues-list,
+  .ats-issue-card {
+    min-width: 0 !important;
+    max-width: 100% !important;
+    width: 100%;
+    box-sizing: border-box;
+  }
+
+  .ats-issue-card__head {
+    min-width: 0;
+    max-width: 100%;
+  }
+
+  .ats-issue-card__title,
+  .ats-issue-card__fix-text {
+    min-width: 0;
+    overflow-wrap: anywhere;
+    word-break: break-word;
+  }
 }
 
 @media (max-width: 768px) {
@@ -32,6 +66,15 @@
   input, textarea, select { max-width: 100%; min-width: 0; }
   button { touch-action: manipulation; }
   .glass-panel { max-width: 100%; }
+
+  .ats-audit-section__head {
+    flex-wrap: wrap;
+  }
+
+  .ats-audit-section__head > div {
+    min-width: 0;
+    flex: 1 1 180px;
+  }
 }
 
 @media (max-width: 480px) {
@@ -44,6 +87,27 @@
 
   .app-shell__content [class*="actions"] > button,
   .app-shell__content [class*="buttons"] > button { max-width: 100%; }
+
+  .ats-audit-grid {
+    gap: 0.75rem;
+  }
+
+  .ats-audit-section {
+    padding: 0.875rem;
+  }
+
+  .ats-issues-filters {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.45rem;
+    max-width: 100%;
+  }
+
+  .ats-issue-card__head {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.6rem;
+  }
 }
 
 @media (max-width: 360px) {
