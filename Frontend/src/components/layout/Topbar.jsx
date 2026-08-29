@@ -39,7 +39,7 @@ const Topbar = ({ theme, onToggleTheme, user, onLogout, onMenuClick, navOpen = f
 
       <div className="topbar__mobile-brand" aria-label="AI Resume Analyzer">
         <span className="topbar__mobile-brand-mark"><LogoMark /></span>
-        <span className="topbar__mobile-brand-text">Resume Analyzer</span>
+        <span className="topbar__mobile-brand-text"><span className="topbar__mobile-brand-name">AI Resume</span><span className="topbar__mobile-brand-sub">Analyzer</span></span>
       </div>
 
       <div className="topbar__context">
