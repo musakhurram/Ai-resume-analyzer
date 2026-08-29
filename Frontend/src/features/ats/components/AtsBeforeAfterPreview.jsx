@@ -28,12 +28,11 @@ const SparkleIcon = ({ size = 20 }) => (
   </Icon>
 );
 
-/* Small section/layers mark belongs inside the picker, not beside the Scope label. */
 const SectionsIcon = ({ size = 17 }) => (
   <Icon size={size} className="ats-sections-icon">
     <svg viewBox="0 0 20 20" fill="none" aria-hidden="true">
       <path d="m10 3 7 3.5-7 3.5-7-3.5L10 3Z" stroke="currentColor" strokeWidth="1.45" strokeLinejoin="round" />
-      <path d="m4.5 9 5.5 2.75L15.5 9M4.5 12.5 10 15.25l5.5-2.75" stroke="currentColor" strokeWidth="1.45" strokeLinecap="round" strokeLinejoin="round" />
+      <path d="m4.5 9 5.5 2.75L15.5 9M4.5 12.5 10 15.25l5.5-2.75" stroke="currentColor" strokeWidth="1.45" strokeLinecap="round" />
     </svg>
   </Icon>
 );
@@ -70,9 +69,6 @@ const AtsBeforeAfterPreview = ({ reportId, originalText, originalPdfUrl, revised
 
   return <div className="ats-preview-modal glass-panel">
     <section className="ats-preview-toolbar" aria-label="AI revision controls">
-      <div className="ats-preview-toolbar__label-row">
-        <span className="ats-toolbar-label">Scope</span>
-      </div>
       <div className="ats-preview-toolbar__row">
         <div className="ats-preview-toolbar__section-picker">
           <label htmlFor="sectionSelect" className="sr-only">Rewrite scope</label>
