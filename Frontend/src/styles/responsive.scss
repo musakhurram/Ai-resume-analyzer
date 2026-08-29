@@ -13,7 +13,6 @@
   .app-shell__content [class*="grid"],
   .app-shell__content [class*="row"] { min-width: 0; max-width: 100%; }
 
-  /* Report audit columns must become a true single-column stack. */
   .ats-audit-grid {
     display: grid !important;
     grid-template-columns: minmax(0, 1fr) !important;
@@ -67,13 +66,68 @@
   button { touch-action: manipulation; }
   .glass-panel { max-width: 100%; }
 
-  .ats-audit-section__head {
-    flex-wrap: wrap;
+  .ats-audit-section__head { flex-wrap: wrap; }
+  .ats-audit-section__head > div { min-width: 0; flex: 1 1 180px; }
+}
+
+@media (max-width: 700px) {
+  .ats-main-tabs {
+    display: grid !important;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    width: 100% !important;
+    min-width: 0;
   }
 
-  .ats-audit-section__head > div {
+  .ats-main-tab {
+    min-width: 0 !important;
+    width: 100%;
+    padding-left: 0.55rem !important;
+    padding-right: 0.55rem !important;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .ats-main-tab__label--full { display: none !important; }
+  .ats-main-tab__label--short { display: inline !important; }
+}
+
+@media (max-width: 640px) {
+  .reports-page__tabs {
+    width: 100% !important;
+    max-width: 100%;
+    gap: 0.25rem !important;
+  }
+
+  .reports-page__tabs button {
     min-width: 0;
-    flex: 1 1 180px;
+    white-space: nowrap;
+    font-size: 0.78rem !important;
+  }
+
+  /* Keep the search control compact. The previous flex-basis allowed it to
+     stretch vertically and its 999px radius made it look like a giant circle. */
+  .reports-page__toolbar {
+    width: 100%;
+    min-width: 0;
+    box-sizing: border-box;
+  }
+
+  .reports-page__search-wrap {
+    flex: 0 0 auto !important;
+    width: 100% !important;
+    max-width: 100%;
+    min-height: 44px;
+    height: 44px;
+    box-sizing: border-box;
+    border-radius: 12px !important;
+  }
+
+  .reports-page__search-input {
+    min-width: 0;
+    width: 100%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
   }
 }
 
@@ -88,13 +142,8 @@
   .app-shell__content [class*="actions"] > button,
   .app-shell__content [class*="buttons"] > button { max-width: 100%; }
 
-  .ats-audit-grid {
-    gap: 0.75rem;
-  }
-
-  .ats-audit-section {
-    padding: 0.875rem;
-  }
+  .ats-audit-grid { gap: 0.75rem; }
+  .ats-audit-section { padding: 0.875rem; }
 
   .ats-issues-filters {
     display: flex;
@@ -108,8 +157,18 @@
     align-items: flex-start;
     gap: 0.6rem;
   }
+
+  .ats-results-nav { gap: 0.6rem; }
+  .ats-back-btn { width: 100%; }
+  .ats-results-nav__actions { margin-left: 0 !important; width: 100%; }
+  .ats-results-nav__actions > button { width: 100%; }
+
+  .ats-main-tabs { order: 2 !important; }
+
+  .topbar__mobile-brand { max-width: 118px; }
 }
 
 @media (max-width: 360px) {
   .app-shell__content { padding-left: 0.625rem; padding-right: 0.625rem; }
+  .topbar__mobile-brand { max-width: 104px; }
 }
