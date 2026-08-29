@@ -17,9 +17,9 @@
 .ats-cmp-toolbar {
   display: flex;
   flex-wrap: wrap;
-  align-items: flex-end;
+  align-items: center;
   gap: 10px 12px;
-  padding: 12px 14px;
+  padding: 10px 12px;
   border: 1px solid var(--border-subtle);
   border-radius: 12px;
   background: var(--surface-2);
@@ -27,55 +27,54 @@
 
 .ats-cmp-toolbar__field {
   display: flex;
-  flex-direction: column;
-  gap: 6px;
+  align-items: center;
   min-width: 0;
 }
 
 .ats-cmp-toolbar__field--scope {
-  flex: 0 1 230px;
+  flex: 0 1 240px;
 }
 
 .ats-cmp-toolbar__field--notes {
-  flex: 1 1 260px;
+  flex: 1 1 280px;
 }
 
 .ats-cmp-toolbar__field--action {
   flex: 0 0 auto;
 }
 
-.ats-cmp-toolbar__label {
-  font-size: 0.72rem;
-  font-weight: 700;
-  color: var(--ink-muted);
-  line-height: 1.2;
-}
-
 @media (max-width: 760px) {
-  .ats-cmp-toolbar__field--scope,
-  .ats-cmp-toolbar__field--notes {
-    flex: 1 1 100%;
+  .ats-cmp-toolbar {
+    flex-direction: column;
+    align-items: stretch;
   }
 
+  .ats-cmp-toolbar__field--scope,
+  .ats-cmp-toolbar__field--notes,
   .ats-cmp-toolbar__field--action {
     flex: 1 1 100%;
+    width: 100%;
   }
 
   .ats-cmp-toolbar__field--action .ats-cmp-generate-btn {
     width: 100%;
   }
-}.ats-cmp-select,
+}
+
+.ats-cmp-select,
 .ats-cmp-input {
   display: flex;
   align-items: center;
   gap: 8px;
-  height: 40px;
+  height: 42px;
+  width: 100%;
   padding: 0 12px;
   border: 1px solid var(--border-subtle);
-  border-radius: 9px;
+  border-radius: 10px;
   background: var(--surface-solid);
   color: var(--accent);
   min-width: 0;
+  transition: border-color var(--duration-fast, 0.15s) ease, box-shadow var(--duration-fast, 0.15s) ease;
 
   &:focus-within {
     border-color: var(--accent);
@@ -94,8 +93,9 @@
     border: none;
     background: transparent;
     color: var(--ink);
-    font-size: 0.82rem;
+    font-size: 0.84rem;
     padding: 0;
+    outline: none;
   }
 
   select {
@@ -123,30 +123,45 @@
 }
 
 .ats-cmp-generate-btn {
-  display: flex;
+  display: inline-flex;
   align-items: center;
   justify-content: center;
-  gap: 7px;
-  height: 40px;
-  padding: 0 18px;
-  border: none;
-  border-radius: 9px;
+  gap: 8px;
+  height: 42px;
+  padding: 0 20px;
+  border: 1px solid color-mix(in srgb, var(--accent) 40%, transparent);
+  border-radius: 10px;
   background: var(--accent);
-  color: var(--on-accent, #0a1b0a);
+  color: var(--on-accent, #0b0d0f);
   font-size: 0.84rem;
-  font-weight: 800;
+  font-weight: 700;
+  letter-spacing: -0.01em;
   white-space: nowrap;
   cursor: pointer;
-  transition: filter var(--duration-fast, 0.15s) ease, transform var(--duration-fast, 0.15s) ease;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.16), 0 0 16px color-mix(in srgb, var(--accent) 20%, transparent);
+  transition: filter var(--duration-fast, 0.15s) ease, transform var(--duration-fast, 0.15s) ease, box-shadow var(--duration-fast, 0.15s) ease;
+
+  > svg {
+    flex-shrink: 0;
+  }
 
   &:hover:not(:disabled) {
-    filter: brightness(1.08);
+    filter: brightness(1.06);
     transform: translateY(-1px);
+    box-shadow: 0 4px 14px color-mix(in srgb, var(--accent) 35%, transparent);
+  }
+
+  &:active:not(:disabled) {
+    transform: translateY(0);
+    filter: brightness(0.96);
+    box-shadow: 0 1px 4px color-mix(in srgb, var(--accent) 20%, transparent);
   }
 
   &:disabled {
-    opacity: 0.7;
-    cursor: default;
+    opacity: 0.65;
+    cursor: not-allowed;
+    transform: none;
+    box-shadow: none;
   }
 }
 
@@ -168,8 +183,9 @@
   padding: 14px 16px;
   border: 1px solid var(--border-subtle);
   border-radius: 12px;
-  background: color-mix(in srgb, var(--surface-card) 97%, var(--accent) 3%);
+  background: color-mix(in srgb, var(--surface-card) 96%, var(--accent) 4%);
   flex-wrap: wrap;
+  transition: background var(--duration-normal, 0.2s) ease, border-color var(--duration-normal, 0.2s) ease;
 }
 
 .ats-cmp-hero__icon {
@@ -181,7 +197,8 @@
   align-items: center;
   justify-content: center;
   color: var(--accent);
-  background: color-mix(in srgb, var(--accent) 14%, transparent);
+  background: var(--accent-soft, color-mix(in srgb, var(--accent) 14%, transparent));
+  border: 1px solid color-mix(in srgb, var(--accent) 25%, transparent);
 }
 
 .ats-cmp-hero__text {
@@ -218,7 +235,7 @@
   padding: 0 10px;
   border-radius: 999px;
   border: 1px solid color-mix(in srgb, var(--accent) 30%, var(--border-subtle));
-  background: color-mix(in srgb, var(--accent) 8%, transparent);
+  background: color-mix(in srgb, var(--accent) 8%, var(--surface-card));
   color: var(--ink);
   font-size: 0.72rem;
   font-weight: 600;
@@ -291,7 +308,7 @@
   padding: 14px;
 
   &--paper {
-    background: color-mix(in srgb, var(--surface-2) 90%, #000 10%);
+    background: var(--bg-subtle, var(--surface-2));
   }
 }
 
@@ -300,7 +317,7 @@
   height: 520px;
   border-radius: 8px;
   overflow: hidden;
-  background: #1e293b;
+  background: var(--surface-card);
 
   iframe {
     width: 100%;

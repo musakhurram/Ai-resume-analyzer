@@ -21,9 +21,19 @@ const Icon = ({ children, size = 20, className = "" }) => (
 
 const SparkleIcon = ({ size = 20 }) => (
   <Icon size={size}>
-    <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
-      <path d="M12 3l1.8 5.2L19 10l-5.2 1.8L12 17l-1.8-5.2L5 10l5.2-1.8L12 3z" stroke="currentColor" strokeWidth="1.5" strokeLinejoin="round" />
-      <path d="m19 15 .8 2.2L22 18l-2.2.8z" fill="currentColor" />
+    <svg viewBox="0 0 16 16" fill="none" aria-hidden="true">
+      <path
+        d="M7.5 1.25L8.75 4.9C8.95 5.5 9.4 5.95 10 6.15L13.65 7.4L10 8.65C9.4 8.85 8.95 9.3 8.75 9.9L7.5 13.55L6.25 9.9C6.05 9.3 5.6 8.85 5 8.65L1.35 7.4L5 6.15C5.6 5.95 6.05 5.5 6.25 4.9L7.5 1.25Z"
+        stroke="currentColor"
+        strokeWidth="1.35"
+        strokeLinejoin="round"
+        fill="currentColor"
+        fillOpacity="0.15"
+      />
+      <path
+        d="M12.5 1.25L13.05 2.55C13.15 2.8 13.35 3 13.6 3.1L14.9 3.65L13.6 4.2C13.35 4.3 13.15 4.5 13.05 4.75L12.5 6.05L11.95 4.75C11.85 4.5 11.65 4.3 11.4 4.2L10.1 3.65L11.4 3.1C11.65 3 11.85 2.8 11.95 2.55L12.5 1.25Z"
+        fill="currentColor"
+      />
     </svg>
   </Icon>
 );
@@ -88,7 +98,6 @@ const AtsBeforeAfterPreview = ({ reportId, originalText, originalPdfUrl, revised
           </div>
         </div>
         <Button variant="primary" size="sm" loading={loading} onClick={handleRunRevise} className="ats-toolbar-btn">
-          <span className="ats-generate-icon" aria-hidden="true"><SparkleIcon size={16} /></span>
           {hasRevision ? "Re-generate" : "Generate Revision"}
         </Button>
       </div>

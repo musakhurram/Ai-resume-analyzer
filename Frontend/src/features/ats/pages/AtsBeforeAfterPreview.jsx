@@ -18,9 +18,27 @@ const IconTarget = () => (
     <circle cx="8" cy="8" r="2.6" stroke="currentColor" strokeWidth="1.3" />
   </svg>
 );
-const IconSparkle = () => (
-  <svg viewBox="0 0 16 16" fill="none" width="14" height="14" aria-hidden="true">
-    <path d="M7.6 1.3c.35 1.98 1.02 3.36 2.02 4.13.98.77 2.34 1.16 4.08 1.17-1.98.35-3.36 1.02-4.13 2.02-.77.98-1.16 2.34-1.17 4.08-.35-1.98-1.02-3.36-2.02-4.13-.98-.77-2.34-1.16-4.08-1.17 1.98-.35 3.36-1.02 4.13-2.02.77-.98 1.16-2.34 1.17-4.08z" fill="currentColor" />
+const IconSparkles = ({ size = 15, className = "" }) => (
+  <svg
+    viewBox="0 0 16 16"
+    fill="none"
+    width={size}
+    height={size}
+    className={className}
+    aria-hidden="true"
+  >
+    <path
+      d="M7.5 1.25L8.75 4.9C8.95 5.5 9.4 5.95 10 6.15L13.65 7.4L10 8.65C9.4 8.85 8.95 9.3 8.75 9.9L7.5 13.55L6.25 9.9C6.05 9.3 5.6 8.85 5 8.65L1.35 7.4L5 6.15C5.6 5.95 6 5.5 6.25 4.9L7.5 1.25Z"
+      stroke="currentColor"
+      strokeWidth="1.35"
+      strokeLinejoin="round"
+      fill="currentColor"
+      fillOpacity="0.15"
+    />
+    <path
+      d="M12.5 1.25L13.05 2.55C13.15 2.8 13.35 3 13.6 3.1L14.9 3.65L13.6 4.2C13.35 4.3 13.15 4.5 13.05 4.75L12.5 6.05L11.95 4.75C11.85 4.5 11.65 4.3 11.4 4.2L10.1 3.65L11.4 3.1C11.65 3 11.85 2.8 11.95 2.55L12.5 1.25Z"
+      fill="currentColor"
+    />
   </svg>
 );
 const IconPdf = () => (
@@ -181,25 +199,40 @@ const AtsBeforeAfterPreview = ({
       {/* --- toolbar --- */}
       <div className="ats-cmp-toolbar">
         <div className="ats-cmp-toolbar__field ats-cmp-toolbar__field--scope">
-          <label className="ats-cmp-toolbar__label">Scope</label>
           <div className="ats-cmp-select">
             <IconTarget />
-            <select value={sections} onChange={(e) => setSections(e.target.value)}>
-              {SECTION_OPTIONS.map((opt) => <option key={opt.value} value={opt.value}>{opt.label}</option>)}
+            <select
+              value={sections}
+              onChange={(e) => setSections(e.target.value)}
+              aria-label="Select resume sections to revise"
+            >
+              {SECTION_OPTIONS.map((opt) => (
+                <option key={opt.value} value={opt.value}>
+                  {opt.label}
+                </option>
+              ))}
             </select>
             <span className="ats-cmp-chevron" aria-hidden="true">
-              <svg viewBox="0 0 16 16" fill="none" width="12" height="12"><path d="M4 6l4 4 4-4" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" /></svg>
+              <svg viewBox="0 0 16 16" fill="none" width="12" height="12">
+                <path
+                  d="M4 6l4 4 4-4"
+                  stroke="currentColor"
+                  strokeWidth="1.6"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                />
+              </svg>
             </span>
           </div>
         </div>
 
         <div className="ats-cmp-toolbar__field ats-cmp-toolbar__field--notes">
-          <label className="ats-cmp-toolbar__label">Focus</label>
           <div className="ats-cmp-input">
-            <IconSparkle />
+            <IconSparkles />
             <input
               type="text"
               placeholder="Optional rewrite focus (e.g. emphasize cloud, leadership…)"
+              aria-label="Optional rewrite focus"
               value={customNotes}
               onChange={(e) => setCustomNotes(e.target.value)}
             />
@@ -207,9 +240,14 @@ const AtsBeforeAfterPreview = ({
         </div>
 
         <div className="ats-cmp-toolbar__field ats-cmp-toolbar__field--action">
-          <button type="button" className="ats-cmp-generate-btn" onClick={handleGenerate} disabled={loading}>
-            {loading ? <span className="ats-cmp-spinner" /> : <IconSparkle />}
-            <span>{loading ? "Generating…" : "Generate Revision"}</span>
+          <button
+            type="button"
+            className="ats-cmp-generate-btn"
+            onClick={handleGenerate}
+            disabled={loading}
+          >
+            {loading && <span className="ats-cmp-spinner" />}
+            <span>{loading ? "Generating…" : revisedResume ? "Re-generate" : "Generate Revision"}</span>
           </button>
         </div>
       </div>
