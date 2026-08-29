@@ -98,7 +98,10 @@ async function getBillingSnapshot(userId) {
   if (!user) return null;
   const plan = normalizePlan(user.plan);
   const config = getPlanConfig(plan);
-  return { plan, planLabel: config.label, aiTokens: Number(user.aiTokens) || 0, tokensPerPurchase: config.tokensPerPurchase, planTokens: config.tokens, description: config.description, tokenCosts: TOKEN_COSTS };
+  const aiTokens = Number(user.aiTokens) || 0;
+  // Backward-compatible field for the existing JD Match review UI. JD Match costs 750 tokens.
+  const resumeCredits = Math.floor(aiTokens / TOKEN_COSTS.jdMatch);
+  return { plan, planLabel: config.label, aiTokens, resumeCredits, tokensPerPurchase: config.tokensPerPurchase, planTokens: config.tokens, description: config.description, tokenCosts: TOKEN_COSTS };
 }
 
 module.exports = { PLAN_CONFIG, TOKEN_COSTS, normalizePlan, getPlanConfig, consumeAiTokens, refundAiTokens, getBillingSnapshot, consumeResumeCredit, refundResumeCredit };
