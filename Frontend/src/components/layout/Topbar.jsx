@@ -1,5 +1,6 @@
 import { useLocation } from "react-router";
 import ThemeToggle from "../../shared/components/ThemeToggle";
+import { LogoMark } from "../../shared/components/Logo";
 import "./Topbar.scss";
 
 function initialsFor(name) {
@@ -13,7 +14,7 @@ function getLocationContext(pathname) {
   return "New Candidate Review";
 }
 
-const Topbar = ({ theme, onToggleTheme, user, onLogout, onMenuClick }) => {
+const Topbar = ({ theme, onToggleTheme, user, onLogout, onMenuClick, navOpen = false }) => {
   const location = useLocation();
   const contextLabel = getLocationContext(location.pathname);
 
@@ -23,16 +24,21 @@ const Topbar = ({ theme, onToggleTheme, user, onLogout, onMenuClick }) => {
         type="button"
         className="topbar__menu"
         onClick={onMenuClick}
-        aria-label="Open navigation menu"
-        aria-expanded={false}
+        aria-label={navOpen ? "Close navigation menu" : "Open navigation menu"}
+        aria-expanded={navOpen}
+        aria-controls="main-navigation"
       >
         <svg viewBox="0 0 20 20" fill="none" aria-hidden="true">
-          <path d="M3 5h14M3 10h14M3 15h14" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
+          {navOpen ? (
+            <path d="M5 5l10 10M15 5L5 15" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" />
+          ) : (
+            <path d="M3 5h14M3 10h14M3 15h14" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
+          )}
         </svg>
       </button>
 
       <div className="topbar__mobile-brand" aria-label="AI Resume Analyzer">
-        <span className="topbar__mobile-brand-mark">R</span>
+        <span className="topbar__mobile-brand-mark"><LogoMark /></span>
         <span className="topbar__mobile-brand-text">Resume Analyzer</span>
       </div>
 
