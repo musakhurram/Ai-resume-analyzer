@@ -12,208 +12,227 @@ function normalizeResumeData(input) {
   return typeof input === "object" ? input : {};
 }
 
-function addWrapped(doc, text, options = {}) {
-  const value = String(text ?? "").trim();
-  if (!value) return;
-  doc.text(value, options.x ?? doc.x, options.y ?? doc.y, {
-    width: options.width,
-    lineGap: options.lineGap ?? 0.5,
-    paragraphGap: options.paragraphGap ?? 0,
-  });
+function asArray(value) {
+  return Array.isArray(value) ? value : value ? [value] : [];
 }
 
-function compactEstimate(resume = {}) {
-  const contact = resume.contact || {};
-  const textParts = [resume.summary];
-  (Array.isArray(resume.skills) ? resume.skills : []).forEach((s) => {
-    textParts.push(s?.category, Array.isArray(s?.items) ? s.items.join(", ") : s?.items);
-  });
-  (Array.isArray(resume.experience) ? resume.experience : []).forEach((e) => {
-    textParts.push(e?.company, e?.title, e?.location, e?.dates);
-    if (Array.isArray(e?.bullets)) {
-      textParts.push(...e.bullets);
-    } else if (e?.bullets) {
-      textParts.push(String(e.bullets));
-    }
-  });
-  (Array.isArray(resume.education) ? resume.education : []).forEach((e) => {
-    textParts.push(e?.degree, e?.institution, e?.dates, e?.details);
-  });
-  (Array.isArray(resume.projects) ? resume.projects : []).forEach((p) => {
-    textParts.push(p?.name, p?.role, p?.dates);
-    if (Array.isArray(p?.bullets)) {
-      textParts.push(...p.bullets);
-    } else if (p?.bullets) {
-      textParts.push(String(p.bullets));
-    }
-  });
-  (Array.isArray(resume.certifications) ? resume.certifications : []).forEach((c) => {
-    textParts.push(c?.name, c?.issuer, c?.date);
-  });
-  textParts.push(contact.fullName, contact.email, contact.phone, contact.location, contact.linkedin, contact.github, contact.website);
-  const chars = textParts.filter(Boolean).reduce((n, value) => n + String(value).length, 0);
-  const sections = [
-    resume.summary,
-    Array.isArray(resume.skills) && resume.skills.length,
-    Array.isArray(resume.experience) && resume.experience.length,
-    Array.isArray(resume.education) && resume.education.length,
-    Array.isArray(resume.projects) && resume.projects.length,
-    Array.isArray(resume.certifications) && resume.certifications.length,
-  ].filter(Boolean).length;
-  const estimatedLines = Math.ceil(chars / 92) + sections * 2 + 7;
-  const estimatedHeight = 72 + estimatedLines * 10.2;
-  return Math.min(1, Math.max(0.76, 680 / estimatedHeight));
+function clean(value) {
+  return String(value ?? "")
+    .replace(/[\u0000-\u0008\u000B\u000C\u000E-\u001F]/g, "")
+    .trim();
 }
 
-function section(doc, title) {
-  doc.font("Helvetica-Bold").fontSize(9.2).fillColor("#0F172A").text(String(title).toUpperCase());
+function bullets(value) {
+  if (Array.isArray(value)) return value.map(clean).filter(Boolean);
+  return clean(value)
+    .split(/\r?\n/)
+    .map((line) => line.replace(/^[•\-–—*\s]+/, "").trim())
+    .filter(Boolean);
+}
+
+function estimateDensity(resume) {
+  const parts = [resume.summary];
+  asArray(resume.skills).forEach((s) => parts.push(s?.category, s?.items));
+  asArray(resume.experience).forEach((e) => parts.push(e?.company, e?.title, e?.location, e?.dates, ...bullets(e?.bullets)));
+  asArray(resume.education).forEach((e) => parts.push(e?.degree, e?.institution, e?.dates, e?.details));
+  asArray(resume.projects).forEach((p) => parts.push(p?.name, p?.role, p?.dates, ...bullets(p?.bullets)));
+  asArray(resume.certifications).forEach((c) => parts.push(c?.name, c?.issuer, c?.date));
+  return parts.filter(Boolean).reduce((n, v) => n + clean(v).length, 0);
+}
+
+function typographyFor(resume) {
+  const chars = estimateDensity(resume);
+  if (chars > 10500) return { body: 7.5, meta: 7.2, title: 8.0, section: 8.8, name: 17 };
+  if (chars > 8500) return { body: 7.8, meta: 7.4, title: 8.2, section: 9.0, name: 18 };
+  if (chars > 6800) return { body: 8.0, meta: 7.6, title: 8.4, section: 9.2, name: 18.5 };
+  return { body: 8.3, meta: 7.8, title: 8.7, section: 9.4, name: 19 };
+}
+
+function section(doc, title, styles) {
+  const bottom = doc.page.height - doc.page.margins.bottom;
+  if (doc.y > bottom - 42) doc.addPage();
+  doc.font("Helvetica-Bold").fontSize(styles.section).fillColor("#0F172A").text(clean(title).toUpperCase());
   doc.moveDown(0.08);
   doc.moveTo(doc.page.margins.left, doc.y)
     .lineTo(doc.page.width - doc.page.margins.right, doc.y)
     .strokeColor("#CBD3DF")
     .lineWidth(0.5)
     .stroke();
-  doc.moveDown(0.16);
+  doc.moveDown(0.18);
 }
 
-function itemHeader(doc, title, dates) {
-  const left = String(title || "").trim();
-  const right = String(dates || "").trim();
+function writeBullet(doc, value, styles, width) {
+  const text = clean(value);
+  if (!text) return;
+  doc.font("Helvetica").fontSize(styles.body).fillColor("#243247");
+  doc.text(`• ${text}`, doc.page.margins.left + 9, doc.y, {
+    width: width - 9,
+    lineGap: 0.7,
+    paragraphGap: 0,
+  });
+}
+
+function writeEntryHeader(doc, left, right, styles) {
   const x = doc.page.margins.left;
   const width = doc.page.width - doc.page.margins.left - doc.page.margins.right;
-  doc.font("Helvetica-Bold").fontSize(8.7).fillColor("#0F172A").text(left, x, doc.y, {
-    width: right ? width - 100 : width,
+  const dateWidth = right ? Math.min(112, width * 0.25) : 0;
+  const startY = doc.y;
+
+  doc.font("Helvetica-Bold").fontSize(styles.title).fillColor("#0F172A").text(clean(left), x, startY, {
+    width: width - dateWidth - (dateWidth ? 8 : 0),
+    lineGap: 0,
   });
+
   if (right) {
-    const y = doc.y - doc.currentLineHeight();
-    doc.font("Helvetica").fontSize(7.8).fillColor("#526074").text(right, x + width - 100, y, {
-      width: 100,
+    doc.font("Helvetica").fontSize(styles.meta).fillColor("#526074").text(clean(right), x + width - dateWidth, startY, {
+      width: dateWidth,
       align: "right",
+      lineGap: 0,
     });
   }
 }
 
+function writeContact(doc, contact, width) {
+  const values = [contact.email, contact.phone, contact.location, contact.linkedin, contact.github, contact.website]
+    .map(clean)
+    .filter(Boolean);
+  if (!values.length) return;
+  doc.font("Helvetica").fontSize(7.6).fillColor("#526074");
+  doc.text(values.join("  |  "), { align: "center", width, lineGap: 0.5 });
+}
+
 function generateAtsPdfBuffer(rawResume = {}, cacheKey = null) {
-  // PDFKit is used directly so this works in Vercel serverless without Chromium.
-  // The generated ATS resume is intentionally constrained to ONE page. We use
-  // a vertical-only scale when the content is dense so wrapping width stays
-  // unchanged and the resume remains readable and ATS-friendly.
+  // PDFKit keeps generation self-contained and reliable in Vercel serverless.
+  // No Chromium/browser process is required.
   return new Promise((resolve, reject) => {
     try {
       const resume = normalizeResumeData(rawResume);
+      const styles = typographyFor(resume);
       const doc = new PDFDocument({
         size: "LETTER",
-        margins: { top: 30, bottom: 30, left: 40, right: 40 },
-        info: { Title: resume?.contact?.fullName ? `${resume.contact.fullName} - ATS Resume` : "ATS Resume" },
+        margins: { top: 30, bottom: 32, left: 40, right: 40 },
+        info: {
+          Title: resume?.contact?.fullName ? `${clean(resume.contact.fullName)} - Resume` : "ATS Resume",
+          Author: "AI Resume Analyzer",
+          Subject: "ATS-friendly resume",
+          Keywords: "resume, ATS, job application",
+        },
+        bufferPages: true,
       });
+
       const chunks = [];
       doc.on("data", (chunk) => chunks.push(chunk));
       doc.on("end", () => resolve(Buffer.concat(chunks)));
-      doc.on("error", (err) => reject(err));
+      doc.on("error", reject);
 
-      // Scale only the vertical axis. This preserves the normal text wrapping
-      // width while ensuring dense but valid CV content stays on one page.
-      const verticalScale = compactEstimate(resume);
-      doc.scale(1, verticalScale);
-
-      const contentWidth = doc.page.width - doc.page.margins.left - doc.page.margins.right;
+      const width = doc.page.width - doc.page.margins.left - doc.page.margins.right;
       const contact = resume.contact || {};
-      const navy = "#0F172A";
-      const muted = "#526074";
-      const text = "#243247";
 
-      doc.font("Helvetica-Bold").fontSize(18).fillColor(navy).text(contact.fullName || "Candidate Name", { align: "center", width: contentWidth });
-      const contactLine = [contact.email, contact.phone, contact.location, contact.linkedin, contact.github, contact.website]
-        .filter(Boolean).map((v) => String(v).trim()).filter(Boolean).join("  |  ");
-      if (contactLine) {
-        doc.moveDown(0.12).font("Helvetica").fontSize(7.7).fillColor(muted).text(contactLine, { align: "center", width: contentWidth, lineGap: 0 });
-      }
-      doc.moveDown(0.25).moveTo(doc.page.margins.left, doc.y).lineTo(doc.page.width - doc.page.margins.right, doc.y)
-        .strokeColor(navy).lineWidth(0.8).stroke();
-      doc.moveDown(0.22);
+      // Clean, ATS-safe header. No tables, columns, icons, images or canvas.
+      doc.font("Helvetica-Bold").fontSize(styles.name).fillColor("#0F172A")
+        .text(clean(contact.fullName) || "Candidate Name", { align: "center", width, lineGap: 0 });
+      doc.moveDown(0.12);
+      writeContact(doc, contact, width);
+      doc.moveDown(0.25);
+      doc.moveTo(doc.page.margins.left, doc.y)
+        .lineTo(doc.page.width - doc.page.margins.right, doc.y)
+        .strokeColor("#0F172A")
+        .lineWidth(0.8)
+        .stroke();
+      doc.moveDown(0.24);
 
-      if (resume.summary) {
-        section(doc, "Professional Summary");
-        doc.font("Helvetica").fontSize(8.45).fillColor(text);
-        addWrapped(doc, resume.summary, { width: contentWidth, lineGap: 0.5 });
+      if (clean(resume.summary)) {
+        section(doc, "Professional Summary", styles);
+        doc.font("Helvetica").fontSize(styles.body).fillColor("#243247")
+          .text(clean(resume.summary), { width, lineGap: 0.8, paragraphGap: 0 });
         doc.moveDown(0.16);
       }
 
-      if (Array.isArray(resume.skills) && resume.skills.length) {
-        section(doc, "Technical Skills");
-        resume.skills.forEach((skill) => {
-          const items = Array.isArray(skill.items) ? skill.items.join(", ") : String(skill.items || "");
-          if (!items.trim()) return;
-          doc.font("Helvetica-Bold").fontSize(8.2).fillColor(navy).text(`${skill.category || "Skills"}: `, { continued: true });
-          doc.font("Helvetica").fillColor(muted).text(items, { lineGap: 0 });
+      if (asArray(resume.skills).length) {
+        section(doc, "Technical Skills", styles);
+        asArray(resume.skills).forEach((skill) => {
+          const category = clean(skill?.category) || "Skills";
+          const items = Array.isArray(skill?.items)
+            ? skill.items.map(clean).filter(Boolean).join(", ")
+            : clean(skill?.items);
+          if (!items) return;
+          doc.font("Helvetica-Bold").fontSize(styles.body).fillColor("#0F172A")
+            .text(`${category}: `, { continued: true, lineGap: 0 });
+          doc.font("Helvetica").fontSize(styles.body).fillColor("#526074")
+            .text(items, { lineGap: 0.7 });
         });
-        doc.moveDown(0.14);
+        doc.moveDown(0.13);
       }
 
-      if (Array.isArray(resume.experience) && resume.experience.length) {
-        section(doc, "Professional Experience");
-        resume.experience.forEach((exp) => {
-          itemHeader(doc, exp.company || "", exp.dates || "");
-          if (exp.title) doc.font("Helvetica-Bold").fontSize(8.1).fillColor(muted).text(exp.title, { lineGap: 0 });
-          if (exp.location) doc.font("Helvetica-Oblique").fontSize(7.7).fillColor(muted).text(exp.location, { lineGap: 0 });
-          if (Array.isArray(exp.bullets)) {
-            exp.bullets.forEach((bullet) => {
-              doc.font("Helvetica").fontSize(8.15).fillColor(text);
-              addWrapped(doc, `• ${bullet}`, { x: 49, width: contentWidth - 9, lineGap: 0.3 });
-            });
-          } else if (exp.bullets) {
-            const lines = String(exp.bullets).split("\n").filter(Boolean);
-            lines.forEach((b) => {
-              doc.font("Helvetica").fontSize(8.15).fillColor(text);
-              addWrapped(doc, `• ${b.replace(/^[•\s*-]+/, "")}`, { x: 49, width: contentWidth - 9, lineGap: 0.3 });
-            });
+      if (asArray(resume.experience).length) {
+        section(doc, "Professional Experience", styles);
+        asArray(resume.experience).forEach((exp) => {
+          writeEntryHeader(doc, exp?.company, exp?.dates, styles);
+          if (clean(exp?.title)) {
+            doc.font("Helvetica-Bold").fontSize(styles.meta + 0.2).fillColor("#526074")
+              .text(clean(exp.title), { lineGap: 0.4 });
+          }
+          if (clean(exp?.location)) {
+            doc.font("Helvetica-Oblique").fontSize(styles.meta).fillColor("#526074")
+              .text(clean(exp.location), { lineGap: 0.4 });
+          }
+          bullets(exp?.bullets).forEach((bullet) => writeBullet(doc, bullet, styles, width));
+          doc.moveDown(0.13);
+        });
+      }
+
+      if (asArray(resume.education).length) {
+        section(doc, "Education", styles);
+        asArray(resume.education).forEach((edu) => {
+          writeEntryHeader(doc, edu?.degree, edu?.dates, styles);
+          if (clean(edu?.institution)) {
+            doc.font("Helvetica").fontSize(styles.meta + 0.2).fillColor("#526074")
+              .text(`— ${clean(edu.institution)}`, { lineGap: 0.5 });
+          }
+          if (clean(edu?.details)) {
+            doc.font("Helvetica").fontSize(styles.body).fillColor("#243247")
+              .text(clean(edu.details), { width, lineGap: 0.7 });
           }
           doc.moveDown(0.12);
         });
       }
 
-      if (Array.isArray(resume.education) && resume.education.length) {
-        section(doc, "Education");
-        resume.education.forEach((edu) => {
-          itemHeader(doc, edu.degree || "", edu.dates || "");
-          if (edu.institution) doc.font("Helvetica").fontSize(8.1).fillColor(muted).text(`— ${edu.institution}`, { lineGap: 0 });
-          if (edu.details) {
-            doc.font("Helvetica").fontSize(8.05).fillColor(text);
-            addWrapped(doc, edu.details, { width: contentWidth, lineGap: 0.3 });
+      if (asArray(resume.projects).length) {
+        section(doc, "Key Projects", styles);
+        asArray(resume.projects).forEach((project) => {
+          writeEntryHeader(doc, project?.name, project?.dates, styles);
+          if (clean(project?.role)) {
+            doc.font("Helvetica").fontSize(styles.meta + 0.2).fillColor("#526074")
+              .text(clean(project.role), { lineGap: 0.4 });
           }
+          bullets(project?.bullets).forEach((bullet) => writeBullet(doc, bullet, styles, width));
           doc.moveDown(0.12);
         });
       }
 
-      if (Array.isArray(resume.projects) && resume.projects.length) {
-        section(doc, "Key Projects");
-        resume.projects.forEach((project) => {
-          itemHeader(doc, project.name || "", project.dates || "");
-          if (project.role) doc.font("Helvetica").fontSize(8.1).fillColor(muted).text(project.role, { lineGap: 0 });
-          if (Array.isArray(project.bullets)) {
-            project.bullets.forEach((bullet) => {
-              doc.font("Helvetica").fontSize(8.15).fillColor(text);
-              addWrapped(doc, `• ${bullet}`, { x: 49, width: contentWidth - 9, lineGap: 0.3 });
-            });
-          } else if (project.bullets) {
-            const lines = String(project.bullets).split("\n").filter(Boolean);
-            lines.forEach((b) => {
-              doc.font("Helvetica").fontSize(8.15).fillColor(text);
-              addWrapped(doc, `• ${b.replace(/^[•\s*-]+/, "")}`, { x: 49, width: contentWidth - 9, lineGap: 0.3 });
-            });
-          }
-          doc.moveDown(0.12);
+      if (asArray(resume.certifications).length) {
+        section(doc, "Certifications", styles);
+        asArray(resume.certifications).forEach((cert) => {
+          const line = [cert?.name, cert?.issuer, cert?.date].map(clean).filter(Boolean).join(" — ");
+          if (!line) return;
+          doc.font("Helvetica").fontSize(styles.body).fillColor("#243247")
+            .text(line, { width, lineGap: 0.7 });
+          doc.moveDown(0.05);
         });
       }
 
-      if (Array.isArray(resume.certifications) && resume.certifications.length) {
-        section(doc, "Certifications");
-        resume.certifications.forEach((cert) => {
-          const line = [cert.name, cert.issuer, cert.date].filter(Boolean).join(" — ");
-          doc.font("Helvetica").fontSize(8.1).fillColor(text);
-          addWrapped(doc, line, { width: contentWidth, lineGap: 0.3 });
-          doc.moveDown(0.08);
-        });
+      // If content is unusually long, allow a clean second page instead of
+      // shrinking/distorting the entire document with vertical scaling.
+      const range = doc.bufferedPageRange();
+      if (range.count > 1) {
+        for (let i = range.start; i < range.start + range.count; i += 1) {
+          doc.switchToPage(i);
+          doc.font("Helvetica").fontSize(6.8).fillColor("#7A8699")
+            .text(`Page ${i + 1 - range.start} of ${range.count}`, doc.page.margins.left, doc.page.height - 18, {
+              width,
+              align: "center",
+            });
+        }
       }
 
       doc.end();
