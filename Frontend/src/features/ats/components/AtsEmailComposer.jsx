@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { createPortal } from "react-dom";
 import "./AtsEmailComposer.scss";
+import "./AtsEmailComposer.responsive.scss";
 
 const IconMail = ({ size = 17 }) => (
   <svg viewBox="0 0 20 20" fill="none" width={size} height={size} aria-hidden="true">
@@ -83,44 +84,20 @@ const AtsEmailComposer = ({ reportId, candidateName, hasRevision = false, onSend
           </div>
           <button type="button" className="ats-email__close" onClick={close} disabled={sending} aria-label="Close email composer"><IconX /></button>
         </div>
-
         <form onSubmit={submit} className="ats-email__form">
           <div className="ats-email__fields">
-            <label className="ats-email__field">
-              <span>Recipient email</span>
-              <input type="email" value={recipient} onChange={(event) => setRecipient(event.target.value)} placeholder="recruiter@company.com" autoFocus maxLength={254} required />
-            </label>
-            <label className="ats-email__field">
-              <span>Subject</span>
-              <input type="text" value={subject} onChange={(event) => setSubject(event.target.value)} maxLength={150} required />
-            </label>
-            <label className="ats-email__field">
-              <span>Message <em>optional</em></span>
-              <textarea value={message} onChange={(event) => setMessage(event.target.value)} rows={7} maxLength={5000} placeholder="Write a short professional message…" />
-              <small className="ats-email__counter">{message.length}/5000</small>
-            </label>
+            <label className="ats-email__field"><span>Recipient email</span><input type="email" value={recipient} onChange={(event) => setRecipient(event.target.value)} placeholder="recruiter@company.com" autoFocus maxLength={254} required /></label>
+            <label className="ats-email__field"><span>Subject</span><input type="text" value={subject} onChange={(event) => setSubject(event.target.value)} maxLength={150} required /></label>
+            <label className="ats-email__field"><span>Message <em>optional</em></span><textarea value={message} onChange={(event) => setMessage(event.target.value)} rows={7} maxLength={5000} placeholder="Write a short professional message…" /><small className="ats-email__counter">{message.length}/5000</small></label>
           </div>
-
           <div className="ats-email__section-label"><span>Attachment</span><small>Choose which resume PDF to send</small></div>
           <div className="ats-email__attachments" role="radiogroup" aria-label="Resume attachment">
-            <button type="button" role="radio" aria-checked={attachment === "optimized"} className={`ats-email__attachment-card ${attachment === "optimized" ? "is-selected" : ""} ${!hasRevision ? "is-disabled" : ""}`} onClick={() => hasRevision && setAttachment("optimized")} disabled={!hasRevision}>
-              <span className="ats-email__attachment-icon"><IconPaperclip /></span>
-              <span className="ats-email__attachment-copy"><strong>AI-optimized resume</strong><small>{hasRevision ? "Your latest AI-improved PDF" : "Generate an AI revision to unlock"}</small></span>
-              <span className="ats-email__radio">{attachment === "optimized" && <span />}</span>
-            </button>
-            <button type="button" role="radio" aria-checked={attachment === "original"} className={`ats-email__attachment-card ${attachment === "original" ? "is-selected" : ""}`} onClick={() => setAttachment("original")}>
-              <span className="ats-email__attachment-icon"><IconPaperclip /></span>
-              <span className="ats-email__attachment-copy"><strong>Original uploaded resume</strong><small>The resume you originally submitted</small></span>
-              <span className="ats-email__radio">{attachment === "original" && <span />}</span>
-            </button>
+            <button type="button" role="radio" aria-checked={attachment === "optimized"} className={`ats-email__attachment-card ${attachment === "optimized" ? "is-selected" : ""} ${!hasRevision ? "is-disabled" : ""}`} onClick={() => hasRevision && setAttachment("optimized")} disabled={!hasRevision}><span className="ats-email__attachment-icon"><IconPaperclip /></span><span className="ats-email__attachment-copy"><strong>AI-optimized resume</strong><small>{hasRevision ? "Your latest AI-improved PDF" : "Generate an AI revision to unlock"}</small></span><span className="ats-email__radio">{attachment === "optimized" && <span />}</span></button>
+            <button type="button" role="radio" aria-checked={attachment === "original"} className={`ats-email__attachment-card ${attachment === "original" ? "is-selected" : ""}`} onClick={() => setAttachment("original")}><span className="ats-email__attachment-icon"><IconPaperclip /></span><span className="ats-email__attachment-copy"><strong>Original uploaded resume</strong><small>The resume you originally submitted</small></span><span className="ats-email__radio">{attachment === "original" && <span />}</span></button>
           </div>
-
           <div className="ats-email__security-note"><IconCheck /><span>Your resume is sent as a PDF attachment. Nothing is downloaded to your device first.</span></div>
           {(localError || error) && <p className="ats-email__error" role="alert">{localError || error}</p>}
-          <div className="ats-email__actions">
-            <button type="button" className="ats-email__cancel" onClick={close} disabled={sending}>Cancel</button>
-            <button type="submit" className="ats-email__send" disabled={sending}>{sending ? <span className="ats-email__spinner" /> : <IconMail size={16} />}{sending ? "Sending…" : "Send resume"}</button>
-          </div>
+          <div className="ats-email__actions"><button type="button" className="ats-email__cancel" onClick={close} disabled={sending}>Cancel</button><button type="submit" className="ats-email__send" disabled={sending}>{sending ? <span className="ats-email__spinner" /> : <IconMail size={16} />}{sending ? "Sending…" : "Send resume"}</button></div>
         </form>
       </div>
     </div>,
@@ -130,9 +107,7 @@ const AtsEmailComposer = ({ reportId, candidateName, hasRevision = false, onSend
   return (
     <div className="ats-email">
       {successVisible && <div className="ats-email__success" role="status"><span className="ats-email__success-icon"><IconCheck /></span><span>{success}</span></div>}
-      <button type="button" className="ats-email__trigger" onClick={() => { setLocalError(""); setOpen(true); }} disabled={sending} aria-haspopup="dialog">
-        <span className="ats-email__trigger-icon"><IconMail size={16} /></span><span>Send Resume</span>
-      </button>
+      <button type="button" className="ats-email__trigger" onClick={() => { setLocalError(""); setOpen(true); }} disabled={sending} aria-haspopup="dialog"><span className="ats-email__trigger-icon"><IconMail size={16} /></span><span>Send Resume</span></button>
       {modal}
     </div>
   );
