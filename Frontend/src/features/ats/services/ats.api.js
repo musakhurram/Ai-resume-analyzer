@@ -28,6 +28,11 @@ export async function getAtsReportById(id) {
   return response.data;
 }
 
+export async function getCurrentUser() {
+  const response = await api.get("/api/auth/get-me");
+  return response.data;
+}
+
 export async function listAtsReports({ search = "", sort = "recent", limit = 50 } = {}) {
   const params = { sort, limit };
   if (search.trim()) params.search = search.trim();
@@ -73,9 +78,10 @@ export async function downloadAtsPdf(id, candidateName = "ATS-Resume") {
   window.URL.revokeObjectURL(url);
 }
 
-export async function sendAtsResumeByEmail({ id, recipient, subject, message, attachment = "optimized" }) {
+export async function sendAtsResumeByEmail({ id, senderEmail, recipient, subject, message, attachment = "optimized" }) {
   const response = await api.post("/api/resume/ats-send-email", {
     id,
+    senderEmail,
     recipient,
     subject,
     message,
