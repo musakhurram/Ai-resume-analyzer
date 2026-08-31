@@ -26,7 +26,6 @@
     "express": "^5.2.1",
     "express-rate-limit": "^7.4.1",
     "google-auth-library": "^9.14.2",
-    "googleapis": "^160.0.0",
     "helmet": "^8.0.0",
     "jsonwebtoken": "^9.0.3",
     "mongoose": "^9.9.3",
