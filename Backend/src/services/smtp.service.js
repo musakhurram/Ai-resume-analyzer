@@ -114,7 +114,7 @@ async function sendEmail({ to, subject, text, html }) {
       "--ai_resume_analyzer_boundary--",
       "",
       ".",
-    ].join("\r\n").replace(/\r?\n/g, "\r\n").replace(/^\./gm, "..\");
+    ].join("\r\n").replace(/\r?\n/g, "\r\n").replace(/^\./gm, "..");
 
     await command(socket, "DATA", [354]);
     socket.write(`${message}\r\n`);
