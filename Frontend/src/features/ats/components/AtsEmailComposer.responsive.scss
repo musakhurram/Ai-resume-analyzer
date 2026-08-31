@@ -1,0 +1,75 @@
+/* Resume email action: keep the results toolbar clean at every breakpoint. */
+.ats-results-nav__actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 8px;
+  min-width: 0;
+  flex-shrink: 0;
+}
+
+.ats-results-nav__actions .ats-email {
+  flex: 0 0 auto;
+}
+
+@media (max-width: 900px) {
+  .ats-results-nav__actions {
+    width: auto;
+    max-width: 100%;
+  }
+}
+
+@media (max-width: 700px) {
+  .ats-results-nav__actions {
+    width: 100%;
+    order: 2;
+    margin-left: 0;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    gap: 8px;
+  }
+
+  .ats-results-nav__actions .ats-email,
+  .ats-results-nav__actions .ats-email__trigger,
+  .ats-results-nav__actions > button {
+    width: 100%;
+  }
+
+  .ats-results-nav__actions .ats-email__trigger {
+    min-height: 40px;
+    padding: 0 12px;
+  }
+
+  .ats-results-nav__actions .ats-email__trigger > span:last-child {
+    display: inline;
+  }
+}
+
+@media (max-width: 520px) {
+  .ats-results-nav__actions {
+    grid-template-columns: 1fr;
+  }
+
+  .ats-results-nav__actions .ats-email__trigger,
+  .ats-results-nav__actions > button {
+    min-height: 42px;
+  }
+}
+
+/* Toasts must stay inside the safe mobile viewport and never cover the header. */
+.ats-email__success {
+  top: max(14px, env(safe-area-inset-top));
+  right: max(14px, env(safe-area-inset-right));
+  left: auto;
+  width: min(360px, calc(100vw - 28px));
+  box-sizing: border-box;
+}
+
+@media (max-width: 520px) {
+  .ats-email__success {
+    left: 14px;
+    right: 14px;
+    width: auto;
+    justify-content: flex-start;
+  }
+}
