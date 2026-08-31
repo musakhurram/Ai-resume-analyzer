@@ -19,6 +19,18 @@
 .pricing-balance-card__track span { display:block; height:100%; min-width:0; border-radius:inherit; background:var(--accent); transition:width .45s ease; }
 .pricing-balance-card__bottom { margin-top:9px; font-family:var(--font-mono); font-size:9px; color:var(--ink-faint); }
 
+.pricing-verification-banner { display:flex; align-items:center; gap:16px; margin:-18px 0 30px; padding:15px 18px; border:1px solid var(--accent); border-radius:14px; background:var(--accent-soft); color:var(--ink); box-shadow:var(--shadow-sm); }
+.pricing-verification-banner__icon { display:grid; place-items:center; width:30px; height:30px; flex:0 0 30px; border-radius:50%; background:var(--accent); color:var(--on-accent); font-size:13px; font-weight:800; }
+.pricing-verification-banner__content { min-width:0; flex:1; }
+.pricing-verification-banner__content strong { display:block; font-size:13px; font-weight:800; }
+.pricing-verification-banner__content p { margin:3px 0 0; color:var(--ink-muted); font-size:11px; line-height:1.5; }
+.pricing-verification-banner__button { flex:0 0 auto; min-height:38px; border:1px solid var(--accent); border-radius:9px; padding:9px 15px; background:var(--accent); color:var(--on-accent); font:inherit; font-size:11px; font-weight:800; cursor:pointer; white-space:nowrap; transition:transform .18s ease, box-shadow .18s ease, opacity .18s ease; }
+.pricing-verification-banner__button:hover:not(:disabled) { transform:translateY(-1px); box-shadow:0 7px 18px rgba(0,0,0,.13); }
+.pricing-verification-banner__button:disabled { cursor:default; opacity:.6; }
+.pricing-verification-banner__success,.pricing-verification-banner__error { display:block; margin-top:5px; font-size:10px; line-height:1.4; }
+.pricing-verification-banner__success { color:var(--accent); font-weight:700; }
+.pricing-verification-banner__error { color:var(--severity-high); }
+
 .pricing-page__notice { display:flex; align-items:center; gap:10px; margin:0 0 30px; padding:13px 16px; border:1px solid var(--border); border-radius:13px; background:var(--surface-2); color:var(--ink-muted); font-size:13px; }
 .pricing-page__notice--success { border-color:var(--accent); }
 .pricing-page__notice-icon { display:grid; place-items:center; width:22px; height:22px; flex:0 0 22px; border-radius:50%; background:var(--accent-soft); color:var(--accent); font-weight:800; }
@@ -82,5 +94,5 @@
 .verification-modal__secondary:hover { border-color:var(--ink-faint); color:var(--ink); }
 
 @media (max-width:1000px) { .pricing-hero { grid-template-columns:1fr; gap:28px; } .pricing-balance-card { max-width:560px; } .pricing-grid { grid-template-columns:1fr; max-width:650px; margin:0 auto; } .pricing-card--popular { margin-top:8px; } .token-guide { grid-template-columns:1fr; } }
-@media (max-width:700px) { .pricing-page { padding:32px 18px 55px; } .pricing-hero { padding-bottom:34px; } .pricing-hero__copy h1 { font-size:43px; } .pricing-section__heading { align-items:flex-start; flex-direction:column; gap:5px; } .pricing-card { padding:23px; } .token-guide__items { grid-template-columns:repeat(2,1fr); } .pricing-card__description { min-height:auto; } .verification-modal { padding:27px 22px; } }
-@media (max-width:420px) { .pricing-hero__copy h1 { font-size:34px; } .pricing-card__heading { flex-direction:column; align-items:flex-start; gap:10px; } .pricing-card__price { align-items:flex-start; } .pricing-balance-card__top,.pricing-balance-card__bottom { flex-wrap:wrap; } .token-guide__items { grid-template-columns:1fr 1fr; } }
+@media (max-width:700px) { .pricing-page { padding:32px 18px 55px; } .pricing-hero { padding-bottom:34px; } .pricing-hero__copy h1 { font-size:43px; } .pricing-section__heading { align-items:flex-start; flex-direction:column; gap:5px; } .pricing-card { padding:23px; } .token-guide__items { grid-template-columns:repeat(2,1fr); } .pricing-card__description { min-height:auto; } .verification-modal { padding:27px 22px; } .pricing-verification-banner { align-items:flex-start; flex-wrap:wrap; margin-top:-8px; } .pricing-verification-banner__content { flex-basis:calc(100% - 46px); } .pricing-verification-banner__button { width:100%; margin-left:46px; } }
+@media (max-width:420px) { .pricing-hero__copy h1 { font-size:34px; } .pricing-card__heading { flex-direction:column; align-items:flex-start; gap:10px; } .pricing-card__price { align-items:flex-start; } .pricing-balance-card__top,.pricing-balance-card__bottom { flex-wrap:wrap; } .token-guide__items { grid-template-columns:1fr 1fr; } .pricing-verification-banner__button { margin-left:0; } }
