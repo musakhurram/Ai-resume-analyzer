@@ -3,11 +3,9 @@
 .ats-email__trigger-icon { width:24px; height:24px; display:grid; place-items:center; border-radius:var(--radius-xs); background:var(--surface-2); color:var(--accent); }
 .ats-email__trigger:hover:not(:disabled) { color:var(--ink); background:var(--surface-2); border-color:var(--border-strong); box-shadow:0 4px 12px rgba(20,28,50,.07); transform:translateY(-1px); }
 .ats-email__trigger:disabled { opacity:.6; cursor:not-allowed; }
-.ats-email__trigger:focus-visible,.ats-email__close:focus-visible,.ats-email__cancel:focus-visible,.ats-email__send:focus-visible,.ats-email__attachment-card:focus-visible { outline:2px solid var(--accent); outline-offset:2px; }
-
+.ats-email__trigger:focus-visible,.ats-email__close:focus-visible,.ats-email__cancel:focus-visible,.ats-email__send:focus-visible,.ats-email__attachment-card:focus-visible,.ats-email__gmail-connect:focus-visible { outline:2px solid var(--accent); outline-offset:2px; }
 .ats-email__success { position:fixed; top:20px; left:50%; right:auto; transform:translateX(-50%); z-index:1100; display:flex; align-items:center; gap:9px; max-width:min(360px,calc(100vw - 32px)); padding:10px 13px; border:1px solid var(--severity-low-border); border-radius:var(--radius-sm); background:var(--surface); color:var(--severity-low); box-shadow:0 12px 34px rgba(20,28,50,.12); font-size:.79rem; font-weight:600; }
 .ats-email__success-icon { width:25px; height:25px; flex:0 0 25px; display:grid; place-items:center; border-radius:50%; background:var(--severity-low-soft); }
-
 .ats-email__backdrop { position:fixed; inset:0; z-index:1000; display:grid; place-items:center; padding:24px; box-sizing:border-box; overflow-y:auto; background:rgba(17,24,39,.48); backdrop-filter:blur(5px); }
 .ats-email__modal { position:relative; width:min(680px,100%); max-height:calc(100vh - 48px); margin:auto; overflow-y:auto; box-sizing:border-box; border:1px solid var(--border-subtle); border-radius:18px; background:var(--surface); box-shadow:0 30px 90px rgba(10,18,45,.2),0 4px 18px rgba(10,18,45,.08); }
 .ats-email__header { display:flex; align-items:flex-start; justify-content:space-between; gap:20px; padding:22px 24px 20px; border-bottom:1px solid var(--border-subtle); }
@@ -19,12 +17,23 @@
 .ats-email__close { width:32px; height:32px; flex:0 0 32px; display:grid; place-items:center; border:1px solid transparent; border-radius:var(--radius-xs); background:transparent; color:var(--ink-muted); cursor:pointer; }
 .ats-email__close:hover:not(:disabled) { border-color:var(--border-subtle); background:var(--surface-2); color:var(--ink); }
 .ats-email__form { display:flex; flex-direction:column; gap:17px; padding:20px 24px 22px; }
+.ats-email__gmail { display:flex; align-items:center; gap:11px; padding:11px 12px; border:1px solid var(--border); border-radius:12px; background:var(--surface-2); }
+.ats-email__gmail.is-connected { border-color:var(--severity-low-border); background:var(--severity-low-soft); }
+.ats-email__gmail-icon { width:32px; height:32px; flex:0 0 32px; display:grid; place-items:center; border-radius:9px; background:var(--surface); color:var(--ink-secondary); border:1px solid var(--border-subtle); }
+.ats-email__gmail-copy { min-width:0; flex:1; display:flex; flex-direction:column; gap:2px; }
+.ats-email__gmail-copy strong { color:var(--ink); font-size:.76rem; font-weight:700; }
+.ats-email__gmail-copy small { color:var(--ink-faint); font-size:.66rem; line-height:1.4; }
+.ats-email__gmail-connect { min-height:34px; padding:0 11px; border:1px solid var(--border); border-radius:8px; background:var(--surface); color:var(--ink); font:inherit; font-size:.7rem; font-weight:700; cursor:pointer; white-space:nowrap; }
+.ats-email__gmail-connect:hover:not(:disabled) { border-color:var(--border-strong); background:var(--surface-3); }
+.ats-email__gmail-connect:disabled { opacity:.55; cursor:not-allowed; }
+.ats-email__gmail-status { display:inline-flex; align-items:center; gap:4px; color:var(--severity-low); font-size:.67rem; font-weight:700; white-space:nowrap; }
 .ats-email__fields { display:grid; gap:13px; }
 .ats-email__field { position:relative; display:grid; gap:6px; }
 .ats-email__field > span { color:var(--ink-secondary); font-size:.76rem; font-weight:650; }
 .ats-email__field em { margin-left:5px; color:var(--ink-faint); font-size:.69rem; font-style:normal; font-weight:500; }
 .ats-email__field input,.ats-email__field textarea { width:100%; box-sizing:border-box; border:1px solid var(--border); border-radius:10px; outline:0; background:var(--surface-2); color:var(--ink); font:inherit; font-size:.83rem; }
 .ats-email__field input { height:42px; padding:0 11px; }
+.ats-email__field input[readonly] { color:var(--ink-muted); cursor:default; }
 .ats-email__field textarea { min-height:142px; padding:10px 11px 27px; resize:vertical; line-height:1.5; }
 .ats-email__field input:focus,.ats-email__field textarea:focus { border-color:var(--accent); background:var(--surface); box-shadow:0 0 0 3px rgba(91,116,255,.1); }
 .ats-email__field-hint { color:var(--ink-faint); font-size:.66rem; line-height:1.4; }
@@ -56,6 +65,5 @@
 .ats-email__cancel:disabled,.ats-email__send:disabled,.ats-email__close:disabled { opacity:.55; cursor:not-allowed; }
 .ats-email__spinner { width:14px; height:14px; border:2px solid rgba(255,255,255,.42); border-top-color:currentColor; border-radius:50%; animation:ats-email-spin 700ms linear infinite; }
 @keyframes ats-email-spin { to { transform:rotate(360deg); } }
-
-@media (max-width:700px) { .ats-email__backdrop{padding:12px}.ats-email__modal{max-height:calc(100vh - 24px);border-radius:15px}.ats-email__header{padding:18px}.ats-email__form{padding:16px 18px 18px}.ats-email__attachments{grid-template-columns:1fr} }
-@media (max-width:560px) { .ats-email__trigger>span:last-child{display:none}.ats-email__header h3{font-size:1.05rem}.ats-email__header p{font-size:.72rem}.ats-email__actions{display:grid;grid-template-columns:1fr 1.35fr}.ats-email__cancel,.ats-email__send{width:100%}.ats-email__success{top:max(12px,env(safe-area-inset-top));max-width:calc(100vw - 24px);width:calc(100vw - 24px);justify-content:center;text-align:center} }
+@media (max-width:700px) { .ats-email__backdrop{padding:12px}.ats-email__modal{max-height:calc(100vh - 24px);border-radius:15px}.ats-email__header{padding:18px}.ats-email__form{padding:16px 18px 18px}.ats-email__attachments{grid-template-columns:1fr}.ats-email__gmail{align-items:flex-start}.ats-email__gmail-connect,.ats-email__gmail-status{margin-top:1px} }
+@media (max-width:560px) { .ats-email__trigger>span:last-child{display:none}.ats-email__header h3{font-size:1.05rem}.ats-email__header p{font-size:.72rem}.ats-email__actions{display:grid;grid-template-columns:1fr 1.35fr}.ats-email__cancel,.ats-email__send{width:100%}.ats-email__success{top:max(12px,env(safe-area-inset-top));max-width:calc(100vw - 24px);width:calc(100vw - 24px);justify-content:center;text-align:center}.ats-email__gmail{flex-wrap:wrap}.ats-email__gmail-copy{min-width:calc(100% - 44px)}.ats-email__gmail-connect,.ats-email__gmail-status{margin-left:43px}.ats-email__gmail-connect{width:calc(100% - 43px)} }
