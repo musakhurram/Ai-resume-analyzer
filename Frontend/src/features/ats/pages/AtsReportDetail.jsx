@@ -9,6 +9,7 @@ import AtsSectionFeedback from "../components/AtsSectionFeedback";
 import AtsTopSuggestions from "../components/AtsTopSuggestions";
 import AtsStrengthsList from "../components/AtsStrengthsList";
 import AtsBeforeAfterPreview from "../components/AtsBeforeAfterPreview";
+import AtsEmailComposer from "../components/AtsEmailComposer";
 import {
   getAtsReportById,
   reviseAtsResume,
@@ -165,11 +166,17 @@ const AtsReportDetail = () => {
               finally { setDownloading(false); }
             }}
             downloading={downloading}
-            onSendEmail={handleSendEmail}
-            emailSending={emailSending}
-            emailError={emailError}
-            emailSuccess={emailSuccess}
           />
+          {revisedResume && (
+            <AtsEmailComposer
+              reportId={report._id}
+              candidateName={revisedResume.contact?.fullName || report.resumeFileName}
+              onSend={handleSendEmail}
+              sending={emailSending}
+              error={emailError}
+              success={emailSuccess}
+            />
+          )}
         </div>
       )}
     </div>
