@@ -9,7 +9,12 @@ import AtsSectionFeedback from "../components/AtsSectionFeedback";
 import AtsTopSuggestions from "../components/AtsTopSuggestions";
 import AtsStrengthsList from "../components/AtsStrengthsList";
 import AtsBeforeAfterPreview from "../components/AtsBeforeAfterPreview";
-import { getAtsReportById, reviseAtsResume, downloadAtsPdf } from "../services/ats.api";
+import {
+  getAtsReportById,
+  reviseAtsResume,
+  downloadAtsPdf,
+  sendAtsResumeByEmail,
+} from "../services/ats.api";
 import "./AtsAnalyzer.scss";
 
 const AtsReportDetail = () => {
@@ -20,6 +25,9 @@ const AtsReportDetail = () => {
   const [revising, setRevising] = useState(false);
   const [reviseError, setReviseError] = useState("");
   const [downloading, setDownloading] = useState(false);
+  const [emailSending, setEmailSending] = useState(false);
+  const [emailError, setEmailError] = useState("");
+  const [emailSuccess, setEmailSuccess] = useState("");
   const [activeView, setActiveView] = useState("audit");
 
   useEffect(() => {
@@ -71,6 +79,27 @@ const AtsReportDetail = () => {
       setError(err.response?.data?.message || err.message || "Failed to download PDF.");
     } finally {
       setDownloading(false);
+    }
+  };
+
+  const handleSendEmail = async ({ recipient, subject, message, attachment }) => {
+    setEmailSending(true);
+    setEmailError("");
+    setEmailSuccess("");
+    try {
+      const data = await sendAtsResumeByEmail({
+        id: report._id,
+        recipient,
+        subject,
+        message,
+        attachment,
+      });
+      setEmailSuccess(data.message || "Resume sent successfully.");
+    } catch (err) {
+      setEmailError(err.response?.data?.message || err.message || "Failed to send resume email.");
+      throw err;
+    } finally {
+      setEmailSending(false);
     }
   };
 
@@ -136,6 +165,10 @@ const AtsReportDetail = () => {
               finally { setDownloading(false); }
             }}
             downloading={downloading}
+            onSendEmail={handleSendEmail}
+            emailSending={emailSending}
+            emailError={emailError}
+            emailSuccess={emailSuccess}
           />
         </div>
       )}
