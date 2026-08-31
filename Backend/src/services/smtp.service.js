@@ -11,9 +11,14 @@ function getTransporter() {
   if (!smtpEnabled()) return null;
   requireSmtpConfig();
   if (!transporter) transporter = nodemailer.createTransport({
-    service: "gmail",
+    host: env.SMTP_HOST,
+    port: env.SMTP_PORT,
+    secure: env.SMTP_PORT === 465,
+    requireTLS: env.SMTP_PORT === 587,
     auth: { user: env.SMTP_USER, pass: env.SMTP_PASSWORD },
-    connectionTimeout: 15000, greetingTimeout: 15000, socketTimeout: 20000,
+    connectionTimeout: 15000,
+    greetingTimeout: 15000,
+    socketTimeout: 20000,
   });
   return transporter;
 }
