@@ -1,6 +1,8 @@
 import { useEffect, useState } from "react";
 import { useSearchParams } from "react-router";
 import { confirmCheckoutSession, createCheckoutSession, getBillingStatus } from "../services/billing.api";
+import { resendVerification } from "../../auth/services/auth.api";
+import { useAuth } from "../../auth/hooks/useAuth";
 import "./Pricing.scss";
 
 const PLANS = [
@@ -13,12 +15,16 @@ const formatTokens = (value) => Number(value || 0).toLocaleString();
 
 const Pricing = () => {
   const [searchParams] = useSearchParams();
+  const { user } = useAuth();
   const [billing, setBilling] = useState(null);
   const [billingLoading, setBillingLoading] = useState(true);
   const [loadingPlan, setLoadingPlan] = useState("");
   const [confirming, setConfirming] = useState(false);
   const [paymentConfirmed, setPaymentConfirmed] = useState(false);
   const [error, setError] = useState("");
+  const [verificationOpen, setVerificationOpen] = useState(false);
+  const [resending, setResending] = useState(false);
+  const [resendMessage, setResendMessage] = useState("");
   const checkoutState = searchParams.get("checkout");
   const sessionId = searchParams.get("session_id");
 
@@ -45,9 +51,30 @@ const Pricing = () => {
 
   const handlePurchase = async (plan) => {
     if (plan === "free") return;
-    setError(""); setLoadingPlan(plan);
-    try { const data = await createCheckoutSession(plan); window.location.assign(data.url); }
-    catch (err) { setError(err.response?.data?.message || "Unable to start checkout. Please try again."); setLoadingPlan(""); }
+    setError(""); setResendMessage(""); setLoadingPlan(plan);
+    try {
+      const data = await createCheckoutSession(plan);
+      window.location.assign(data.url);
+    } catch (err) {
+      if (err.response?.status === 403 && err.response?.data?.code === "EMAIL_VERIFICATION_REQUIRED") {
+        setVerificationOpen(true);
+        setLoadingPlan("");
+        return;
+      }
+      setError(err.response?.data?.message || "Unable to start checkout. Please try again.");
+      setLoadingPlan("");
+    }
+  };
+
+  const handleResendVerification = async () => {
+    if (!user?.email || resending) return;
+    setResending(true); setResendMessage(""); setError("");
+    try {
+      const data = await resendVerification(user.email);
+      setResendMessage(data?.message || "A new verification link has been sent.");
+    } catch (err) {
+      setError(err.response?.data?.message || "Unable to resend the verification email. Please try again.");
+    } finally { setResending(false); }
   };
 
   const planId = billing?.plan || "free";
@@ -91,6 +118,21 @@ const Pricing = () => {
     <section className="token-guide"><div className="token-guide__intro"><span className="pricing-section__eyebrow">HOW TOKENS WORK</span><h2>One balance. Every AI feature.</h2><p>Token costs vary by task, so smaller actions don't consume a full generation.</p></div><div className="token-guide__items">{[["ATS Analysis", billing?.tokenCosts?.atsAnalysis || 500], ["JD Match", billing?.tokenCosts?.jdMatch || 750], ["Resume Optimization", billing?.tokenCosts?.resumeOptimization || 2000], ["ATS Resume PDF", billing?.tokenCosts?.atsResumeGeneration || 2500]].map(([label, cost]) => <div className="token-guide__item" key={label}><span>{label}</span><strong>{formatTokens(cost)}</strong><small>tokens</small></div>)}</div></section>
     {error && <p className="pricing-card__error" role="alert">{error}</p>}
     <p className="pricing-card__secure"><span>⌁</span> Secure checkout powered by Stripe · Your card details are handled by Stripe</p>
+
+    {verificationOpen && <div className="verification-modal__backdrop" role="presentation" onMouseDown={(event) => { if (event.target === event.currentTarget) setVerificationOpen(false); }}>
+      <div className="verification-modal" role="dialog" aria-modal="true" aria-labelledby="verification-title">
+        <button type="button" className="verification-modal__close" onClick={() => setVerificationOpen(false)} aria-label="Close">×</button>
+        <div className="verification-modal__icon">✓</div>
+        <span className="pricing-page__eyebrow">ONE QUICK STEP</span>
+        <h2 id="verification-title">Verify your email to continue</h2>
+        <p>You're free to use the Resume Analyzer without verification. Before we can take a payment for Pro or Premium, we need to confirm that you own your email address.</p>
+        <div className="verification-modal__email">{user?.email}</div>
+        {resendMessage && <div className="verification-modal__success">{resendMessage}</div>}
+        {error && <div className="verification-modal__error">{error}</div>}
+        <button type="button" className="pricing-card__button" onClick={handleResendVerification} disabled={resending}>{resending ? "Sending verification email…" : "Resend verification email"}</button>
+        <button type="button" className="verification-modal__secondary" onClick={() => { setVerificationOpen(false); window.location.reload(); }}>I've verified my email</button>
+      </div>
+    </div>}
   </div>;
 };
 
