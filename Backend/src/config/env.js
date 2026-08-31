@@ -32,6 +32,14 @@ function loadEnv() {
     COOKIE_DOMAIN: process.env.COOKIE_DOMAIN || undefined,
     STRIPE_SECRET_KEY: process.env.STRIPE_SECRET_KEY || "",
     STRIPE_WEBHOOK_SECRET: process.env.STRIPE_WEBHOOK_SECRET || "",
+    SMTP_ENABLED: process.env.SMTP_ENABLED || "false",
+    SMTP_HOST: process.env.SMTP_HOST || "smtp.gmail.com",
+    SMTP_PORT: Number(process.env.SMTP_PORT) || 465,
+    SMTP_USER: process.env.SMTP_USER || "",
+    SMTP_PASSWORD: process.env.SMTP_PASSWORD || "",
+    SMTP_FROM: process.env.SMTP_FROM || process.env.SMTP_USER || "",
+    SMTP_FROM_EMAIL: process.env.SMTP_FROM_EMAIL || process.env.SMTP_USER || "",
+    SMTP_HELO: process.env.SMTP_HELO || "ai-resume-analyzer",
   };
 }
 
