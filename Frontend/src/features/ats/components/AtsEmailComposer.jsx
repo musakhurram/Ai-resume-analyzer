@@ -25,14 +25,17 @@ const IconCheck = () => (
   </svg>
 );
 
-const AtsEmailComposer = ({ reportId, candidateName, hasRevision = false, onSend, sending = false, error = "", success = "" }) => {
+const AtsEmailComposer = ({ reportId, candidateName, senderEmail = "", hasRevision = false, onSend, sending = false, error = "", success = "" }) => {
   const [open, setOpen] = useState(false);
+  const [sender, setSender] = useState(senderEmail || "");
   const [recipient, setRecipient] = useState("");
   const [subject, setSubject] = useState("");
   const [message, setMessage] = useState("");
   const [attachment, setAttachment] = useState(hasRevision ? "optimized" : "original");
   const [localError, setLocalError] = useState("");
   const [successVisible, setSuccessVisible] = useState(false);
+
+  useEffect(() => setSender(senderEmail || ""), [senderEmail]);
 
   useEffect(() => {
     const name = candidateName || "My Resume";
@@ -61,10 +64,11 @@ const AtsEmailComposer = ({ reportId, candidateName, hasRevision = false, onSend
   const submit = async (event) => {
     event.preventDefault();
     setLocalError("");
+    if (!sender.trim()) return setLocalError("Your sender email could not be loaded. Please sign in again.");
     if (!recipient.trim()) return setLocalError("Enter the recipient’s email address.");
     if (!subject.trim()) return setLocalError("Add a subject before sending.");
     try {
-      await onSend?.({ id: reportId, recipient: recipient.trim(), subject: subject.trim(), message: message.trim(), attachment });
+      await onSend?.({ id: reportId, senderEmail: sender.trim(), recipient: recipient.trim(), subject: subject.trim(), message: message.trim(), attachment });
     } catch {
       // Parent supplies the API error and keeps the composer open for retry.
     }
@@ -86,7 +90,12 @@ const AtsEmailComposer = ({ reportId, candidateName, hasRevision = false, onSend
         </div>
         <form onSubmit={submit} className="ats-email__form">
           <div className="ats-email__fields">
-            <label className="ats-email__field"><span>Recipient email</span><input type="email" value={recipient} onChange={(event) => setRecipient(event.target.value)} placeholder="recruiter@company.com" autoFocus maxLength={254} required /></label>
+            <label className="ats-email__field">
+              <span>Sender email</span>
+              <input type="email" value={sender} onChange={(event) => setSender(event.target.value)} placeholder="you@example.com" autoComplete="email" maxLength={254} required />
+              <small className="ats-email__field-hint">Your logged-in account email. Replies will be directed to this address.</small>
+            </label>
+            <label className="ats-email__field"><span>Recipient email</span><input type="email" value={recipient} onChange={(event) => setRecipient(event.target.value)} placeholder="recruiter@company.com" autoComplete="email" maxLength={254} required /></label>
             <label className="ats-email__field"><span>Subject</span><input type="text" value={subject} onChange={(event) => setSubject(event.target.value)} maxLength={150} required /></label>
             <label className="ats-email__field"><span>Message <em>optional</em></span><textarea value={message} onChange={(event) => setMessage(event.target.value)} rows={7} maxLength={5000} placeholder="Write a short professional message…" /><small className="ats-email__counter">{message.length}/5000</small></label>
           </div>
