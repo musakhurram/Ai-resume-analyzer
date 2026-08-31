@@ -49,8 +49,18 @@ async function createCheckoutSessionController(req, res, next) {
     if (!["pro", "premium"].includes(requestedPlan)) return res.status(400).json({ message: "Choose a valid Pro or Premium plan." });
     const config = PLAN_CONFIG[requestedPlan];
     const priceCents = PLAN_PRICES_CENTS[requestedPlan];
-    const user = await userModel.findById(req.user.id).select("_id plan aiTokens");
+    const user = await userModel.findById(req.user.id).select("_id plan aiTokens emailVerified");
     if (!user) return res.status(404).json({ message: "User not found" });
+
+    // Free features remain available to unverified users. Verification is only required
+    // at the point where a user proceeds to a paid Stripe checkout.
+    if (!user.emailVerified) {
+      return res.status(403).json({
+        code: "EMAIL_VERIFICATION_REQUIRED",
+        message: "Please verify your email before proceeding to a paid plan.",
+      });
+    }
+
     const currentPlan = normalizePlan(user.plan);
     if (PLAN_RANK[requestedPlan] < PLAN_RANK[currentPlan]) return res.status(400).json({ message: `You're already on ${getPlanConfig(currentPlan).label}. Choose ${getPlanConfig(currentPlan).label} again for more tokens, or upgrade to ${requestedPlan === "pro" ? "Premium" : "a higher plan"}.` });
 
