@@ -8,8 +8,16 @@ const {
 
 const stripeRouter = Router();
 
-stripeRouter.post("/create-checkout-session", authUser, createCheckoutSessionController);
+stripeRouter.post(
+  "/create-checkout-session",
+  authUser,
+  createCheckoutSessionController,
+);
 stripeRouter.get("/billing-status", authUser, getBillingStatusController);
-stripeRouter.get("/confirm-checkout-session", authUser, confirmCheckoutSessionController);
+stripeRouter.get(
+  "/confirm-checkout-session",
+  authUser,
+  confirmCheckoutSessionController,
+);
 
 module.exports = stripeRouter;

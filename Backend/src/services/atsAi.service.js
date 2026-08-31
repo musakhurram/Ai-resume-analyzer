@@ -9,11 +9,19 @@ const MODEL_NAME = "gemini-3.5-flash-lite";
 const atsAnalysisJsonSchema = {
   type: "object",
   properties: {
-    overallScore: { type: "number", description: "Overall ATS readiness and resume quality score between 0 and 100" },
+    overallScore: {
+      type: "number",
+      description:
+        "Overall ATS readiness and resume quality score between 0 and 100",
+    },
     atsCompatibility: {
       type: "object",
       properties: {
-        score: { type: "number", description: "ATS structural and parseability score between 0 and 100" },
+        score: {
+          type: "number",
+          description:
+            "ATS structural and parseability score between 0 and 100",
+        },
         issues: {
           type: "array",
           items: {
@@ -32,14 +40,69 @@ const atsAnalysisJsonSchema = {
     sections: {
       type: "object",
       properties: {
-        contactInfo: { type: "object", properties: { score: { type: "number" }, feedback: { type: "string" }, suggestions: { type: "array", items: { type: "string" } } }, required: ["score", "feedback", "suggestions"] },
-        summary: { type: "object", properties: { score: { type: "number" }, feedback: { type: "string" }, suggestions: { type: "array", items: { type: "string" } } }, required: ["score", "feedback", "suggestions"] },
-        experience: { type: "object", properties: { score: { type: "number" }, feedback: { type: "string" }, suggestions: { type: "array", items: { type: "string" } } }, required: ["score", "feedback", "suggestions"] },
-        skills: { type: "object", properties: { score: { type: "number" }, feedback: { type: "string" }, suggestions: { type: "array", items: { type: "string" } } }, required: ["score", "feedback", "suggestions"] },
-        education: { type: "object", properties: { score: { type: "number" }, feedback: { type: "string" }, suggestions: { type: "array", items: { type: "string" } } }, required: ["score", "feedback", "suggestions"] },
-        formatting: { type: "object", properties: { score: { type: "number" }, feedback: { type: "string" }, suggestions: { type: "array", items: { type: "string" } } }, required: ["score", "feedback", "suggestions"] },
+        contactInfo: {
+          type: "object",
+          properties: {
+            score: { type: "number" },
+            feedback: { type: "string" },
+            suggestions: { type: "array", items: { type: "string" } },
+          },
+          required: ["score", "feedback", "suggestions"],
+        },
+        summary: {
+          type: "object",
+          properties: {
+            score: { type: "number" },
+            feedback: { type: "string" },
+            suggestions: { type: "array", items: { type: "string" } },
+          },
+          required: ["score", "feedback", "suggestions"],
+        },
+        experience: {
+          type: "object",
+          properties: {
+            score: { type: "number" },
+            feedback: { type: "string" },
+            suggestions: { type: "array", items: { type: "string" } },
+          },
+          required: ["score", "feedback", "suggestions"],
+        },
+        skills: {
+          type: "object",
+          properties: {
+            score: { type: "number" },
+            feedback: { type: "string" },
+            suggestions: { type: "array", items: { type: "string" } },
+          },
+          required: ["score", "feedback", "suggestions"],
+        },
+        education: {
+          type: "object",
+          properties: {
+            score: { type: "number" },
+            feedback: { type: "string" },
+            suggestions: { type: "array", items: { type: "string" } },
+          },
+          required: ["score", "feedback", "suggestions"],
+        },
+        formatting: {
+          type: "object",
+          properties: {
+            score: { type: "number" },
+            feedback: { type: "string" },
+            suggestions: { type: "array", items: { type: "string" } },
+          },
+          required: ["score", "feedback", "suggestions"],
+        },
       },
-      required: ["contactInfo", "summary", "experience", "skills", "education", "formatting"],
+      required: [
+        "contactInfo",
+        "summary",
+        "experience",
+        "skills",
+        "education",
+        "formatting",
+      ],
     },
     strengths: { type: "array", items: { type: "string" } },
     topSuggestions: {
@@ -56,7 +119,13 @@ const atsAnalysisJsonSchema = {
       },
     },
   },
-  required: ["overallScore", "atsCompatibility", "sections", "strengths", "topSuggestions"],
+  required: [
+    "overallScore",
+    "atsCompatibility",
+    "sections",
+    "strengths",
+    "topSuggestions",
+  ],
 };
 
 const atsRevisedResumeJsonSchema = {
@@ -65,34 +134,83 @@ const atsRevisedResumeJsonSchema = {
     contact: {
       type: "object",
       properties: {
-        fullName: { type: "string" }, email: { type: "string" }, phone: { type: "string" }, location: { type: "string" }, linkedin: { type: "string" }, github: { type: "string" }, website: { type: "string" },
+        fullName: { type: "string" },
+        email: { type: "string" },
+        phone: { type: "string" },
+        location: { type: "string" },
+        linkedin: { type: "string" },
+        github: { type: "string" },
+        website: { type: "string" },
       },
       required: ["fullName", "email", "phone", "location"],
     },
-    summary: { type: "string", description: "ATS-optimized professional summary with target role keywords (3-4 concise lines)" },
+    summary: {
+      type: "string",
+      description:
+        "ATS-optimized professional summary with target role keywords (3-4 concise lines)",
+    },
     experience: {
       type: "array",
       items: {
         type: "object",
-        properties: { company: { type: "string" }, title: { type: "string" }, location: { type: "string" }, dates: { type: "string" }, bullets: { type: "array", items: { type: "string" } } },
+        properties: {
+          company: { type: "string" },
+          title: { type: "string" },
+          location: { type: "string" },
+          dates: { type: "string" },
+          bullets: { type: "array", items: { type: "string" } },
+        },
         required: ["company", "title", "dates", "bullets"],
       },
     },
     skills: {
       type: "array",
-      items: { type: "object", properties: { category: { type: "string" }, items: { type: "array", items: { type: "string" } } }, required: ["category", "items"] },
+      items: {
+        type: "object",
+        properties: {
+          category: { type: "string" },
+          items: { type: "array", items: { type: "string" } },
+        },
+        required: ["category", "items"],
+      },
     },
     education: {
       type: "array",
-      items: { type: "object", properties: { institution: { type: "string" }, degree: { type: "string" }, dates: { type: "string" }, details: { type: "string" } }, required: ["institution", "degree", "dates"] },
+      items: {
+        type: "object",
+        properties: {
+          institution: { type: "string" },
+          degree: { type: "string" },
+          dates: { type: "string" },
+          details: { type: "string" },
+        },
+        required: ["institution", "degree", "dates"],
+      },
     },
     projects: {
       type: "array",
-      items: { type: "object", properties: { name: { type: "string" }, role: { type: "string" }, bullets: { type: "array", items: { type: "string" } }, link: { type: "string" } }, required: ["name", "bullets"] },
+      items: {
+        type: "object",
+        properties: {
+          name: { type: "string" },
+          role: { type: "string" },
+          bullets: { type: "array", items: { type: "string" } },
+          link: { type: "string" },
+        },
+        required: ["name", "bullets"],
+      },
     },
     certifications: {
       type: "array",
-      items: { type: "object", properties: { name: { type: "string" }, issuer: { type: "string" }, date: { type: "string" } }, required: ["name", "issuer"] },
+      items: {
+        type: "object",
+        properties: {
+          name: { type: "string" },
+          issuer: { type: "string" },
+          date: { type: "string" },
+        },
+        required: ["name", "issuer"],
+      },
     },
   },
   required: ["contact", "summary", "experience", "skills", "education"],
@@ -101,13 +219,18 @@ const atsRevisedResumeJsonSchema = {
 async function generateContentWithRetry(payload, maxRetries = 3) {
   let lastError;
   for (let attempt = 0; attempt <= maxRetries; attempt++) {
-    try { return await ai.models.generateContent(payload); } catch (err) {
+    try {
+      return await ai.models.generateContent(payload);
+    } catch (err) {
       lastError = err;
       const status = err.status || err.code;
-      const retryable = status === 429 || (status >= 500 && status < 600) || !status;
+      const retryable =
+        status === 429 || (status >= 500 && status < 600) || !status;
       if (!retryable || attempt === maxRetries) break;
       const delayMs = 1000 * Math.pow(2, attempt) + Math.random() * 500;
-      console.warn(`Gemini ATS request failed (${status}), retrying in ${Math.round(delayMs)}ms (attempt ${attempt + 1}/${maxRetries})`);
+      console.warn(
+        `Gemini ATS request failed (${status}), retrying in ${Math.round(delayMs)}ms (attempt ${attempt + 1}/${maxRetries})`,
+      );
       await new Promise((resolve) => setTimeout(resolve, delayMs));
     }
   }
@@ -128,11 +251,25 @@ Be honest and calibrated. Scores must reflect the actual content. Do not reward 
 Return actionable suggestions.
 `;
   try {
-    const response = await generateContentWithRetry({ model: MODEL_NAME, contents: prompt, config: { responseMimeType: "application/json", responseSchema: atsAnalysisJsonSchema } });
+    const response = await generateContentWithRetry({
+      model: MODEL_NAME,
+      contents: prompt,
+      config: {
+        responseMimeType: "application/json",
+        responseSchema: atsAnalysisJsonSchema,
+      },
+    });
     return JSON.parse(response.text);
   } catch (err) {
-    console.warn("Structured ATS analysis output failed, retrying without schema:", err.message);
-    const response = await generateContentWithRetry({ model: MODEL_NAME, contents: prompt, config: { responseMimeType: "application/json" } });
+    console.warn(
+      "Structured ATS analysis output failed, retrying without schema:",
+      err.message,
+    );
+    const response = await generateContentWithRetry({
+      model: MODEL_NAME,
+      contents: prompt,
+      config: { responseMimeType: "application/json" },
+    });
     return JSON.parse(response.text);
   }
 }
@@ -140,20 +277,48 @@ Return actionable suggestions.
 function resumeJsonToText(resume) {
   const parts = [];
   const c = resume?.contact || {};
-  parts.push([c.fullName, c.email, c.phone, c.location, c.linkedin, c.github, c.website].filter(Boolean).join(" | "));
+  parts.push(
+    [c.fullName, c.email, c.phone, c.location, c.linkedin, c.github, c.website]
+      .filter(Boolean)
+      .join(" | "),
+  );
   if (resume?.summary) parts.push(`SUMMARY\n${resume.summary}`);
-  for (const s of resume?.skills || []) parts.push(`SKILLS - ${s.category}: ${(s.items || []).join(", ")}`);
-  for (const e of resume?.experience || []) parts.push(`EXPERIENCE\n${e.title || ""} | ${e.company || ""} | ${e.dates || ""}\n${(e.bullets || []).map((b) => `- ${b}`).join("\n")}`);
-  for (const e of resume?.education || []) parts.push(`EDUCATION\n${e.degree || ""} | ${e.institution || ""} | ${e.dates || ""}\n${e.details || ""}`);
-  for (const p of resume?.projects || []) parts.push(`PROJECT\n${p.name || ""} | ${p.role || ""}\n${(p.bullets || []).map((b) => `- ${b}`).join("\n")}\n${p.link || ""}`);
-  for (const c of resume?.certifications || []) parts.push(`CERTIFICATION\n${c.name || ""} | ${c.issuer || ""} | ${c.date || ""}`);
+  for (const s of resume?.skills || [])
+    parts.push(`SKILLS - ${s.category}: ${(s.items || []).join(", ")}`);
+  for (const e of resume?.experience || [])
+    parts.push(
+      `EXPERIENCE\n${e.title || ""} | ${e.company || ""} | ${e.dates || ""}\n${(e.bullets || []).map((b) => `- ${b}`).join("\n")}`,
+    );
+  for (const e of resume?.education || [])
+    parts.push(
+      `EDUCATION\n${e.degree || ""} | ${e.institution || ""} | ${e.dates || ""}\n${e.details || ""}`,
+    );
+  for (const p of resume?.projects || [])
+    parts.push(
+      `PROJECT\n${p.name || ""} | ${p.role || ""}\n${(p.bullets || []).map((b) => `- ${b}`).join("\n")}\n${p.link || ""}`,
+    );
+  for (const c of resume?.certifications || [])
+    parts.push(
+      `CERTIFICATION\n${c.name || ""} | ${c.issuer || ""} | ${c.date || ""}`,
+    );
   return parts.filter(Boolean).join("\n\n");
 }
 
-async function reviseResumeForAts({ resumeText, suggestions = [], sectionsToRevise = "all", optimizationFeedback = "" }) {
-  const suggestionsText = Array.isArray(suggestions) && suggestions.length > 0
-    ? suggestions.map((s, idx) => `${idx + 1}. [${s.section || "General"}] ${s.suggestion || s}`).join("\n")
-    : "Address all general ATS compatibility weaknesses, weak action verbs, formatting issues, and improve impact quantification where supported by original facts.";
+async function reviseResumeForAts({
+  resumeText,
+  suggestions = [],
+  sectionsToRevise = "all",
+  optimizationFeedback = "",
+}) {
+  const suggestionsText =
+    Array.isArray(suggestions) && suggestions.length > 0
+      ? suggestions
+          .map(
+            (s, idx) =>
+              `${idx + 1}. [${s.section || "General"}] ${s.suggestion || s}`,
+          )
+          .join("\n")
+      : "Address all general ATS compatibility weaknesses, weak action verbs, formatting issues, and improve impact quantification where supported by original facts.";
 
   const prompt = `
 You are an executive resume writer and ATS optimization specialist.
@@ -181,11 +346,25 @@ CRITICAL QUALITY RULES:
 `;
 
   try {
-    const response = await generateContentWithRetry({ model: MODEL_NAME, contents: prompt, config: { responseMimeType: "application/json", responseSchema: atsRevisedResumeJsonSchema } });
+    const response = await generateContentWithRetry({
+      model: MODEL_NAME,
+      contents: prompt,
+      config: {
+        responseMimeType: "application/json",
+        responseSchema: atsRevisedResumeJsonSchema,
+      },
+    });
     return JSON.parse(response.text);
   } catch (err) {
-    console.warn("Structured ATS revise output failed, retrying without schema:", err.message);
-    const response = await generateContentWithRetry({ model: MODEL_NAME, contents: prompt, config: { responseMimeType: "application/json" } });
+    console.warn(
+      "Structured ATS revise output failed, retrying without schema:",
+      err.message,
+    );
+    const response = await generateContentWithRetry({
+      model: MODEL_NAME,
+      contents: prompt,
+      config: { responseMimeType: "application/json" },
+    });
     return JSON.parse(response.text);
   }
 }
