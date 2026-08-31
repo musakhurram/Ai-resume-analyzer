@@ -1,22 +1,25 @@
 .ats-email {
-  margin-top: 16px;
+  margin-top: 0;
+  min-width: 0;
 }
 
 .ats-email__trigger {
-  width: 100%;
-  min-height: 46px;
+  width: auto;
+  min-height: 42px;
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  gap: 9px;
-  padding: 0 18px;
+  gap: 8px;
+  padding: 0 15px;
   border: 1px solid rgba(91, 116, 255, 0.34);
-  border-radius: 12px;
+  border-radius: 10px;
   background: rgba(91, 116, 255, 0.08);
   color: #536dff;
   font: inherit;
+  font-size: 0.84rem;
   font-weight: 650;
   cursor: pointer;
+  white-space: nowrap;
   transition: transform 160ms ease, border-color 160ms ease, background 160ms ease, box-shadow 160ms ease;
 }
 
@@ -282,6 +285,11 @@
 
 @keyframes ats-email-spin {
   to { transform: rotate(360deg); }
+}
+
+@media (max-width: 900px) {
+  .ats-email__trigger { padding: 0 12px; }
+  .ats-email__trigger span { display: none; }
 }
 
 @media (max-width: 560px) {
