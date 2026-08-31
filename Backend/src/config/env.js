@@ -1,14 +1,29 @@
 // Validates required environment variables once at boot so the app fails fast.
-const REQUIRED_IN_ALL_ENVS = ["MONGO_URI", "JWT_SECRET", "GOOGLE_GENAI_API_KEY"];
+const REQUIRED_IN_ALL_ENVS = [
+  "MONGO_URI",
+  "JWT_SECRET",
+  "GOOGLE_GENAI_API_KEY",
+];
 const RECOMMENDED = ["GOOGLE_CLIENT_ID"];
 
 function loadEnv() {
   const missing = REQUIRED_IN_ALL_ENVS.filter((key) => !process.env[key]);
-  if (missing.length) throw new Error(`Missing required environment variable(s): ${missing.join(", ")}.`);
+  if (missing.length)
+    throw new Error(
+      `Missing required environment variable(s): ${missing.join(", ")}.`,
+    );
   const missingRecommended = RECOMMENDED.filter((key) => !process.env[key]);
-  if (missingRecommended.length) console.warn(`Warning: ${missingRecommended.join(", ")} not set — Google Sign-In will be disabled.`);
-  if (process.env.NODE_ENV === "production" && process.env.JWT_SECRET.length < 32) {
-    throw new Error("JWT_SECRET is too short for production use. Use at least 32 random characters.");
+  if (missingRecommended.length)
+    console.warn(
+      `Warning: ${missingRecommended.join(", ")} not set — Google Sign-In will be disabled.`,
+    );
+  if (
+    process.env.NODE_ENV === "production" &&
+    process.env.JWT_SECRET.length < 32
+  ) {
+    throw new Error(
+      "JWT_SECRET is too short for production use. Use at least 32 random characters.",
+    );
   }
   return {
     PORT: Number(process.env.PORT) || 3000,
