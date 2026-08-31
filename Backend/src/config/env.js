@@ -17,13 +17,8 @@ function loadEnv() {
     console.warn(
       `Warning: ${missingRecommended.join(", ")} not set — Google Sign-In will be disabled.`,
     );
-  if (
-    process.env.NODE_ENV === "production" &&
-    process.env.JWT_SECRET.length < 32
-  ) {
-    throw new Error(
-      "JWT_SECRET is too short for production use. Use at least 32 random characters.",
-    );
+  if (process.env.NODE_ENV === "production" && process.env.JWT_SECRET.length < 32) {
+    throw new Error("JWT_SECRET is too short for production use. Use at least 32 random characters.");
   }
   return {
     PORT: Number(process.env.PORT) || 3000,
@@ -32,6 +27,8 @@ function loadEnv() {
     JWT_SECRET: process.env.JWT_SECRET,
     GOOGLE_GENAI_API_KEY: process.env.GOOGLE_GENAI_API_KEY,
     GOOGLE_CLIENT_ID: process.env.GOOGLE_CLIENT_ID,
+    GOOGLE_OAUTH_CLIENT_SECRET: process.env.GOOGLE_OAUTH_CLIENT_SECRET || "",
+    GOOGLE_OAUTH_REDIRECT_URI: process.env.GOOGLE_OAUTH_REDIRECT_URI || "http://localhost:5000/api/auth/gmail/callback",
     CLIENT_URL: process.env.CLIENT_URL || "http://localhost:5173",
     COOKIE_DOMAIN: process.env.COOKIE_DOMAIN || undefined,
     STRIPE_SECRET_KEY: process.env.STRIPE_SECRET_KEY || "",
@@ -40,8 +37,6 @@ function loadEnv() {
     SMTP_HOST: process.env.SMTP_HOST || "smtp.gmail.com",
     SMTP_PORT: Number(process.env.SMTP_PORT) || 587,
     SMTP_USER: process.env.SMTP_USER || "",
-    // Google App Passwords are sometimes copied with spaces. Normalize them
-    // so a pasted 16-character App Password works reliably on Vercel.
     SMTP_PASSWORD: String(process.env.SMTP_PASSWORD || "").replace(/\s/g, ""),
     SMTP_FROM: process.env.SMTP_FROM || process.env.SMTP_USER || "",
   };
