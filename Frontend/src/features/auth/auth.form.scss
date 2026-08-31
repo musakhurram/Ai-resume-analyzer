@@ -10,6 +10,11 @@
   &__options > a { margin-left:auto; white-space:nowrap; }
   &__checkbox-label { display:inline-flex; align-items:center; gap:.5rem; color:var(--ink-secondary); cursor:pointer; user-select:none; transition:color var(--duration-fast) var(--ease); &:hover,&:focus-within{color:var(--ink);} }
   &__checkbox { appearance:none; -webkit-appearance:none; position:relative; flex:0 0 auto; width:16px; height:16px; margin:0; border:1px solid var(--border-strong); border-radius:4px; background:var(--surface-1); cursor:pointer; display:grid; place-content:center; transition:background-color var(--duration-fast) var(--ease),border-color var(--duration-fast) var(--ease),box-shadow var(--duration-fast) var(--ease); &::after{content:"";width:7px;height:3.5px;border-left:1.5px solid #fff;border-bottom:1.5px solid #fff;transform:rotate(-45deg) scale(0);transition:transform var(--duration-fast) var(--ease);} &:hover{border-color:var(--accent);} &:focus-visible{outline:2px solid rgba(66,133,244,.2);outline-offset:2px;} &:checked{background:var(--accent);border-color:var(--accent);&::after{transform:rotate(-45deg) scale(1);}} &:disabled{cursor:not-allowed;opacity:.55;} }
+  &__forgot-link { flex:0 0 auto; display:inline-flex; align-items:center; gap:.35rem; padding:.3rem .55rem; margin:-.3rem -.55rem -.3rem 0; border:1px solid transparent; border-radius:7px; color:var(--ink-secondary); font-weight:600; line-height:1.35; text-decoration:none; transition:color var(--duration-fast) var(--ease),background-color var(--duration-fast) var(--ease),border-color var(--duration-fast) var(--ease); }
+  &__forgot-link::after { content:"→"; font-size:.78rem; color:var(--ink-faint); transform:translateX(-2px); transition:color var(--duration-fast) var(--ease),transform var(--duration-fast) var(--ease); }
+  &__forgot-link:hover { color:var(--accent-light,var(--accent)); background:var(--surface-2); border-color:var(--border); }
+  &__forgot-link:hover::after { color:var(--accent-light,var(--accent)); transform:translateX(2px); }
+  &__forgot-link:focus-visible { outline:2px solid rgba(66,133,244,.28); outline-offset:2px; }
   &__strength { margin-top:var(--space-2); padding:.5rem .65rem; border-radius:var(--radius-sm); background:var(--surface-2); border:1px solid var(--border); }
   &__strength-header { display:flex; align-items:center; justify-content:space-between; margin-bottom:.35rem; }
   &__strength-label { font-family:var(--font-mono); font-size:.6875rem; color:var(--ink-muted); text-transform:uppercase; letter-spacing:.05em; }
@@ -31,4 +36,4 @@
 .forgot-password__back a { color:var(--ink-secondary); font-weight:600; text-decoration:none; transition:color var(--duration-fast) var(--ease); }
 .forgot-password__back:hover a { color:var(--accent-light,var(--accent)); }
 .forgot-password__back:hover span { color:var(--accent-light,var(--accent)); transform:translateX(-2px); }
-@media (max-width:480px){.forgot-password__intro{padding:.85rem;gap:.7rem}.forgot-password__description{font-size:.78rem}}
+@media (max-width:480px){.forgot-password__intro{padding:.85rem;gap:.7rem}.forgot-password__description{font-size:.78rem}.auth-form__options{gap:.5rem}.auth-form__forgot-link{padding:.28rem .45rem;margin:-.28rem -.45rem -.28rem 0}}
