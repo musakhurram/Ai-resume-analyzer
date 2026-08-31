@@ -104,6 +104,8 @@ const AtsReportDetail = () => {
     }
   };
 
+  const candidateName = revisedResume?.contact?.fullName || report.resumeFileName || "My Resume";
+
   return (
     <div className="ats-analyzer-container ats-analyzer-container--results">
       <div className="ats-results-nav">
@@ -120,8 +122,21 @@ const AtsReportDetail = () => {
           </button>
         </div>
         <div className="ats-results-nav__actions">
-          {activeView === "studio" && revisedResume ? (
-            <Button variant="primary" size="sm" loading={downloading} onClick={handleDownload}>Download ATS PDF</Button>
+          {activeView === "studio" ? (
+            <>
+              <AtsEmailComposer
+                reportId={report._id}
+                candidateName={candidateName}
+                hasRevision={!!revisedResume}
+                onSend={handleSendEmail}
+                sending={emailSending}
+                error={emailError}
+                success={emailSuccess}
+              />
+              {revisedResume && (
+                <Button variant="primary" size="sm" loading={downloading} onClick={handleDownload}>Download ATS PDF</Button>
+              )}
+            </>
           ) : (
             <Button variant="primary" size="sm" onClick={handleFixAll} loading={revising}>Fix with AI</Button>
           )}
@@ -167,16 +182,6 @@ const AtsReportDetail = () => {
             }}
             downloading={downloading}
           />
-          {revisedResume && (
-            <AtsEmailComposer
-              reportId={report._id}
-              candidateName={revisedResume.contact?.fullName || report.resumeFileName}
-              onSend={handleSendEmail}
-              sending={emailSending}
-              error={emailError}
-              success={emailSuccess}
-            />
-          )}
         </div>
       )}
     </div>
