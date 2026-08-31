@@ -1,33 +1,10 @@
-const nodemailer = require("nodemailer");
-const env = require("../config/env");
 const atsReportModel = require("../models/atsReport.model");
 const {
   generateAtsPdfBufferSafe: generateAtsPdfBuffer,
 } = require("../services/atsPdf.safe.service");
+const { sendEmail } = require("../services/smtp.service");
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-let transporter;
-
-function getTransporter() {
-  if (String(env.SMTP_ENABLED).toLowerCase() !== "true") {
-    throw new Error("Email sending is not enabled on the server.");
-  }
-  if (!env.SMTP_HOST || !env.SMTP_USER || !env.SMTP_PASSWORD) {
-    throw new Error("SMTP email configuration is incomplete.");
-  }
-  if (!transporter) {
-    transporter = nodemailer.createTransport({
-      host: env.SMTP_HOST,
-      port: env.SMTP_PORT,
-      secure: Number(env.SMTP_PORT) === 465,
-      auth: {
-        user: env.SMTP_USER,
-        pass: env.SMTP_PASSWORD,
-      },
-    });
-  }
-  return transporter;
-}
 
 function getAuthenticatedUserId(req) {
   return req.user?.id || req.user?._id || undefined;
@@ -38,6 +15,10 @@ function safeFileName(name) {
     .replace(/\.[^/.]+$/, "")
     .replace(/[^a-zA-Z0-9_-]/g, "_")
     .slice(0, 100);
+}
+
+function safeHeader(value) {
+  return String(value || "").replace(/[\r\n]/g, " ").trim();
 }
 
 async function sendAtsEmailController(req, res, next) {
@@ -55,7 +36,7 @@ async function sendAtsEmailController(req, res, next) {
       return res.status(400).json({ message: "Please enter a valid target email address." });
     }
 
-    const cleanSubject = String(subject || "").trim();
+    const cleanSubject = safeHeader(subject);
     if (!cleanSubject || cleanSubject.length > 150) {
       return res.status(400).json({ message: "Please provide an email subject (maximum 150 characters)." });
     }
@@ -103,9 +84,10 @@ async function sendAtsEmailController(req, res, next) {
       return res.status(413).json({ message: "The resume PDF is too large to send by email." });
     }
 
-    const mailer = getTransporter();
-    await mailer.sendMail({
-      from: env.SMTP_FROM,
+    // Use the application's shared SMTP service so ATS emails get the same
+    // Gmail TLS, timeout, authentication and recipient-acceptance checks as
+    // the rest of the application.
+    const result = await sendEmail({
       to,
       subject: cleanSubject,
       text: cleanMessage || "Please find my resume attached.",
@@ -122,11 +104,17 @@ async function sendAtsEmailController(req, res, next) {
       message: "Resume email sent successfully.",
       recipient: to,
       attachment: attachment === "original" ? "original" : "optimized",
+      messageId: result.messageId,
+      accepted: result.accepted,
     });
   } catch (error) {
     if (error?.code === "EAUTH" || error?.responseCode === 535) {
       error.statusCode = 502;
-      error.message = "SMTP authentication failed. Check the email account and App Password configured on the server.";
+      error.message = "SMTP authentication failed. Check SMTP_USER and use a Google App Password for SMTP_PASSWORD.";
+    }
+    if (error?.code === "ETIMEDOUT" || error?.code === "ECONNECTION" || error?.code === "ESOCKET") {
+      error.statusCode = 502;
+      error.message = "The email server could not be reached. Check the SMTP host, port and TLS settings in the backend environment.";
     }
     next(error);
   }
