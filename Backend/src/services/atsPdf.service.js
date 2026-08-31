@@ -51,14 +51,25 @@ function typographyFor(resume) {
 function section(doc, title, styles) {
   const bottom = doc.page.height - doc.page.margins.bottom;
   if (doc.y > bottom - 42) doc.addPage();
-  doc.font("Helvetica-Bold").fontSize(styles.section).fillColor("#0F172A").text(clean(title).toUpperCase());
-  doc.moveDown(0.08);
-  doc.moveTo(doc.page.margins.left, doc.y)
-    .lineTo(doc.page.width - doc.page.margins.right, doc.y)
+
+  const x = doc.page.margins.left;
+  const width = doc.page.width - doc.page.margins.left - doc.page.margins.right;
+  const headingY = doc.y;
+  const heading = clean(title).toUpperCase();
+
+  // Use explicit coordinates rather than moveDown() so every section has
+  // exactly the same heading -> rule -> content spacing.
+  doc.font("Helvetica-Bold").fontSize(styles.section).fillColor("#0F172A")
+    .text(heading, x, headingY, { width, lineGap: 0 });
+
+  const ruleY = headingY + styles.section + 2;
+  doc.moveTo(x, ruleY)
+    .lineTo(x + width, ruleY)
     .strokeColor("#CBD3DF")
     .lineWidth(0.5)
     .stroke();
-  doc.moveDown(0.18);
+
+  doc.y = ruleY + 5;
 }
 
 function writeBullet(doc, value, styles, width) {
@@ -102,8 +113,6 @@ function writeContact(doc, contact, width) {
 }
 
 function generateAtsPdfBuffer(rawResume = {}, cacheKey = null) {
-  // PDFKit keeps generation self-contained and reliable in Vercel serverless.
-  // No Chromium/browser process is required.
   return new Promise((resolve, reject) => {
     try {
       const resume = normalizeResumeData(rawResume);
@@ -128,7 +137,6 @@ function generateAtsPdfBuffer(rawResume = {}, cacheKey = null) {
       const width = doc.page.width - doc.page.margins.left - doc.page.margins.right;
       const contact = resume.contact || {};
 
-      // Clean, ATS-safe header. No tables, columns, icons, images or canvas.
       doc.font("Helvetica-Bold").fontSize(styles.name).fillColor("#0F172A")
         .text(clean(contact.fullName) || "Candidate Name", { align: "center", width, lineGap: 0 });
       doc.moveDown(0.12);
@@ -139,13 +147,13 @@ function generateAtsPdfBuffer(rawResume = {}, cacheKey = null) {
         .strokeColor("#0F172A")
         .lineWidth(0.8)
         .stroke();
-      doc.moveDown(0.24);
+      doc.y += 7;
 
       if (clean(resume.summary)) {
         section(doc, "Professional Summary", styles);
         doc.font("Helvetica").fontSize(styles.body).fillColor("#243247")
           .text(clean(resume.summary), { width, lineGap: 0.8, paragraphGap: 0 });
-        doc.moveDown(0.16);
+        doc.y += 5;
       }
 
       if (asArray(resume.skills).length) {
@@ -161,7 +169,7 @@ function generateAtsPdfBuffer(rawResume = {}, cacheKey = null) {
           doc.font("Helvetica").fontSize(styles.body).fillColor("#526074")
             .text(items, { lineGap: 0.7 });
         });
-        doc.moveDown(0.13);
+        doc.y += 4;
       }
 
       if (asArray(resume.experience).length) {
@@ -177,7 +185,7 @@ function generateAtsPdfBuffer(rawResume = {}, cacheKey = null) {
               .text(clean(exp.location), { lineGap: 0.4 });
           }
           bullets(exp?.bullets).forEach((bullet) => writeBullet(doc, bullet, styles, width));
-          doc.moveDown(0.13);
+          doc.y += 4;
         });
       }
 
@@ -193,7 +201,7 @@ function generateAtsPdfBuffer(rawResume = {}, cacheKey = null) {
             doc.font("Helvetica").fontSize(styles.body).fillColor("#243247")
               .text(clean(edu.details), { width, lineGap: 0.7 });
           }
-          doc.moveDown(0.12);
+          doc.y += 4;
         });
       }
 
@@ -206,7 +214,7 @@ function generateAtsPdfBuffer(rawResume = {}, cacheKey = null) {
               .text(clean(project.role), { lineGap: 0.4 });
           }
           bullets(project?.bullets).forEach((bullet) => writeBullet(doc, bullet, styles, width));
-          doc.moveDown(0.12);
+          doc.y += 4;
         });
       }
 
@@ -217,12 +225,10 @@ function generateAtsPdfBuffer(rawResume = {}, cacheKey = null) {
           if (!line) return;
           doc.font("Helvetica").fontSize(styles.body).fillColor("#243247")
             .text(line, { width, lineGap: 0.7 });
-          doc.moveDown(0.05);
+          doc.y += 2;
         });
       }
 
-      // If content is unusually long, allow a clean second page instead of
-      // shrinking/distorting the entire document with vertical scaling.
       const range = doc.bufferedPageRange();
       if (range.count > 1) {
         for (let i = range.start; i < range.start + range.count; i += 1) {
