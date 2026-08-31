@@ -10,15 +10,19 @@ function requireSmtpConfig() {
 function getTransporter() {
   if (!smtpEnabled()) return null;
   requireSmtpConfig();
+  const port = Number(env.SMTP_PORT) || 587;
   if (!transporter) transporter = nodemailer.createTransport({
-    host: env.SMTP_HOST,
-    port: env.SMTP_PORT,
-    secure: env.SMTP_PORT === 465,
-    requireTLS: env.SMTP_PORT === 587,
+    host: env.SMTP_HOST || "smtp.gmail.com",
+    port,
+    secure: port === 465,
+    requireTLS: port === 587,
     auth: { user: env.SMTP_USER, pass: env.SMTP_PASSWORD },
-    connectionTimeout: 15000,
-    greetingTimeout: 15000,
-    socketTimeout: 20000,
+    tls: { minVersion: "TLSv1.2", servername: env.SMTP_HOST || "smtp.gmail.com" },
+    connectionTimeout: 20000,
+    greetingTimeout: 20000,
+    socketTimeout: 30000,
+    disableFileAccess: true,
+    disableUrlAccess: true,
   });
   return transporter;
 }
@@ -29,14 +33,33 @@ async function verifySmtpConnection() {
 }
 function safe(value) { return String(value || "").replace(/[\r\n<>]/g, " ").trim(); }
 async function sendEmail({ to, subject, text, html, attachments }) {
-  if (!smtpEnabled()) throw new Error("SMTP is not enabled.");
+  if (!smtpEnabled()) throw new Error("SMTP is not enabled. Set SMTP_ENABLED=true in the backend environment.");
   const recipient = safe(to);
   if (!recipient) throw new Error("Email recipient is required.");
-  const info = await getTransporter().sendMail({ from: env.SMTP_FROM || env.SMTP_USER, to: recipient, subject: safe(subject) || "AI Resume Analyzer", text, html, attachments });
+  const smtpUser = safe(env.SMTP_USER);
+  if (!smtpUser) throw new Error("SMTP_USER is not configured.");
+
+  // Gmail should send from the account that authenticated with SMTP. Using a
+  // different/unverified SMTP_FROM can cause delivery/rewrite problems.
+  const info = await getTransporter().sendMail({
+    from: smtpUser,
+    sender: smtpUser,
+    replyTo: smtpUser,
+    to: recipient,
+    subject: safe(subject) || "AI Resume Analyzer",
+    text: text || "Please find my resume attached.",
+    html,
+    attachments,
+    date: new Date(),
+  });
   const accepted = Array.isArray(info.accepted) ? info.accepted : [];
-  if (!accepted.some((a) => String(a).toLowerCase() === recipient.toLowerCase())) throw new Error(`SMTP did not accept recipient ${recipient}.`);
-  console.log(`Email accepted by Gmail for ${recipient}. Message ID: ${info.messageId}`);
-  return { accepted: true, messageId: info.messageId, acceptedRecipients: accepted, rejectedRecipients: info.rejected || [], response: info.response };
+  const rejected = Array.isArray(info.rejected) ? info.rejected : [];
+  const acceptedRecipient = accepted.some(a => String(a).toLowerCase() === recipient.toLowerCase());
+  if (!acceptedRecipient || rejected.some(a => String(a).toLowerCase() === recipient.toLowerCase())) {
+    throw new Error(`The SMTP server did not accept ${recipient}. ${info.response || "No SMTP response was provided."}`);
+  }
+  console.log(`Resume email accepted by SMTP server for ${recipient}. Message ID: ${info.messageId}. Response: ${info.response || "n/a"}`);
+  return { accepted: true, messageId: info.messageId, acceptedRecipients: accepted, rejectedRecipients: rejected, response: info.response };
 }
 async function sendWelcomeEmail({ to, username }) {
   const name = safe(username) || "there";
