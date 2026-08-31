@@ -3,6 +3,7 @@ const upload = require("../middlewares/file.middleware");
 const { aiGenerationLimiter } = require("../middlewares/rateLimit.middleware");
 const { authUser } = require("../middlewares/auth.middleware");
 const atsController = require("../controllers/atsAnalyze.controller");
+const { sendAtsEmailController } = require("../controllers/atsEmail.controller");
 const {
   atsManualRevisionController,
 } = require("../controllers/atsManualRevision.controller");
@@ -35,6 +36,11 @@ atsRouter.get(
   "/ats-download/:id",
   authUser,
   atsController.atsDownloadController,
+);
+atsRouter.post(
+  "/ats-send-email",
+  authUser,
+  sendAtsEmailController,
 );
 atsRouter.get("/ats-preview/:id", authUser, atsController.atsPreviewController);
 atsRouter.get(
