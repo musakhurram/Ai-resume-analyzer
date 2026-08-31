@@ -22,8 +22,12 @@ function loadEnv() {
     STRIPE_SECRET_KEY: process.env.STRIPE_SECRET_KEY || "",
     STRIPE_WEBHOOK_SECRET: process.env.STRIPE_WEBHOOK_SECRET || "",
     SMTP_ENABLED: process.env.SMTP_ENABLED || "false",
+    SMTP_HOST: process.env.SMTP_HOST || "smtp.gmail.com",
+    SMTP_PORT: Number(process.env.SMTP_PORT) || 587,
     SMTP_USER: process.env.SMTP_USER || "",
-    SMTP_PASSWORD: process.env.SMTP_PASSWORD || "",
+    // Google App Passwords are sometimes copied with spaces. Normalize them
+    // so a pasted 16-character App Password works reliably on Vercel.
+    SMTP_PASSWORD: String(process.env.SMTP_PASSWORD || "").replace(/\s/g, ""),
     SMTP_FROM: process.env.SMTP_FROM || process.env.SMTP_USER || "",
   };
 }
