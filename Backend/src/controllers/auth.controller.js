@@ -4,6 +4,7 @@ const jwt = require("jsonwebtoken");
 const tokenBlacklistModel = require("../models/blacklist.model");
 const env = require("../config/env");
 const { verifyGoogleIdToken } = require("../services/google.service");
+const { sendWelcomeEmail, sendEmail, smtpEnabled } = require("../services/smtp.service");
 
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
@@ -33,42 +34,28 @@ function toPublicUser(user) {
   };
 }
 
-/**
- * @name registerUserController
- * @description register a new user, expects username, email and password
- * @access Public
- */
 async function registerUserController(req, res, next) {
   try {
     const { username, email, password } = req.body || {};
     if (!username || !email || !password) {
-      return res.status(400).json({
-        message: "Please provide username, email, and password",
-      });
+      return res.status(400).json({ message: "Please provide username, email, and password" });
     }
-
     if (typeof username !== "string" || username.trim().length < 3) {
       return res.status(400).json({ message: "Username must be at least 3 characters" });
     }
-
     if (typeof email !== "string" || !EMAIL_REGEX.test(email)) {
       return res.status(400).json({ message: "Please provide a valid email address" });
     }
-
     if (typeof password !== "string" || password.length < 8) {
       return res.status(400).json({ message: "Password must be at least 8 characters" });
     }
 
     const normalizedEmail = email.trim().toLowerCase();
-
     const isUserAlreadyExists = await userModel.findOne({
       $or: [{ username: username.trim() }, { email: normalizedEmail }],
     });
-
     if (isUserAlreadyExists) {
-      return res.status(409).json({
-        message: "Account already exists with this email address or username",
-      });
+      return res.status(409).json({ message: "Account already exists with this email address or username" });
     }
 
     const hash = await bcrypt.hash(password, 12);
@@ -79,9 +66,16 @@ async function registerUserController(req, res, next) {
       authProvider: "local",
     });
 
+    // Email delivery must never make registration fail. If Gmail SMTP is
+    // configured, send the welcome message in the background.
+    if (smtpEnabled()) {
+      sendWelcomeEmail({ to: user.email, username: user.username }).catch((error) => {
+        console.error("Welcome email failed:", error?.message || error);
+      });
+    }
+
     const token = signToken(user);
     setAuthCookie(res, token);
-
     return res.status(201).json({
       message: "User registered successfully",
       token,
@@ -92,41 +86,24 @@ async function registerUserController(req, res, next) {
   }
 }
 
-/**
- * @name loginUserController
- * @description login a user, expects email and password in the request body
- * @access Public
- */
 async function loginUserController(req, res, next) {
   try {
     const { email, password } = req.body || {};
-
     if (!email || !password) {
-      return res.status(400).json({
-        message: "Please provide both email and password",
-      });
+      return res.status(400).json({ message: "Please provide both email and password" });
     }
-
     const user = await userModel
       .findOne({ email: String(email).trim().toLowerCase() })
       .select("+password");
-
-    // Same generic message whether the account or password is wrong, and
-    // whether the account uses Google Sign-In — avoids leaking which
-    // accounts exist / how they authenticate.
     if (!user || !user.password) {
       return res.status(401).json({ message: "Invalid email or password" });
     }
-
     const isPasswordValid = await bcrypt.compare(password, user.password);
-
     if (!isPasswordValid) {
       return res.status(401).json({ message: "Invalid email or password" });
     }
-
     const token = signToken(user);
     setAuthCookie(res, token);
-
     return res.status(200).json({
       message: "User logged in successfully",
       token,
@@ -137,28 +114,18 @@ async function loginUserController(req, res, next) {
   }
 }
 
-/**
- * @name googleAuthController
- * @description sign in or register a user via a verified Google ID token
- * @access Public
- */
 async function googleAuthController(req, res, next) {
   try {
     const { credential } = req.body || {};
-    if (!credential) {
-      return res.status(400).json({ message: "Google credential is required" });
-    }
+    if (!credential) return res.status(400).json({ message: "Google credential is required" });
 
     const profile = await verifyGoogleIdToken(credential);
     const normalizedEmail = profile.email.trim().toLowerCase();
-
     let user = await userModel.findOne({
       $or: [{ googleId: profile.googleId }, { email: normalizedEmail }],
     });
 
     if (user && !user.googleId) {
-      // Existing local account with the same email — link the Google
-      // identity to it instead of creating a duplicate account.
       user.googleId = profile.googleId;
       user.authProvider = user.authProvider === "local" ? user.authProvider : "google";
       if (profile.picture) user.avatarUrl = profile.picture;
@@ -169,12 +136,10 @@ async function googleAuthController(req, res, next) {
       const baseUsername = normalizedEmail.split("@")[0].replace(/[^a-zA-Z0-9_]/g, "") || "user";
       let username = baseUsername;
       let suffix = 0;
-      // Ensure uniqueness against the required unique username field.
       while (await userModel.exists({ username })) {
         suffix += 1;
         username = `${baseUsername}${suffix}`;
       }
-
       user = await userModel.create({
         username,
         email: normalizedEmail,
@@ -182,11 +147,15 @@ async function googleAuthController(req, res, next) {
         googleId: profile.googleId,
         avatarUrl: profile.picture,
       });
+      if (smtpEnabled()) {
+        sendWelcomeEmail({ to: user.email, username: user.username }).catch((error) => {
+          console.error("Welcome email failed:", error?.message || error);
+        });
+      }
     }
 
     const token = signToken(user);
     setAuthCookie(res, token);
-
     return res.status(200).json({
       message: "Signed in with Google successfully",
       token,
@@ -197,51 +166,46 @@ async function googleAuthController(req, res, next) {
   }
 }
 
-/**
- * @name logoutUserController
- * @description clear token from user cookie and add token in blacklist
- * @access Public
- */
 async function logoutUserController(req, res, next) {
   try {
-    const token =
-      req.cookies?.token ||
+    const token = req.cookies?.token ||
       (req.headers.authorization?.startsWith("Bearer ")
         ? req.headers.authorization.split(" ")[1]
         : req.headers.authorization);
-
-    if (token) {
-      await tokenBlacklistModel.create({ token });
-    }
-
+    if (token) await tokenBlacklistModel.create({ token });
     res.clearCookie("token", { domain: env.COOKIE_DOMAIN });
+    return res.status(200).json({ message: "User logged out successfully" });
+  } catch (err) {
+    next(err);
+  }
+}
+
+async function getMeController(req, res, next) {
+  try {
+    const user = await userModel.findById(req.user.id);
+    if (!user) return res.status(404).json({ message: "User not found" });
     return res.status(200).json({
-      message: "User logged out successfully",
+      message: "User details fetched successfully",
+      user: toPublicUser(user),
     });
   } catch (err) {
     next(err);
   }
 }
 
-/**
- * @name getMeController
- * @description get the current logged in user details
- * @access Private
- */
-async function getMeController(req, res, next) {
+async function testSmtpController(req, res, next) {
   try {
     const user = await userModel.findById(req.user.id);
+    if (!user) return res.status(404).json({ message: "User not found" });
+    if (!smtpEnabled()) return res.status(503).json({ message: "SMTP is not enabled." });
 
-    if (!user) {
-      return res.status(404).json({
-        message: "User not found",
-      });
-    }
-
-    return res.status(200).json({
-      message: "User details fetched successfully",
-      user: toPublicUser(user),
+    await sendEmail({
+      to: user.email,
+      subject: "AI Resume Analyzer SMTP Test",
+      text: "Your Gmail SMTP configuration is working correctly.",
+      html: "<p>Your Gmail SMTP configuration is working correctly.</p>",
     });
+    return res.status(200).json({ message: "SMTP test email sent successfully." });
   } catch (err) {
     next(err);
   }
@@ -253,4 +217,5 @@ module.exports = {
   googleAuthController,
   logoutUserController,
   getMeController,
+  testSmtpController,
 };
