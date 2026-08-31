@@ -1,48 +1,95 @@
+@use "../../../styles/tokens" as *;
+
 .ats-email {
-  margin-top: 0;
+  position: relative;
+  display: inline-flex;
+  align-items: center;
   min-width: 0;
 }
 
 .ats-email__trigger {
-  width: auto;
-  min-height: 42px;
+  min-height: 36px;
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  gap: 8px;
-  padding: 0 15px;
-  border: 1px solid rgba(91, 116, 255, 0.34);
-  border-radius: 10px;
-  background: rgba(91, 116, 255, 0.08);
-  color: #536dff;
+  gap: 7px;
+  padding: 0 12px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: var(--surface);
+  color: var(--ink-secondary);
   font: inherit;
-  font-size: 0.84rem;
+  font-size: 0.79rem;
   font-weight: 650;
+  line-height: 1;
   cursor: pointer;
   white-space: nowrap;
-  transition: transform 160ms ease, border-color 160ms ease, background 160ms ease, box-shadow 160ms ease;
+  box-shadow: 0 1px 2px rgba(20, 28, 50, 0.03);
+  transition: color var(--duration-fast) var(--ease), background var(--duration-fast) var(--ease), border-color var(--duration-fast) var(--ease), box-shadow var(--duration-fast) var(--ease), transform var(--duration-fast) var(--ease);
+}
+
+.ats-email__trigger-icon {
+  width: 24px;
+  height: 24px;
+  display: grid;
+  place-items: center;
+  border-radius: var(--radius-xs);
+  background: var(--surface-2);
+  color: var(--accent);
 }
 
 .ats-email__trigger:hover:not(:disabled) {
+  color: var(--ink);
+  background: var(--surface-2);
+  border-color: var(--border-strong);
+  box-shadow: 0 4px 12px rgba(20, 28, 50, 0.07);
   transform: translateY(-1px);
-  border-color: rgba(91, 116, 255, 0.58);
-  background: rgba(91, 116, 255, 0.13);
-  box-shadow: 0 8px 24px rgba(38, 53, 112, 0.1);
 }
 
-.ats-email__trigger:disabled {
-  opacity: 0.6;
-  cursor: not-allowed;
+.ats-email__trigger:disabled { opacity: 0.6; cursor: not-allowed; }
+
+.ats-email__trigger:focus-visible,
+.ats-email__close:focus-visible,
+.ats-email__cancel:focus-visible,
+.ats-email__send:focus-visible,
+.ats-email__attachment-card:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
 }
 
 .ats-email__success {
-  margin-bottom: 10px;
-  padding: 10px 12px;
-  border: 1px solid rgba(30, 150, 95, 0.25);
-  border-radius: 10px;
-  background: rgba(30, 150, 95, 0.07);
-  color: #168257;
-  font-size: 0.88rem;
+  position: fixed;
+  top: 20px;
+  right: 20px;
+  z-index: 1100;
+  display: inline-flex;
+  align-items: center;
+  gap: 9px;
+  max-width: min(360px, calc(100vw - 40px));
+  padding: 10px 13px;
+  border: 1px solid var(--severity-low-border);
+  border-radius: var(--radius-sm);
+  background: var(--surface);
+  color: var(--severity-low);
+  box-shadow: 0 12px 34px rgba(20, 28, 50, 0.12);
+  font-size: 0.79rem;
+  font-weight: 600;
+  animation: ats-email-toast-in 180ms var(--ease);
+}
+
+.ats-email__success-icon {
+  width: 25px;
+  height: 25px;
+  flex: 0 0 25px;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  background: var(--severity-low-soft);
+}
+
+@keyframes ats-email-toast-in {
+  from { opacity: 0; transform: translateY(-6px); }
+  to { opacity: 1; transform: translateY(0); }
 }
 
 .ats-email__backdrop {
@@ -52,252 +99,356 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 20px;
-  background: rgba(10, 17, 35, 0.58);
-  backdrop-filter: blur(8px);
+  padding: 24px;
+  background: rgba(17, 24, 39, 0.48);
+  backdrop-filter: blur(5px);
+  animation: ats-email-fade 160ms ease-out;
+}
+
+@keyframes ats-email-fade {
+  from { opacity: 0; }
+  to { opacity: 1; }
 }
 
 .ats-email__modal {
-  width: min(620px, 100%);
-  max-height: min(760px, calc(100vh - 40px));
+  width: min(680px, 100%);
+  max-height: min(820px, calc(100vh - 48px));
   overflow: auto;
-  border: 1px solid rgba(255, 255, 255, 0.8);
-  border-radius: 20px;
-  background: #fff;
-  box-shadow: 0 28px 90px rgba(10, 18, 45, 0.28);
+  border: 1px solid var(--border-subtle);
+  border-radius: 18px;
+  background: var(--surface);
+  box-shadow: 0 30px 90px rgba(10, 18, 45, 0.2), 0 4px 18px rgba(10, 18, 45, 0.08);
+  animation: ats-email-modal-in 180ms var(--ease);
+}
+
+@keyframes ats-email-modal-in {
+  from { opacity: 0; transform: translateY(8px) scale(0.985); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
 }
 
 .ats-email__header {
   display: flex;
+  align-items: flex-start;
   justify-content: space-between;
-  gap: 18px;
-  padding: 24px 24px 18px;
-  border-bottom: 1px solid #edf0f6;
+  gap: 20px;
+  padding: 22px 24px 20px;
+  border-bottom: 1px solid var(--border-subtle);
+}
+
+.ats-email__header-main {
+  display: flex;
+  align-items: flex-start;
+  gap: 13px;
+  min-width: 0;
+}
+
+.ats-email__header-icon {
+  width: 40px;
+  height: 40px;
+  flex: 0 0 40px;
+  display: grid;
+  place-items: center;
+  border: 1px solid var(--border-subtle);
+  border-radius: 11px;
+  background: var(--surface-2);
+  color: var(--accent);
 }
 
 .ats-email__eyebrow {
-  display: inline-flex;
-  align-items: center;
-  gap: 7px;
-  color: #5d6eea;
-  font-size: 0.76rem;
+  display: block;
+  margin: 1px 0 4px;
+  color: var(--accent);
+  font-size: 0.67rem;
   font-weight: 750;
-  letter-spacing: 0.08em;
+  letter-spacing: 0.075em;
   text-transform: uppercase;
 }
 
 .ats-email__header h3 {
-  margin: 7px 0 4px;
-  color: #17203a;
-  font-size: 1.35rem;
-  line-height: 1.2;
+  margin: 0;
+  color: var(--ink);
+  font-size: 1.2rem;
+  font-weight: 700;
+  letter-spacing: -0.015em;
+  line-height: 1.25;
 }
 
 .ats-email__header p {
-  margin: 0;
-  color: #778096;
-  font-size: 0.88rem;
-  line-height: 1.5;
+  margin: 5px 0 0;
+  color: var(--ink-muted);
+  font-size: 0.77rem;
+  line-height: 1.45;
 }
 
 .ats-email__close {
-  width: 36px;
-  height: 36px;
-  flex: 0 0 36px;
+  width: 32px;
+  height: 32px;
+  flex: 0 0 32px;
   display: grid;
   place-items: center;
-  border: 0;
-  border-radius: 10px;
-  background: #f4f6fa;
-  color: #687188;
+  border: 1px solid transparent;
+  border-radius: var(--radius-xs);
+  background: transparent;
+  color: var(--ink-muted);
   cursor: pointer;
+  transition: all var(--duration-fast) var(--ease);
 }
 
 .ats-email__close:hover:not(:disabled) {
-  background: #eceff5;
-  color: #252d43;
+  border-color: var(--border-subtle);
+  background: var(--surface-2);
+  color: var(--ink);
 }
 
 .ats-email__form {
+  display: flex;
+  flex-direction: column;
+  gap: 17px;
+  padding: 20px 24px 22px;
+}
+
+.ats-email__fields { display: grid; gap: 13px; }
+
+.ats-email__field {
+  position: relative;
   display: grid;
-  gap: 16px;
-  padding: 20px 24px 24px;
+  gap: 6px;
 }
 
-.ats-email__form label {
-  display: grid;
-  gap: 7px;
+.ats-email__field > span {
+  color: var(--ink-secondary);
+  font-size: 0.76rem;
+  font-weight: 650;
 }
 
-.ats-email__form label > span {
-  color: #3c455d;
-  font-size: 0.82rem;
-  font-weight: 700;
-}
-
-.ats-email__form label em {
+.ats-email__field em {
   margin-left: 5px;
-  color: #98a0b1;
-  font-size: 0.75rem;
+  color: var(--ink-faint);
+  font-size: 0.69rem;
   font-style: normal;
   font-weight: 500;
 }
 
-.ats-email__form input,
-.ats-email__form textarea,
-.ats-email__form select {
+.ats-email__field input,
+.ats-email__field textarea {
   width: 100%;
   box-sizing: border-box;
-  border: 1px solid #dfe3ec;
-  border-radius: 11px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
   outline: 0;
-  background: #fbfcfe;
-  color: #20283e;
+  background: var(--surface-2);
+  color: var(--ink);
   font: inherit;
-  font-size: 0.9rem;
-  transition: border-color 150ms ease, box-shadow 150ms ease, background 150ms ease;
+  font-size: 0.83rem;
+  transition: border-color var(--duration-fast) var(--ease), box-shadow var(--duration-fast) var(--ease), background var(--duration-fast) var(--ease);
 }
 
-.ats-email__form input,
-.ats-email__form select {
-  height: 44px;
-  padding: 0 12px;
-}
+.ats-email__field input { height: 42px; padding: 0 11px; }
 
-.ats-email__form textarea {
-  min-height: 130px;
-  padding: 11px 12px;
+.ats-email__field textarea {
+  min-height: 142px;
+  padding: 10px 11px 27px;
   resize: vertical;
   line-height: 1.5;
 }
 
-.ats-email__form input:focus,
-.ats-email__form textarea:focus,
-.ats-email__form select:focus {
-  border-color: #7382ff;
-  background: #fff;
-  box-shadow: 0 0 0 3px rgba(91, 116, 255, 0.11);
+.ats-email__field input::placeholder,
+.ats-email__field textarea::placeholder { color: var(--ink-faint); }
+
+.ats-email__field input:focus,
+.ats-email__field textarea:focus {
+  border-color: var(--accent);
+  background: var(--surface);
+  box-shadow: 0 0 0 3px rgba(91, 116, 255, 0.1);
 }
 
-.ats-email__attachment {
+.ats-email__counter {
+  position: absolute;
+  right: 10px;
+  bottom: 9px;
+  color: var(--ink-faint);
+  font-size: 0.65rem;
+  pointer-events: none;
+}
+
+.ats-email__section-label {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+  margin-top: 1px;
+}
+
+.ats-email__section-label > span { color: var(--ink-secondary); font-size: 0.76rem; font-weight: 650; }
+.ats-email__section-label small { color: var(--ink-faint); font-size: 0.67rem; }
+
+.ats-email__attachments {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.ats-email__attachment-card {
+  min-width: 0;
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  gap: 16px;
-  padding: 13px 14px;
-  border: 1px solid #e5e8ef;
+  gap: 10px;
+  padding: 11px;
+  border: 1px solid var(--border);
   border-radius: 12px;
-  background: #f8f9fc;
+  background: var(--surface-2);
+  color: var(--ink);
+  text-align: left;
+  font: inherit;
+  cursor: pointer;
+  transition: border-color var(--duration-fast) var(--ease), background var(--duration-fast) var(--ease), box-shadow var(--duration-fast) var(--ease), transform var(--duration-fast) var(--ease);
 }
 
-.ats-email__attachment-title,
-.ats-email__attachment small {
-  display: block;
+.ats-email__attachment-card:hover:not(:disabled) {
+  border-color: var(--border-strong);
+  background: var(--surface);
+  transform: translateY(-1px);
 }
 
-.ats-email__attachment-title {
-  color: #303950;
-  font-size: 0.84rem;
-  font-weight: 750;
+.ats-email__attachment-card.is-selected {
+  border-color: var(--accent);
+  background: rgba(91, 116, 255, 0.055);
+  box-shadow: 0 0 0 2px rgba(91, 116, 255, 0.08);
 }
 
-.ats-email__attachment small {
-  margin-top: 3px;
-  color: #81899a;
-  font-size: 0.75rem;
+.ats-email__attachment-card.is-disabled { opacity: 0.55; cursor: not-allowed; }
+
+.ats-email__attachment-icon {
+  width: 31px;
+  height: 31px;
+  flex: 0 0 31px;
+  display: grid;
+  place-items: center;
+  border-radius: 9px;
+  background: var(--surface-3);
+  color: var(--accent);
 }
 
-.ats-email__attachment select {
-  width: min(235px, 48%);
-  background: #fff;
+.ats-email__attachment-copy {
+  min-width: 0;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
 }
+
+.ats-email__attachment-copy strong,
+.ats-email__attachment-copy small {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.ats-email__attachment-copy strong { color: var(--ink); font-size: 0.76rem; font-weight: 700; }
+.ats-email__attachment-copy small { color: var(--ink-faint); font-size: 0.66rem; }
+
+.ats-email__radio {
+  width: 16px;
+  height: 16px;
+  flex: 0 0 16px;
+  display: grid;
+  place-items: center;
+  border: 1.5px solid var(--border-strong);
+  border-radius: 50%;
+}
+
+.ats-email__radio span { width: 8px; height: 8px; border-radius: 50%; background: var(--accent); }
+
+.ats-email__security-note {
+  display: flex;
+  align-items: flex-start;
+  gap: 7px;
+  padding: 9px 11px;
+  border: 1px solid var(--border-subtle);
+  border-radius: 9px;
+  background: var(--surface-2);
+  color: var(--ink-faint);
+  font-size: 0.67rem;
+  line-height: 1.45;
+}
+
+.ats-email__security-note svg { flex: 0 0 16px; margin-top: 1px; color: var(--severity-low); }
 
 .ats-email__error {
   margin: -3px 0 0;
-  padding: 10px 12px;
-  border-radius: 10px;
-  background: #fff2f2;
-  color: #c43e49;
-  font-size: 0.82rem;
+  padding: 9px 11px;
+  border: 1px solid var(--severity-high-border);
+  border-radius: 9px;
+  background: var(--severity-high-soft);
+  color: var(--severity-high);
+  font-size: 0.74rem;
   line-height: 1.4;
 }
 
-.ats-email__actions {
-  display: flex;
-  justify-content: flex-end;
-  gap: 9px;
-  padding-top: 2px;
-}
+.ats-email__actions { display: flex; justify-content: flex-end; gap: 8px; padding-top: 2px; }
 
 .ats-email__cancel,
 .ats-email__send {
-  min-height: 42px;
-  padding: 0 16px;
-  border-radius: 10px;
+  min-height: 40px;
+  padding: 0 15px;
+  border-radius: 9px;
   font: inherit;
-  font-size: 0.86rem;
+  font-size: 0.77rem;
   font-weight: 700;
   cursor: pointer;
+  transition: all var(--duration-fast) var(--ease);
 }
 
-.ats-email__cancel {
-  border: 1px solid #dfe3ec;
-  background: #fff;
-  color: #667087;
-}
-
-.ats-email__cancel:hover:not(:disabled) {
-  background: #f6f7fa;
-}
+.ats-email__cancel { border: 1px solid var(--border); background: var(--surface); color: var(--ink-muted); }
+.ats-email__cancel:hover:not(:disabled) { border-color: var(--border-strong); background: var(--surface-2); color: var(--ink); }
 
 .ats-email__send {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  gap: 8px;
-  min-width: 132px;
-  border: 1px solid #596df2;
-  background: linear-gradient(135deg, #5369ef, #7656df);
-  color: #fff;
-  box-shadow: 0 8px 18px rgba(87, 102, 231, 0.2);
+  gap: 7px;
+  min-width: 122px;
+  border: 1px solid var(--accent);
+  background: var(--accent);
+  color: var(--on-accent);
+  box-shadow: 0 6px 14px rgba(91, 116, 255, 0.18);
 }
 
-.ats-email__send:hover:not(:disabled) {
-  filter: brightness(1.03);
-  transform: translateY(-1px);
-}
+.ats-email__send:hover:not(:disabled) { box-shadow: 0 8px 18px rgba(91, 116, 255, 0.23); transform: translateY(-1px); }
 
 .ats-email__cancel:disabled,
 .ats-email__send:disabled,
-.ats-email__close:disabled {
-  opacity: 0.55;
-  cursor: not-allowed;
-}
+.ats-email__close:disabled { opacity: 0.55; cursor: not-allowed; }
 
 .ats-email__spinner {
-  width: 15px;
-  height: 15px;
-  border: 2px solid rgba(255, 255, 255, 0.45);
-  border-top-color: #fff;
+  width: 14px;
+  height: 14px;
+  border: 2px solid rgba(255, 255, 255, 0.42);
+  border-top-color: currentColor;
   border-radius: 50%;
   animation: ats-email-spin 700ms linear infinite;
 }
 
-@keyframes ats-email-spin {
-  to { transform: rotate(360deg); }
-}
+@keyframes ats-email-spin { to { transform: rotate(360deg); } }
 
 @media (max-width: 900px) {
-  .ats-email__trigger { padding: 0 12px; }
-  .ats-email__trigger span { display: none; }
+  .ats-email__trigger { padding: 0 10px; }
+  .ats-email__trigger > span:last-child { display: none; }
+}
+
+@media (max-width: 700px) {
+  .ats-email__backdrop { padding: 12px; }
+  .ats-email__modal { max-height: calc(100vh - 24px); border-radius: 15px; }
+  .ats-email__header { padding: 18px; }
+  .ats-email__form { padding: 16px 18px 18px; gap: 16px; }
+  .ats-email__attachments { grid-template-columns: 1fr; }
 }
 
 @media (max-width: 560px) {
-  .ats-email__backdrop { padding: 10px; }
-  .ats-email__modal { border-radius: 16px; max-height: calc(100vh - 20px); }
-  .ats-email__header { padding: 18px 18px 15px; }
-  .ats-email__form { padding: 16px 18px 18px; }
-  .ats-email__attachment { align-items: stretch; flex-direction: column; gap: 10px; }
-  .ats-email__attachment select { width: 100%; }
-  .ats-email__actions { display: grid; grid-template-columns: 1fr 1.3fr; }
+  .ats-email__header-main { gap: 10px; }
+  .ats-email__header-icon { width: 36px; height: 36px; flex-basis: 36px; }
+  .ats-email__header h3 { font-size: 1.05rem; }
+  .ats-email__header p { font-size: 0.72rem; }
+  .ats-email__actions { display: grid; grid-template-columns: 1fr 1.35fr; }
+  .ats-email__cancel, .ats-email__send { width: 100%; }
 }
