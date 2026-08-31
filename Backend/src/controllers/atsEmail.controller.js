@@ -1,4 +1,5 @@
 const atsReportModel = require("../models/atsReport.model");
+const userModel = require("../models/user.model");
 const {
   generateAtsPdfBufferSafe: generateAtsPdfBuffer,
 } = require("../services/atsPdf.safe.service");
@@ -28,12 +29,24 @@ async function sendAtsEmailController(req, res, next) {
       return res.status(401).json({ message: "Authentication is required to send a resume." });
     }
 
-    const { id, recipient, subject, message = "", attachment = "optimized" } = req.body || {};
+    const { id, senderEmail, recipient, subject, message = "", attachment = "optimized" } = req.body || {};
     const to = String(recipient || "").trim();
 
     if (!id) return res.status(400).json({ message: "Resume report ID is required." });
     if (!EMAIL_RE.test(to) || to.length > 254) {
       return res.status(400).json({ message: "Please enter a valid target email address." });
+    }
+
+    const user = await userModel.findById(userId).select("email");
+    if (!user) return res.status(404).json({ message: "User account not found." });
+    const accountEmail = String(user.email || "").trim().toLowerCase();
+    const requestedSender = String(senderEmail || accountEmail).trim().toLowerCase();
+
+    if (!EMAIL_RE.test(requestedSender) || requestedSender.length > 254) {
+      return res.status(400).json({ message: "Please provide a valid sender email address." });
+    }
+    if (requestedSender !== accountEmail) {
+      return res.status(403).json({ message: "The sender email must match the email address on your logged-in account." });
     }
 
     const cleanSubject = safeHeader(subject);
@@ -84,11 +97,9 @@ async function sendAtsEmailController(req, res, next) {
       return res.status(413).json({ message: "The resume PDF is too large to send by email." });
     }
 
-    // Use the application's shared SMTP service so ATS emails get the same
-    // Gmail TLS, timeout, authentication and recipient-acceptance checks as
-    // the rest of the application.
     const result = await sendEmail({
       to,
+      replyTo: requestedSender,
       subject: cleanSubject,
       text: cleanMessage || "Please find my resume attached.",
       attachments: [
@@ -102,6 +113,7 @@ async function sendAtsEmailController(req, res, next) {
 
     return res.status(200).json({
       message: "Resume email sent successfully.",
+      sender: requestedSender,
       recipient: to,
       attachment: attachment === "original" ? "original" : "optimized",
       messageId: result.messageId,
