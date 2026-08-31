@@ -31,6 +31,7 @@ const AtsEmailComposer = ({ reportId, candidateName, hasRevision = false, onSend
   const [message, setMessage] = useState("");
   const [attachment, setAttachment] = useState(hasRevision ? "optimized" : "original");
   const [localError, setLocalError] = useState("");
+  const [successVisible, setSuccessVisible] = useState(false);
 
   useEffect(() => {
     const name = candidateName || "My Resume";
@@ -41,10 +42,12 @@ const AtsEmailComposer = ({ reportId, candidateName, hasRevision = false, onSend
   useEffect(() => setAttachment(hasRevision ? "optimized" : "original"), [hasRevision]);
 
   useEffect(() => {
-    if (success) {
-      setOpen(false);
-      setRecipient("");
-    }
+    if (!success) return undefined;
+    setOpen(false);
+    setRecipient("");
+    setSuccessVisible(true);
+    const timer = window.setTimeout(() => setSuccessVisible(false), 4500);
+    return () => window.clearTimeout(timer);
   }, [success]);
 
   const close = () => {
@@ -62,7 +65,7 @@ const AtsEmailComposer = ({ reportId, candidateName, hasRevision = false, onSend
     try {
       await onSend?.({ id: reportId, recipient: recipient.trim(), subject: subject.trim(), message: message.trim(), attachment });
     } catch {
-      // Parent displays the server error; keep the composer open so the user can retry.
+      // Parent supplies the API error and keeps the composer open for retry.
     }
   };
 
@@ -126,7 +129,7 @@ const AtsEmailComposer = ({ reportId, candidateName, hasRevision = false, onSend
 
   return (
     <div className="ats-email">
-      {success && <div className="ats-email__success" role="status"><span className="ats-email__success-icon"><IconCheck /></span><span>{success}</span></div>}
+      {successVisible && <div className="ats-email__success" role="status"><span className="ats-email__success-icon"><IconCheck /></span><span>{success}</span></div>}
       <button type="button" className="ats-email__trigger" onClick={() => { setLocalError(""); setOpen(true); }} disabled={sending} aria-haspopup="dialog">
         <span className="ats-email__trigger-icon"><IconMail size={16} /></span><span>Send Resume</span>
       </button>
