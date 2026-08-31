@@ -39,7 +39,7 @@ async function sendAtsEmailController(req, res, next) {
     if (!EMAIL_RE.test(requestedSender) || requestedSender.length > 254) return res.status(400).json({ message: "Please provide a valid sender email address." });
     if (requestedSender !== accountEmail) return res.status(403).json({ message: "The sender email must match your logged-in account." });
     if (!user.gmailOAuthRefreshToken || String(user.gmailOAuthEmail || "").toLowerCase() !== accountEmail) {
-      return res.status(409).json({ message: "Connect your Gmail account before sending. The resume will be sent directly from your Gmail address." });
+      return res.status(409).json({ message: "Connect your Gmail account before sending. The resume will be sent directly from your Gmail address.", code: "GMAIL_NOT_CONNECTED" });
     }
 
     const cleanSubject = safeHeader(subject);
@@ -66,28 +66,55 @@ async function sendAtsEmailController(req, res, next) {
     if (!Buffer.isBuffer(pdfBuffer) || pdfBuffer.length === 0) return res.status(500).json({ message: "Unable to prepare the resume PDF." });
     if (pdfBuffer.length > 10 * 1024 * 1024) return res.status(413).json({ message: "The resume PDF is too large to send by email." });
 
-    const result = await sendGmailMessage({
-      refreshToken: user.gmailOAuthRefreshToken,
-      from: accountEmail,
-      to,
-      subject: cleanSubject,
-      text: cleanMessage || "Please find my resume attached.",
-      attachment: { filename: fileName, content: pdfBuffer, contentType: "application/pdf" },
-    });
+    try {
+      const result = await sendGmailMessage({
+        refreshToken: user.gmailOAuthRefreshToken,
+        from: accountEmail,
+        to,
+        subject: cleanSubject,
+        text: cleanMessage || "Please find my resume attached.",
+        attachment: { filename: fileName, content: pdfBuffer, contentType: "application/pdf" },
+      });
 
-    return res.status(200).json({
-      message: "Resume sent from your Gmail account.",
-      sender: accountEmail,
-      recipient: to,
-      attachment: attachment === "original" ? "original" : "optimized",
-      messageId: result.messageId,
-      threadId: result.threadId,
-    });
-  } catch (error) {
-    if (error?.code === 401 || error?.code === 403 || error?.response?.status === 401 || error?.response?.status === 403) {
-      error.statusCode = 409;
-      error.message = "Your Gmail connection has expired or was revoked. Please reconnect Gmail and try again.";
+      return res.status(200).json({
+        message: "Resume sent from your Gmail account.",
+        sender: result.senderEmail || accountEmail,
+        recipient: to,
+        attachment: attachment === "original" ? "original" : "optimized",
+        messageId: result.messageId,
+        threadId: result.threadId,
+      });
+    } catch (error) {
+      // A refresh token can be revoked or expire independently of the app login.
+      // Clear only the Gmail connection so the user can immediately reconnect;
+      // never log or expose the stored refresh token.
+      if (error?.code === "GMAIL_REFRESH_TOKEN_REVOKED" || error?.code === "GMAIL_TOKEN_INVALID") {
+        user.gmailOAuthRefreshToken = null;
+        user.gmailOAuthEmail = null;
+        user.gmailOAuthConnectedAt = null;
+        await user.save();
+
+        return res.status(409).json({
+          message: "Your Gmail connection has expired or was revoked. Please reconnect Gmail and try again.",
+          code: "GMAIL_RECONNECT_REQUIRED",
+        });
+      }
+
+      if (error?.code === 401 || error?.code === 403 || error?.response?.status === 401 || error?.response?.status === 403) {
+        user.gmailOAuthRefreshToken = null;
+        user.gmailOAuthEmail = null;
+        user.gmailOAuthConnectedAt = null;
+        await user.save();
+
+        return res.status(409).json({
+          message: "Your Gmail connection is no longer authorized. Please reconnect Gmail and try again.",
+          code: "GMAIL_RECONNECT_REQUIRED",
+        });
+      }
+
+      throw error;
     }
+  } catch (error) {
     next(error);
   }
 }
