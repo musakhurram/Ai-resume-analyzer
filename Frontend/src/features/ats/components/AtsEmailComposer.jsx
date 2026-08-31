@@ -17,6 +17,7 @@ const IconX = () => (
 const AtsEmailComposer = ({
   reportId,
   candidateName,
+  hasRevision = false,
   onSend,
   sending = false,
   error = "",
@@ -26,7 +27,7 @@ const AtsEmailComposer = ({
   const [recipient, setRecipient] = useState("");
   const [subject, setSubject] = useState("");
   const [message, setMessage] = useState("");
-  const [attachment, setAttachment] = useState("optimized");
+  const [attachment, setAttachment] = useState(hasRevision ? "optimized" : "original");
   const [localError, setLocalError] = useState("");
 
   useEffect(() => {
@@ -34,6 +35,10 @@ const AtsEmailComposer = ({
     setSubject(`Application — ${name}`);
     setMessage(`Hello,\n\nPlease find my resume attached for your consideration.\n\nThank you,\n${candidateName || ""}`.trim());
   }, [candidateName]);
+
+  useEffect(() => {
+    setAttachment(hasRevision ? "optimized" : "original");
+  }, [hasRevision]);
 
   useEffect(() => {
     if (success) {
@@ -83,7 +88,7 @@ const AtsEmailComposer = ({
               <div>
                 <span className="ats-email__eyebrow"><IconMail /> Resume delivery</span>
                 <h3 id="ats-email-title">Send your resume</h3>
-                <p>The PDF is attached securely by the Resume Analyzer server.</p>
+                <p>{hasRevision ? "Choose your resume version and send the PDF directly to a recruiter." : "Your original uploaded resume will be attached. Generate an AI revision to also send the optimized version."}</p>
               </div>
               <button type="button" className="ats-email__close" onClick={close} disabled={sending} aria-label="Close"><IconX /></button>
             </div>
@@ -130,7 +135,7 @@ const AtsEmailComposer = ({
                   <small>PDF generated from this ATS report</small>
                 </div>
                 <select value={attachment} onChange={(event) => setAttachment(event.target.value)}>
-                  <option value="optimized">AI-optimized resume</option>
+                  <option value="optimized" disabled={!hasRevision}>AI-optimized resume{!hasRevision ? " (generate revision first)" : ""}</option>
                   <option value="original">Original uploaded resume</option>
                 </select>
               </div>
