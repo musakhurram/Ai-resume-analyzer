@@ -1,0 +1,295 @@
+.ats-email {
+  margin-top: 16px;
+}
+
+.ats-email__trigger {
+  width: 100%;
+  min-height: 46px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 9px;
+  padding: 0 18px;
+  border: 1px solid rgba(91, 116, 255, 0.34);
+  border-radius: 12px;
+  background: rgba(91, 116, 255, 0.08);
+  color: #536dff;
+  font: inherit;
+  font-weight: 650;
+  cursor: pointer;
+  transition: transform 160ms ease, border-color 160ms ease, background 160ms ease, box-shadow 160ms ease;
+}
+
+.ats-email__trigger:hover:not(:disabled) {
+  transform: translateY(-1px);
+  border-color: rgba(91, 116, 255, 0.58);
+  background: rgba(91, 116, 255, 0.13);
+  box-shadow: 0 8px 24px rgba(38, 53, 112, 0.1);
+}
+
+.ats-email__trigger:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.ats-email__success {
+  margin-bottom: 10px;
+  padding: 10px 12px;
+  border: 1px solid rgba(30, 150, 95, 0.25);
+  border-radius: 10px;
+  background: rgba(30, 150, 95, 0.07);
+  color: #168257;
+  font-size: 0.88rem;
+}
+
+.ats-email__backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  background: rgba(10, 17, 35, 0.58);
+  backdrop-filter: blur(8px);
+}
+
+.ats-email__modal {
+  width: min(620px, 100%);
+  max-height: min(760px, calc(100vh - 40px));
+  overflow: auto;
+  border: 1px solid rgba(255, 255, 255, 0.8);
+  border-radius: 20px;
+  background: #fff;
+  box-shadow: 0 28px 90px rgba(10, 18, 45, 0.28);
+}
+
+.ats-email__header {
+  display: flex;
+  justify-content: space-between;
+  gap: 18px;
+  padding: 24px 24px 18px;
+  border-bottom: 1px solid #edf0f6;
+}
+
+.ats-email__eyebrow {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  color: #5d6eea;
+  font-size: 0.76rem;
+  font-weight: 750;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.ats-email__header h3 {
+  margin: 7px 0 4px;
+  color: #17203a;
+  font-size: 1.35rem;
+  line-height: 1.2;
+}
+
+.ats-email__header p {
+  margin: 0;
+  color: #778096;
+  font-size: 0.88rem;
+  line-height: 1.5;
+}
+
+.ats-email__close {
+  width: 36px;
+  height: 36px;
+  flex: 0 0 36px;
+  display: grid;
+  place-items: center;
+  border: 0;
+  border-radius: 10px;
+  background: #f4f6fa;
+  color: #687188;
+  cursor: pointer;
+}
+
+.ats-email__close:hover:not(:disabled) {
+  background: #eceff5;
+  color: #252d43;
+}
+
+.ats-email__form {
+  display: grid;
+  gap: 16px;
+  padding: 20px 24px 24px;
+}
+
+.ats-email__form label {
+  display: grid;
+  gap: 7px;
+}
+
+.ats-email__form label > span {
+  color: #3c455d;
+  font-size: 0.82rem;
+  font-weight: 700;
+}
+
+.ats-email__form label em {
+  margin-left: 5px;
+  color: #98a0b1;
+  font-size: 0.75rem;
+  font-style: normal;
+  font-weight: 500;
+}
+
+.ats-email__form input,
+.ats-email__form textarea,
+.ats-email__form select {
+  width: 100%;
+  box-sizing: border-box;
+  border: 1px solid #dfe3ec;
+  border-radius: 11px;
+  outline: 0;
+  background: #fbfcfe;
+  color: #20283e;
+  font: inherit;
+  font-size: 0.9rem;
+  transition: border-color 150ms ease, box-shadow 150ms ease, background 150ms ease;
+}
+
+.ats-email__form input,
+.ats-email__form select {
+  height: 44px;
+  padding: 0 12px;
+}
+
+.ats-email__form textarea {
+  min-height: 130px;
+  padding: 11px 12px;
+  resize: vertical;
+  line-height: 1.5;
+}
+
+.ats-email__form input:focus,
+.ats-email__form textarea:focus,
+.ats-email__form select:focus {
+  border-color: #7382ff;
+  background: #fff;
+  box-shadow: 0 0 0 3px rgba(91, 116, 255, 0.11);
+}
+
+.ats-email__attachment {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 13px 14px;
+  border: 1px solid #e5e8ef;
+  border-radius: 12px;
+  background: #f8f9fc;
+}
+
+.ats-email__attachment-title,
+.ats-email__attachment small {
+  display: block;
+}
+
+.ats-email__attachment-title {
+  color: #303950;
+  font-size: 0.84rem;
+  font-weight: 750;
+}
+
+.ats-email__attachment small {
+  margin-top: 3px;
+  color: #81899a;
+  font-size: 0.75rem;
+}
+
+.ats-email__attachment select {
+  width: min(235px, 48%);
+  background: #fff;
+}
+
+.ats-email__error {
+  margin: -3px 0 0;
+  padding: 10px 12px;
+  border-radius: 10px;
+  background: #fff2f2;
+  color: #c43e49;
+  font-size: 0.82rem;
+  line-height: 1.4;
+}
+
+.ats-email__actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 9px;
+  padding-top: 2px;
+}
+
+.ats-email__cancel,
+.ats-email__send {
+  min-height: 42px;
+  padding: 0 16px;
+  border-radius: 10px;
+  font: inherit;
+  font-size: 0.86rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.ats-email__cancel {
+  border: 1px solid #dfe3ec;
+  background: #fff;
+  color: #667087;
+}
+
+.ats-email__cancel:hover:not(:disabled) {
+  background: #f6f7fa;
+}
+
+.ats-email__send {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-width: 132px;
+  border: 1px solid #596df2;
+  background: linear-gradient(135deg, #5369ef, #7656df);
+  color: #fff;
+  box-shadow: 0 8px 18px rgba(87, 102, 231, 0.2);
+}
+
+.ats-email__send:hover:not(:disabled) {
+  filter: brightness(1.03);
+  transform: translateY(-1px);
+}
+
+.ats-email__cancel:disabled,
+.ats-email__send:disabled,
+.ats-email__close:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+.ats-email__spinner {
+  width: 15px;
+  height: 15px;
+  border: 2px solid rgba(255, 255, 255, 0.45);
+  border-top-color: #fff;
+  border-radius: 50%;
+  animation: ats-email-spin 700ms linear infinite;
+}
+
+@keyframes ats-email-spin {
+  to { transform: rotate(360deg); }
+}
+
+@media (max-width: 560px) {
+  .ats-email__backdrop { padding: 10px; }
+  .ats-email__modal { border-radius: 16px; max-height: calc(100vh - 20px); }
+  .ats-email__header { padding: 18px 18px 15px; }
+  .ats-email__form { padding: 16px 18px 18px; }
+  .ats-email__attachment { align-items: stretch; flex-direction: column; gap: 10px; }
+  .ats-email__attachment select { width: 100%; }
+  .ats-email__actions { display: grid; grid-template-columns: 1fr 1.3fr; }
+}
