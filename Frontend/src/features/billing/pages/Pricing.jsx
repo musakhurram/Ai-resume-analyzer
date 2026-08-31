@@ -27,6 +27,7 @@ const Pricing = () => {
   const [resendMessage, setResendMessage] = useState("");
   const checkoutState = searchParams.get("checkout");
   const sessionId = searchParams.get("session_id");
+  const isEmailVerified = user?.emailVerified === true;
 
   useEffect(() => {
     let active = true;
@@ -66,14 +67,14 @@ const Pricing = () => {
     }
   };
 
-  const handleResendVerification = async () => {
-    if (!user?.email || resending) return;
+  const handleSendVerification = async () => {
+    if (!user?.email || isEmailVerified || resending) return;
     setResending(true); setResendMessage(""); setError("");
     try {
       const data = await resendVerification(user.email);
-      setResendMessage(data?.message || "A new verification link has been sent.");
+      setResendMessage(data?.message || "Verification email sent. Check your inbox.");
     } catch (err) {
-      setError(err.response?.data?.message || "Unable to resend the verification email. Please try again.");
+      setError(err.response?.data?.message || "Unable to send the verification email. Please try again.");
     } finally { setResending(false); }
   };
 
@@ -94,6 +95,19 @@ const Pricing = () => {
         <div className="pricing-balance-card__bottom"><span>{billingLoading ? "Checking balance" : hasBalance ? `${usagePercent}% remaining` : "Balance unavailable"}</span><span>{hasBalance ? `${formatTokens(Math.max(0, currentAllowance - tokenBalance))} used` : "—"}</span></div>
       </div>
     </header>
+
+    {!isEmailVerified && <section className="pricing-verification-banner" aria-live="polite">
+      <div className="pricing-verification-banner__icon">✓</div>
+      <div className="pricing-verification-banner__content">
+        <strong>Verify your email before upgrading</strong>
+        <p>You can use the Resume Analyzer normally without verification. Verification is only required before you proceed to a paid Pro or Premium plan.</p>
+        {resendMessage && <span className="pricing-verification-banner__success">{resendMessage}</span>}
+        {error && <span className="pricing-verification-banner__error">{error}</span>}
+      </div>
+      <button type="button" className="pricing-verification-banner__button" onClick={handleSendVerification} disabled={resending}>
+        {resending ? "Sending…" : "Verify email address"}
+      </button>
+    </section>}
 
     {checkoutState === "success" && <div className="pricing-page__notice pricing-page__notice--success"><span className="pricing-page__notice-icon">✓</span><span>{confirming ? "Confirming your payment…" : paymentConfirmed ? `${billing?.planLabel || "Plan"} activated. ${formatTokens(billing?.aiTokens)} AI tokens are now available.` : "Payment is still processing. Your token balance will update once Stripe confirms it."}</span></div>}
     {checkoutState === "cancelled" && <div className="pricing-page__notice"><span className="pricing-page__notice-icon">×</span><span>Checkout was cancelled. No charge was made.</span></div>}
@@ -116,7 +130,7 @@ const Pricing = () => {
     </section>
 
     <section className="token-guide"><div className="token-guide__intro"><span className="pricing-section__eyebrow">HOW TOKENS WORK</span><h2>One balance. Every AI feature.</h2><p>Token costs vary by task, so smaller actions don't consume a full generation.</p></div><div className="token-guide__items">{[["ATS Analysis", billing?.tokenCosts?.atsAnalysis || 500], ["JD Match", billing?.tokenCosts?.jdMatch || 750], ["Resume Optimization", billing?.tokenCosts?.resumeOptimization || 2000], ["ATS Resume PDF", billing?.tokenCosts?.atsResumeGeneration || 2500]].map(([label, cost]) => <div className="token-guide__item" key={label}><span>{label}</span><strong>{formatTokens(cost)}</strong><small>tokens</small></div>)}</div></section>
-    {error && <p className="pricing-card__error" role="alert">{error}</p>}
+    {error && !verificationOpen && <p className="pricing-card__error" role="alert">{error}</p>}
     <p className="pricing-card__secure"><span>⌁</span> Secure checkout powered by Stripe · Your card details are handled by Stripe</p>
 
     {verificationOpen && <div className="verification-modal__backdrop" role="presentation" onMouseDown={(event) => { if (event.target === event.currentTarget) setVerificationOpen(false); }}>
@@ -127,9 +141,8 @@ const Pricing = () => {
         <h2 id="verification-title">Verify your email to continue</h2>
         <p>You're free to use the Resume Analyzer without verification. Before we can take a payment for Pro or Premium, we need to confirm that you own your email address.</p>
         <div className="verification-modal__email">{user?.email}</div>
+        <button type="button" className="pricing-card__button" onClick={handleSendVerification} disabled={resending}>{resending ? "Sending verification email…" : "Verify email address"}</button>
         {resendMessage && <div className="verification-modal__success">{resendMessage}</div>}
-        {error && <div className="verification-modal__error">{error}</div>}
-        <button type="button" className="pricing-card__button" onClick={handleResendVerification} disabled={resending}>{resending ? "Sending verification email…" : "Resend verification email"}</button>
         <button type="button" className="verification-modal__secondary" onClick={() => { setVerificationOpen(false); window.location.reload(); }}>I've verified my email</button>
       </div>
     </div>}
