@@ -72,3 +72,14 @@ export async function downloadAtsPdf(id, candidateName = "ATS-Resume") {
   link.remove();
   window.URL.revokeObjectURL(url);
 }
+
+export async function sendAtsResumeByEmail({ id, recipient, subject, message, attachment = "optimized" }) {
+  const response = await api.post("/api/resume/ats-send-email", {
+    id,
+    recipient,
+    subject,
+    message,
+    attachment,
+  });
+  return response.data;
+}
