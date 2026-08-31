@@ -25,70 +25,57 @@ const AtsEmailComposer = ({ reportId, candidateName, senderEmail = "", hasRevisi
   useEffect(() => setAttachment(hasRevision ? "optimized" : "original"), [hasRevision]);
   useEffect(() => {
     if (!success) return undefined;
-    setOpen(false);
-    setRecipient("");
-    setSuccessVisible(true);
+    setOpen(false); setRecipient(""); setSuccessVisible(true);
     const timer = window.setTimeout(() => setSuccessVisible(false), 4500);
     return () => window.clearTimeout(timer);
   }, [success]);
   useEffect(() => {
-    if (new URLSearchParams(window.location.search).get("gmail") === "connected") {
+    const params = new URLSearchParams(window.location.search);
+    const gmailState = params.get("gmail");
+    if (gmailState === "connected") {
       window.history.replaceState({}, document.title, window.location.pathname);
       setGmail({ loading: false, connected: true, email: senderEmail || null });
+      setOpen(true);
+      setLocalError("");
+    } else if (gmailState === "error") {
+      const message = params.get("message");
+      window.history.replaceState({}, document.title, window.location.pathname);
+      setOpen(true);
+      setLocalError(message || "Unable to connect Gmail. Please try again.");
     }
   }, [senderEmail]);
   useEffect(() => {
     if (!open) return;
     let cancelled = false;
     setGmail((prev) => ({ ...prev, loading: true }));
-    getGmailStatus()
-      .then((data) => { if (!cancelled) setGmail({ loading: false, connected: !!data.connected, email: data.email || null }); })
-      .catch(() => { if (!cancelled) setGmail({ loading: false, connected: false, email: null }); });
+    getGmailStatus().then((data) => { if (!cancelled) setGmail({ loading: false, connected: !!data.connected, email: data.email || null }); }).catch(() => { if (!cancelled) setGmail({ loading: false, connected: false, email: null }); });
     return () => { cancelled = true; };
   }, [open]);
-
-  const close = () => {
-    if (!sending) { setOpen(false); setLocalError(""); }
-  };
-
-  const handleConnect = () => {
-    setLocalError("");
-    connectGmail(window.location.pathname);
-  };
-
-  const submit = async (event) => {
-    event.preventDefault();
-    setLocalError("");
-    if (!gmail.connected) return setLocalError("Connect your Gmail account before sending the resume.");
-    if (!sender.trim()) return setLocalError("Your sender email could not be loaded. Please sign in again.");
-    if (!recipient.trim()) return setLocalError("Enter the recipient’s email address.");
-    if (!subject.trim()) return setLocalError("Add a subject before sending.");
-    try {
-      await onSend?.({ id: reportId, senderEmail: sender.trim(), recipient: recipient.trim(), subject: subject.trim(), message: message.trim(), attachment });
-    } catch { /* Parent supplies the API error and keeps the composer open. */ }
-  };
-
   useEffect(() => {
     const name = candidateName || "My Resume";
     setSubject(`Application — ${name}`);
     setMessage(`Hello,\n\nI’m writing to express my interest in opportunities at your organization. Please find my resume attached for your consideration.\n\nI would appreciate the opportunity to discuss how my experience could contribute to your team.\n\nThank you for your time and consideration.\n${candidateName || ""}`.trim());
   }, [candidateName]);
 
+  const close = () => { if (!sending) { setOpen(false); setLocalError(""); } };
+  const handleConnect = () => { setLocalError(""); connectGmail(window.location.pathname); };
+  const submit = async (event) => {
+    event.preventDefault(); setLocalError("");
+    if (!gmail.connected) return setLocalError("Connect your Gmail account before sending the resume.");
+    if (!sender.trim()) return setLocalError("Your sender email could not be loaded. Please sign in again.");
+    if (!recipient.trim()) return setLocalError("Enter the recipient’s email address.");
+    if (!subject.trim()) return setLocalError("Add a subject before sending.");
+    try { await onSend?.({ id: reportId, senderEmail: sender.trim(), recipient: recipient.trim(), subject: subject.trim(), message: message.trim(), attachment }); } catch { /* parent supplies the API error */ }
+  };
+
   const modal = open ? createPortal(
     <div className="ats-email__backdrop" role="presentation" onMouseDown={(event) => event.target === event.currentTarget && close()}>
       <div className="ats-email__modal" role="dialog" aria-modal="true" aria-labelledby="ats-email-title">
-        <div className="ats-email__header">
-          <div className="ats-email__header-main"><div className="ats-email__header-icon"><IconMail size={19} /></div><div><span className="ats-email__eyebrow">Resume delivery</span><h3 id="ats-email-title">Send your resume</h3><p>Send the PDF directly from your own Gmail account.</p></div></div>
-          <button type="button" className="ats-email__close" onClick={close} disabled={sending} aria-label="Close email composer"><IconX /></button>
-        </div>
+        <div className="ats-email__header"><div className="ats-email__header-main"><div className="ats-email__header-icon"><IconMail size={19} /></div><div><span className="ats-email__eyebrow">Resume delivery</span><h3 id="ats-email-title">Send your resume</h3><p>Send the PDF directly from your own Gmail account.</p></div></div><button type="button" className="ats-email__close" onClick={close} disabled={sending} aria-label="Close email composer"><IconX /></button></div>
         <form onSubmit={submit} className="ats-email__form">
-          <div className={`ats-email__gmail ${gmail.connected ? "is-connected" : ""}`}>
-            <div className="ats-email__gmail-icon"><IconGoogle /></div>
-            <div className="ats-email__gmail-copy"><strong>{gmail.connected ? "Gmail connected" : "Connect Gmail to send"}</strong><small>{gmail.connected ? `${gmail.email || sender} · Emails will be sent from this Gmail account` : "Required to make your email appear from your own Gmail address."}</small></div>
-            {gmail.connected ? <span className="ats-email__gmail-status"><IconCheck /> Connected</span> : <button type="button" className="ats-email__gmail-connect" onClick={handleConnect} disabled={gmail.loading}>{gmail.loading ? "Checking…" : "Connect Gmail"}</button>}
-          </div>
+          <div className={`ats-email__gmail ${gmail.connected ? "is-connected" : ""}`}><div className="ats-email__gmail-icon"><IconGoogle /></div><div className="ats-email__gmail-copy"><strong>{gmail.connected ? "Gmail connected" : "Connect Gmail to send"}</strong><small>{gmail.connected ? `${gmail.email || sender} · Emails will be sent from this Gmail account` : "Required to make your email appear from your own Gmail address."}</small></div>{gmail.connected ? <span className="ats-email__gmail-status"><IconCheck /> Connected</span> : <button type="button" className="ats-email__gmail-connect" onClick={handleConnect} disabled={gmail.loading}>{gmail.loading ? "Checking…" : "Connect Gmail"}</button>}</div>
           <div className="ats-email__fields">
-            <label className="ats-email__field"><span>Sender email</span><input type="email" value={sender} onChange={(event) => setSender(event.target.value)} placeholder="you@example.com" autoComplete="email" maxLength={254} readOnly /><small className="ats-email__field-hint">Your logged-in email. Gmail authorization is required to send from this address.</small></label>
+            <label className="ats-email__field"><span>Sender email</span><input type="email" value={sender} placeholder="you@example.com" autoComplete="email" maxLength={254} readOnly /><small className="ats-email__field-hint">Your logged-in email. Gmail authorization is required to send from this address.</small></label>
             <label className="ats-email__field"><span>Recipient email</span><input type="email" value={recipient} onChange={(event) => setRecipient(event.target.value)} placeholder="recruiter@company.com" autoComplete="email" maxLength={254} required /></label>
             <label className="ats-email__field"><span>Subject</span><input type="text" value={subject} onChange={(event) => setSubject(event.target.value)} maxLength={150} required /></label>
             <label className="ats-email__field"><span>Message <em>optional</em></span><textarea value={message} onChange={(event) => setMessage(event.target.value)} rows={7} maxLength={5000} placeholder="Write a short professional message…" /><small className="ats-email__counter">{message.length}/5000</small></label>
@@ -108,5 +95,4 @@ const AtsEmailComposer = ({ reportId, candidateName, senderEmail = "", hasRevisi
 
   return <div className="ats-email">{successVisible && <div className="ats-email__success" role="status"><span className="ats-email__success-icon"><IconCheck /></span><span>{success}</span></div>}<button type="button" className="ats-email__trigger" onClick={() => { setLocalError(""); setOpen(true); }} disabled={sending} aria-haspopup="dialog"><span className="ats-email__trigger-icon"><IconMail size={16} /></span><span>Send Resume</span></button>{modal}</div>;
 };
-
 export default AtsEmailComposer;
