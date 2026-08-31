@@ -12,6 +12,7 @@ import AtsBeforeAfterPreview from "../components/AtsBeforeAfterPreview";
 import AtsEmailComposer from "../components/AtsEmailComposer";
 import {
   getAtsReportById,
+  getCurrentUser,
   reviseAtsResume,
   downloadAtsPdf,
   sendAtsResumeByEmail,
@@ -23,6 +24,7 @@ const AtsReportDetail = () => {
   const [report, setReport] = useState(null);
   const [error, setError] = useState("");
   const [revisedResume, setRevisedResume] = useState(null);
+  const [senderEmail, setSenderEmail] = useState("");
   const [revising, setRevising] = useState(false);
   const [reviseError, setReviseError] = useState("");
   const [downloading, setDownloading] = useState(false);
@@ -45,6 +47,18 @@ const AtsReportDetail = () => {
       });
     return () => { cancelled = true; };
   }, [id]);
+
+  useEffect(() => {
+    let cancelled = false;
+    getCurrentUser()
+      .then((data) => {
+        if (!cancelled) setSenderEmail(data.user?.email || "");
+      })
+      .catch(() => {
+        if (!cancelled) setSenderEmail("");
+      });
+    return () => { cancelled = true; };
+  }, []);
 
   if (!report && !error) return <PageLoader label="Loading ATS report" />;
   if (error) return <Callout tone="error" title="Report unavailable">{error}</Callout>;
@@ -83,13 +97,14 @@ const AtsReportDetail = () => {
     }
   };
 
-  const handleSendEmail = async ({ recipient, subject, message, attachment }) => {
+  const handleSendEmail = async ({ senderEmail: selectedSender, recipient, subject, message, attachment }) => {
     setEmailSending(true);
     setEmailError("");
     setEmailSuccess("");
     try {
       const data = await sendAtsResumeByEmail({
         id: report._id,
+        senderEmail: selectedSender,
         recipient,
         subject,
         message,
@@ -127,6 +142,7 @@ const AtsReportDetail = () => {
               <AtsEmailComposer
                 reportId={report._id}
                 candidateName={candidateName}
+                senderEmail={senderEmail}
                 hasRevision={!!revisedResume}
                 onSend={handleSendEmail}
                 sending={emailSending}
