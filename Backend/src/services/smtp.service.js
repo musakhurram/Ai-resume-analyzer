@@ -32,19 +32,22 @@ async function verifySmtpConnection() {
   return { enabled: true, verified: true };
 }
 function safe(value) { return String(value || "").replace(/[\r\n<>]/g, " ").trim(); }
-async function sendEmail({ to, subject, text, html, attachments }) {
+async function sendEmail({ to, subject, text, html, attachments, replyTo }) {
   if (!smtpEnabled()) throw new Error("SMTP is not enabled. Set SMTP_ENABLED=true in the backend environment.");
   const recipient = safe(to);
   if (!recipient) throw new Error("Email recipient is required.");
   const smtpUser = safe(env.SMTP_USER);
   if (!smtpUser) throw new Error("SMTP_USER is not configured.");
+  const safeReplyTo = safe(replyTo);
 
-  // Gmail should send from the account that authenticated with SMTP. Using a
-  // different/unverified SMTP_FROM can cause delivery/rewrite problems.
+  // Gmail sends from the account that authenticated with SMTP. A user's
+  // account email is therefore used as Reply-To unless it is unavailable;
+  // this lets recruiters reply directly to the logged-in user without
+  // spoofing an unverified From address.
   const info = await getTransporter().sendMail({
     from: smtpUser,
     sender: smtpUser,
-    replyTo: smtpUser,
+    replyTo: safeReplyTo || smtpUser,
     to: recipient,
     subject: safe(subject) || "AI Resume Analyzer",
     text: text || "Please find my resume attached.",
