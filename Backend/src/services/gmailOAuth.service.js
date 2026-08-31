@@ -27,10 +27,21 @@ function encryptRefreshToken(token) {
 
 function decryptRefreshToken(value) {
   const [ivPart, tagPart, dataPart] = String(value || "").split(".");
-  if (!ivPart || !tagPart || !dataPart) throw new Error("Invalid stored Gmail OAuth token.");
-  const decipher = crypto.createDecipheriv("aes-256-gcm", getEncryptionKey(), Buffer.from(ivPart, "base64url"));
-  decipher.setAuthTag(Buffer.from(tagPart, "base64url"));
-  return Buffer.concat([decipher.update(Buffer.from(dataPart, "base64url")), decipher.final()]).toString("utf8");
+  if (!ivPart || !tagPart || !dataPart) {
+    const error = new Error("Invalid stored Gmail OAuth token.");
+    error.code = "GMAIL_TOKEN_INVALID";
+    throw error;
+  }
+  try {
+    const decipher = crypto.createDecipheriv("aes-256-gcm", getEncryptionKey(), Buffer.from(ivPart, "base64url"));
+    decipher.setAuthTag(Buffer.from(tagPart, "base64url"));
+    return Buffer.concat([decipher.update(Buffer.from(dataPart, "base64url")), decipher.final()]).toString("utf8");
+  } catch (error) {
+    const tokenError = new Error("The stored Gmail connection is no longer valid.");
+    tokenError.code = "GMAIL_TOKEN_INVALID";
+    tokenError.cause = error;
+    throw tokenError;
+  }
 }
 
 function buildAuthorizationUrl(state) {
@@ -47,7 +58,7 @@ async function exchangeCode(code) {
   const client = getOAuthClient();
   const { tokens } = await client.getToken(code);
   if (!tokens.refresh_token) {
-    const error = new Error("Google did not return a refresh token. Revoke the existing Gmail connection and try again.");
+    const error = new Error("Google did not return a refresh token. Reconnect Gmail and grant the requested permission again.");
     error.code = "GMAIL_REFRESH_TOKEN_MISSING";
     throw error;
   }
@@ -65,9 +76,29 @@ async function exchangeCode(code) {
 async function getAccessToken(refreshToken) {
   const client = getOAuthClient();
   client.setCredentials({ refresh_token: decryptRefreshToken(refreshToken) });
-  const { token } = await client.getAccessToken();
-  if (!token) throw new Error("Unable to refresh the Gmail access token.");
-  return token;
+
+  try {
+    const { token } = await client.getAccessToken();
+    if (!token) {
+      const error = new Error("Google did not return a Gmail access token.");
+      error.code = "GMAIL_REFRESH_TOKEN_REVOKED";
+      throw error;
+    }
+    return token;
+  } catch (error) {
+    const googleError = error?.response?.data || error?.response?.body || {};
+    const googleCode = googleError?.error || error?.code;
+    const message = String(googleError?.error_description || error?.message || "").toLowerCase();
+
+    if (googleCode === "invalid_grant" || message.includes("invalid_grant") || message.includes("token has been expired or revoked")) {
+      const revokedError = new Error("Your Gmail authorization has expired or was revoked.");
+      revokedError.code = "GMAIL_REFRESH_TOKEN_REVOKED";
+      revokedError.cause = error;
+      throw revokedError;
+    }
+
+    throw error;
+  }
 }
 
 async function getGmailAccountEmail(accessToken) {
@@ -87,9 +118,6 @@ async function getGmailAccountEmail(accessToken) {
 async function sendGmailMessage({ refreshToken, from, to, subject, text, attachment }) {
   const accessToken = await getAccessToken(refreshToken);
 
-  // Never trust a sender address supplied by the frontend. The Gmail API sends
-  // as the Google account represented by the OAuth token. We fetch that account
-  // and use it as the actual RFC 2822 From header.
   const gmailAccountEmail = await getGmailAccountEmail(accessToken);
   const requestedFrom = String(from || "").trim().toLowerCase();
   if (requestedFrom && requestedFrom !== gmailAccountEmail) {
