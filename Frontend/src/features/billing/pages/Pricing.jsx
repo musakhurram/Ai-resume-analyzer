@@ -28,6 +28,8 @@ const Pricing = () => {
   const checkoutState = searchParams.get("checkout");
   const sessionId = searchParams.get("session_id");
   const isEmailVerified = user?.emailVerified === true;
+  const isGoogleUser = user?.authProvider === "google";
+  const needsEmailVerification = !isGoogleUser && !isEmailVerified;
 
   useEffect(() => {
     let active = true;
@@ -68,7 +70,7 @@ const Pricing = () => {
   };
 
   const handleSendVerification = async () => {
-    if (!user?.email || isEmailVerified || resending) return;
+    if (!user?.email || isEmailVerified || isGoogleUser || resending) return;
     setResending(true); setResendMessage(""); setError("");
     try {
       const data = await resendVerification(user.email);
@@ -96,7 +98,7 @@ const Pricing = () => {
       </div>
     </header>
 
-    {!isEmailVerified && <section className="pricing-verification-banner" aria-live="polite">
+    {needsEmailVerification && <section className="pricing-verification-banner" aria-live="polite">
       <div className="pricing-verification-banner__icon">✓</div>
       <div className="pricing-verification-banner__content">
         <strong>Verify your email before upgrading</strong>
