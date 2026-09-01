@@ -1,12 +1,17 @@
 import axios from "axios";
 
-// Use the local backend during development and the deployed backend in
-// production. VITE_API_URL can still override this in either environment.
+// The frontend is built with Vite, so VITE_* values are baked into the
+// production bundle at build time. Never allow a localhost API URL to leak
+// into a deployed build, even if Vercel has an old VITE_API_URL value.
+const configuredApiUrl = String(import.meta.env.VITE_API_URL || "").trim();
 const isLocalhost = typeof window !== "undefined" &&
   ["localhost", "127.0.0.1"].includes(window.location.hostname);
+const isConfiguredLocalApi = /^(https?:\/\/)?(localhost|127\.0\.0\.1)(:\d+)?(?:\/|$)/i.test(configuredApiUrl);
 
-const baseURL = import.meta.env.VITE_API_URL ||
-  (isLocalhost ? "http://localhost:3000" : "https://resume-backend-musa-ba96.vercel.app");
+const baseURL = !isLocalhost && isConfiguredLocalApi
+  ? "https://resume-backend-musa-ba96.vercel.app"
+  : configuredApiUrl ||
+    (isLocalhost ? "http://localhost:3000" : "https://resume-backend-musa-ba96.vercel.app");
 
 const api = axios.create({
   baseURL,
