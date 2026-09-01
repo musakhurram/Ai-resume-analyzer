@@ -1,17 +1,7 @@
 import axios from "axios";
 
-// The frontend is built with Vite, so VITE_* values are baked into the
-// production bundle at build time. Never allow a localhost API URL to leak
-// into a deployed build, even if Vercel has an old VITE_API_URL value.
-const configuredApiUrl = String(import.meta.env.VITE_API_URL || "").trim();
-const isLocalhost = typeof window !== "undefined" &&
-  ["localhost", "127.0.0.1"].includes(window.location.hostname);
-const isConfiguredLocalApi = /^(https?:\/\/)?(localhost|127\.0\.0\.1)(:\d+)?(?:\/|$)/i.test(configuredApiUrl);
-
-const baseURL = !isLocalhost && isConfiguredLocalApi
-  ? "https://resume-backend-musa-ba96.vercel.app"
-  : configuredApiUrl ||
-    (isLocalhost ? "http://localhost:3000" : "https://resume-backend-musa-ba96.vercel.app");
+// In production this must be set to the deployed backend URL.
+const baseURL = import.meta.env.VITE_API_URL || "http://localhost:3000";
 
 const api = axios.create({
   baseURL,
@@ -19,7 +9,8 @@ const api = axios.create({
 });
 
 // Cookie auth is the primary mechanism.
-// Bearer token is a fallback for mobile browsers where cross-site cookies may not be sent reliably.
+// Bearer token is a fallback for mobile browsers where
+// cross-site cookies may not be sent reliably.
 api.interceptors.request.use((config) => {
   const token = localStorage.getItem("ra_auth_token");
 
@@ -40,12 +31,7 @@ api.interceptors.response.use(
     const status = error?.response?.status;
     const url = String(config?.url || "");
 
-    if (
-      status === 404 &&
-      config &&
-      !config._atsPreviewFallback &&
-      /\/api\/resume\/ats-preview\/[^/]+(?:$|[?#])/.test(url)
-    ) {
+    if (status === 404 && config && !config._atsPreviewFallback && /\/api\/resume\/ats-preview\/[^/]+(?:$|[?#])/.test(url)) {
       const fallbackConfig = {
         ...config,
         url: url.replace("/ats-preview/", "/ats-download/"),
