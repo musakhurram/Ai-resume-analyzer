@@ -8,14 +8,16 @@ const GMAIL_SEND_URL = "https://gmail.googleapis.com/gmail/v1/users/me/messages/
 
 function getOAuthClient() {
   if (!env.GOOGLE_CLIENT_ID || !env.GOOGLE_OAUTH_CLIENT_SECRET || !env.GOOGLE_OAUTH_REDIRECT_URI) {
-    const error = new Error("Google Gmail OAuth is not configured. Set GOOGLE_CLIENT_ID, GOOGLE_OAUTH_CLIENT_SECRET and GOOGLE_OAUTH_REDIRECT_URI.");
+    const error = new Error("Google Gmail OAuth is not configured.");
     error.code = "GMAIL_OAUTH_NOT_CONFIGURED";
     throw error;
   }
   return new OAuth2Client(env.GOOGLE_CLIENT_ID, env.GOOGLE_OAUTH_CLIENT_SECRET, env.GOOGLE_OAUTH_REDIRECT_URI);
 }
 
-function getEncryptionKey() { return crypto.createHash("sha256").update(env.JWT_SECRET).digest(); }
+function getEncryptionKey() {
+  return crypto.createHash("sha256").update(env.JWT_SECRET).digest();
+}
 
 function encryptRefreshToken(token) {
   const iv = crypto.randomBytes(12);
@@ -44,7 +46,13 @@ function decryptRefreshToken(value) {
 }
 
 function buildAuthorizationUrl(state) {
-  return getOAuthClient().generateAuthUrl({ access_type: "offline", prompt: "consent", include_granted_scopes: true, scope: [GMAIL_SEND_SCOPE, "openid", "email"], state });
+  return getOAuthClient().generateAuthUrl({
+    access_type: "offline",
+    prompt: "consent",
+    include_granted_scopes: true,
+    scope: [GMAIL_SEND_SCOPE, "openid", "email"],
+    state,
+  });
 }
 
 async function exchangeCode(code) {
@@ -68,13 +76,12 @@ async function getAccessToken(refreshToken) {
   client.setCredentials({ refresh_token: decryptedRefreshToken });
   try {
     const { credentials } = await client.refreshAccessToken();
-    const token = credentials?.access_token;
-    if (!token) {
+    if (!credentials?.access_token) {
       const error = new Error("Google did not return a Gmail access token.");
       error.code = "GMAIL_REFRESH_TOKEN_REVOKED";
       throw error;
     }
-    return { accessToken: token, refreshToken: credentials.refresh_token || decryptedRefreshToken };
+    return { accessToken: credentials.access_token, refreshToken: credentials.refresh_token || decryptedRefreshToken };
   } catch (cause) {
     const googleError = cause?.response?.data || cause?.response?.body || {};
     const googleCode = googleError?.error || cause?.code;
@@ -101,14 +108,66 @@ async function getGmailAccountEmail(accessToken) {
   return String(data.email).trim().toLowerCase();
 }
 
+function sanitizeHeader(value) {
+  return String(value || "").replace(/[\r\n]+/g, " ").trim();
+}
+
+// RFC 2047 encoded-word prevents UTF-8 subjects such as an em dash from
+// becoming mojibake (for example: "Ã¢Â€Â”") in Gmail or other mail clients.
+function encodeMimeHeader(value) {
+  const clean = sanitizeHeader(value);
+  if (!clean) return "";
+  if (/^[\x00-\x7F]*$/.test(clean)) return clean;
+  return `=?UTF-8?B?${Buffer.from(clean, "utf8").toString("base64")}?=`;
+}
+
+function normalizeMojibake(value) {
+  let result = String(value || "");
+  // Repair the common double-UTF-8 decoding produced by AI-generated text
+  // before it reaches the MIME header. Keep this deliberately conservative.
+  for (let i = 0; i < 2; i += 1) {
+    if (!/[ÃÂ]/.test(result)) break;
+    try {
+      const repaired = Buffer.from(result, "latin1").toString("utf8");
+      if (repaired === result || /�/.test(repaired)) break;
+      result = repaired;
+    } catch {
+      break;
+    }
+  }
+  return result;
+}
+
+function foldHeader(name, value) {
+  const headerValue = encodeMimeHeader(normalizeMojibake(value));
+  if (!headerValue) return "";
+  return `${name}: ${headerValue}`;
+}
+
+function wrapBase64(value, width = 76) {
+  const output = [];
+  for (let i = 0; i < value.length; i += width) output.push(value.slice(i, i + width));
+  return output.join("\r\n");
+}
+
 function buildRawMessage({ from, to, subject, text, attachment }) {
   const boundary = `=_ResumeAnalyzer_${crypto.randomBytes(12).toString("hex")}`;
-  const safe = (value) => String(value || "").replace(/[\r\n]/g, " ");
-  const encodedAttachment = Buffer.isBuffer(attachment.content) ? attachment.content.toString("base64") : Buffer.from(attachment.content).toString("base64");
+  const safe = (value) => sanitizeHeader(value);
+  const cleanSubject = normalizeMojibake(subject);
+  const cleanText = String(text || "Please find my resume attached.")
+    .replace(/\r\n/g, "\n")
+    .replace(/\r/g, "\n")
+    .replace(/[\u0000-\u0008\u000B\u000C\u000E-\u001F]/g, "");
+  const encodedAttachment = Buffer.isBuffer(attachment.content)
+    ? attachment.content.toString("base64")
+    : Buffer.from(attachment.content).toString("base64");
+  const attachmentName = safe(attachment.filename || "Resume.pdf").replace(/"/g, "");
+
   const lines = [
-    `From: ${safe(from)}`,
-    `To: ${safe(to)}`,
-    `Subject: ${safe(subject)}`,
+    foldHeader("From", from),
+    foldHeader("To", to),
+    foldHeader("Subject", cleanSubject),
+    `Date: ${new Date().toUTCString()}`,
     "MIME-Version: 1.0",
     `Content-Type: multipart/mixed; boundary="${boundary}"`,
     "",
@@ -116,16 +175,18 @@ function buildRawMessage({ from, to, subject, text, attachment }) {
     "Content-Type: text/plain; charset=UTF-8",
     "Content-Transfer-Encoding: 8bit",
     "",
-    String(text || "Please find my resume attached."),
+    cleanText,
     "",
     `--${boundary}`,
-    `Content-Type: ${safe(attachment.contentType || "application/pdf")}; name="${safe(attachment.filename)}"`,
+    `Content-Type: ${safe(attachment.contentType || "application/pdf")}; name="${attachmentName}"`,
     "Content-Transfer-Encoding: base64",
-    `Content-Disposition: attachment; filename="${safe(attachment.filename)}"`,
+    `Content-Disposition: attachment; filename="${attachmentName}"`,
     "",
+    wrapBase64(encodedAttachment),
+    "",
+    `--${boundary}--`,
   ];
-  for (let i = 0; i < encodedAttachment.length; i += 76) lines.push(encodedAttachment.slice(i, i + 76));
-  lines.push("", `--${boundary}--`);
+
   return Buffer.from(lines.join("\r\n"), "utf8").toString("base64url");
 }
 
@@ -152,7 +213,11 @@ async function sendGmailMessage({ refreshToken, from, to, subject, text, attachm
 
   const raw = buildRawMessage({ from: gmailAccountEmail, to, subject, text, attachment });
   let { response, data } = await sendWithAccessToken(tokenResult.accessToken, raw);
-  if (response.status === 401) ({ response, data } = await sendWithAccessToken((await getAccessToken(refreshToken)).accessToken, raw));
+
+  if (response.status === 401) {
+    const retry = await getAccessToken(refreshToken);
+    ({ response, data } = await sendWithAccessToken(retry.accessToken, raw));
+  }
 
   if (!response.ok) {
     const error = new Error(data?.error?.message || "Gmail rejected the message.");
@@ -160,7 +225,14 @@ async function sendGmailMessage({ refreshToken, from, to, subject, text, attachm
     error.response = { status: response.status, data };
     throw error;
   }
+
   return { messageId: data.id, threadId: data.threadId, senderEmail: gmailAccountEmail };
 }
 
-module.exports = { GMAIL_SEND_SCOPE, buildAuthorizationUrl, exchangeCode, encryptRefreshToken, sendGmailMessage };
+module.exports = {
+  GMAIL_SEND_SCOPE,
+  buildAuthorizationUrl,
+  exchangeCode,
+  encryptRefreshToken,
+  sendGmailMessage,
+};
