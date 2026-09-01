@@ -107,12 +107,12 @@ async function createCheckoutSessionController(req, res, next) {
     const priceCents = PLAN_PRICES_CENTS[requestedPlan];
     const user = await userModel
       .findById(req.user.id)
-      .select("_id plan aiTokens emailVerified");
+      .select("_id plan aiTokens emailVerified authProvider");
     if (!user) return res.status(404).json({ message: "User not found" });
 
-    // Free features remain available to unverified users. Verification is only required
-    // at the point where a user proceeds to a paid Stripe checkout.
-    if (!user.emailVerified) {
+    // Google already verifies the identity/email through Google's ID token.
+    // Only local email/password accounts need our own email-verification step.
+    if (user.authProvider !== "google" && !user.emailVerified) {
       return res.status(403).json({
         code: "EMAIL_VERIFICATION_REQUIRED",
         message: "Please verify your email before proceeding to a paid plan.",
