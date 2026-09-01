@@ -3,51 +3,71 @@ import "./GoogleSignInButton.scss";
 
 const GOOGLE_CLIENT_ID = import.meta.env.VITE_GOOGLE_CLIENT_ID;
 
+// Google Identity Services keeps its initialize() state globally. React 18+
+// StrictMode intentionally mounts effects twice in development, and auth
+// pages can also remount this component during navigation. Keep one GSI
+// initialization and always route the response to the latest component.
+let initializedClientId = null;
+let latestCredentialHandler = null;
+
+const handleGoogleCredential = (response) => {
+  if (response?.credential) {
+    latestCredentialHandler?.(response.credential);
+  }
+};
+
+const handleGoogleError = (err) => {
+  console.error("[GoogleSignIn] Google Identity error:", err);
+};
+
+function initializeGoogleIdentity() {
+  if (!GOOGLE_CLIENT_ID || !window.google?.accounts?.id) return false;
+
+  if (initializedClientId !== GOOGLE_CLIENT_ID) {
+    window.google.accounts.id.initialize({
+      client_id: GOOGLE_CLIENT_ID,
+      callback: handleGoogleCredential,
+      error_callback: handleGoogleError,
+      auto_select: false,
+    });
+    initializedClientId = GOOGLE_CLIENT_ID;
+  }
+
+  return true;
+}
+
 /**
  * Renders a plain, always-consistent "Continue with Google" button.
- *
- * Google's own renderButton() will silently swap in a personalized
- * "Continue as [Name]" chip whenever it detects an active Google session
- * in the browser — that's a Google-controlled behavior with no simple
- * "off" switch. To avoid that, we render Google's real button but keep it
- * fully transparent and stacked on top of our own plain-styled button.
- * Clicks land on the (invisible) real Google button and drive the actual
- * sign-in flow; the user only ever sees our design underneath.
+ * Google's real button is rendered transparently on top of our visual button
+ * so the actual Google authentication flow remains fully controlled by GSI.
  */
 const GoogleSignInButton = ({ onCredential, disabled }) => {
   const realBtnRef = useRef(null);
+  const onCredentialRef = useRef(onCredential);
+
+  // Always keep the singleton callback pointed at the current page's handler
+  // without causing GSI initialize() to run again on every render.
+  useEffect(() => {
+    onCredentialRef.current = onCredential;
+    latestCredentialHandler = (credential) => onCredentialRef.current?.(credential);
+
+    return () => {
+      if (latestCredentialHandler) latestCredentialHandler = null;
+    };
+  }, [onCredential]);
 
   useEffect(() => {
-    if (!GOOGLE_CLIENT_ID) {
-      console.warn(
-        "[GoogleSignIn] VITE_GOOGLE_CLIENT_ID is not configured. Google Sign-In is disabled."
-      );
-      return;
-    }
-    if (disabled) return;
+    if (!GOOGLE_CLIENT_ID || disabled) return;
 
     let cancelled = false;
     let attempts = 0;
-    const maxAttempts = 40; // ~6s timeout
+    const maxAttempts = 40;
 
-    function render() {
+    const render = () => {
       if (cancelled || !window.google?.accounts?.id || !realBtnRef.current) return;
 
       try {
-        window.google.accounts.id.initialize({
-          client_id: GOOGLE_CLIENT_ID,
-          callback: (response) => {
-            if (response?.credential) {
-              onCredential(response.credential);
-            }
-          },
-          error_callback: (err) => {
-            console.error("[GoogleSignIn] Google Identity error:", err);
-          },
-          // Without this, Google auto-detects an active browser session and
-          // may auto-complete sign-in unexpectedly on load.
-          auto_select: false,
-        });
+        if (!initializeGoogleIdentity()) return;
 
         realBtnRef.current.innerHTML = "";
         window.google.accounts.id.renderButton(realBtnRef.current, {
@@ -61,12 +81,11 @@ const GoogleSignInButton = ({ onCredential, disabled }) => {
       } catch (err) {
         console.error("[GoogleSignIn] Failed to render Google button:", err);
       }
-    }
+    };
 
     if (window.google?.accounts?.id) {
       render();
     } else {
-      // The GSI script loads async — poll briefly until it's ready.
       const interval = setInterval(() => {
         attempts += 1;
         if (window.google?.accounts?.id) {
@@ -79,6 +98,7 @@ const GoogleSignInButton = ({ onCredential, disabled }) => {
           );
         }
       }, 150);
+
       return () => {
         cancelled = true;
         clearInterval(interval);
@@ -88,15 +108,12 @@ const GoogleSignInButton = ({ onCredential, disabled }) => {
     return () => {
       cancelled = true;
     };
-  }, [disabled, onCredential]);
+  }, [disabled]);
 
   if (!GOOGLE_CLIENT_ID) return null;
 
   return (
     <div className="google-signin-btn">
-      {/* What the user sees: our own plain, always-the-same button.
-          pointer-events: none lets clicks fall through to the real
-          Google button positioned on top of it. */}
       <div className="google-signin-btn__visual" aria-hidden="true">
         <svg viewBox="0 0 48 48" width="20" height="20" aria-hidden="true">
           <path fill="#FFC107" d="M43.6 20.5H42V20H24v8h11.3c-1.6 4.7-6.1 8-11.3 8-6.6 0-12-5.4-12-12s5.4-12 12-12c3.1 0 5.8 1.1 8 3l5.7-5.7C34.6 6 29.6 4 24 4 12.9 4 4 12.9 4 24s8.9 20 20 20 20-8.9 20-20c0-1.3-.1-2.7-.4-3.5z" />
@@ -107,8 +124,6 @@ const GoogleSignInButton = ({ onCredential, disabled }) => {
         <span>Continue with Google</span>
       </div>
 
-      {/* The real, functional Google button — fully invisible, but still
-          receives the click. */}
       <div
         ref={realBtnRef}
         className={`google-signin-btn__real${disabled ? " is-disabled" : ""}`}
