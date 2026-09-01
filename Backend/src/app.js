@@ -8,7 +8,6 @@ const express = require("express");
 const cookieParser = require("cookie-parser");
 const cors = require("cors");
 const helmet = require("helmet");
-const stripe = require("stripe");
 const compression = require("compression");
 const morgan = require("morgan");
 const env = require("./config/env");
@@ -22,9 +21,9 @@ app.set("trust proxy", 1);
 app.use(helmet());
 app.use(compression());
 
-// CLIENT_URL is the source of truth. Keep the current production frontend
-// domains here as a safe fallback so an outdated/missing CLIENT_URL cannot
-// break every authenticated request with a 500 CORS error.
+// CLIENT_URL is the source of truth. Keep known production origins as a
+// fallback. Vercel also gives each deployment its own *.vercel.app hostname,
+// so allow deployment URLs belonging to this frontend project as well.
 const configuredOrigins = String(env.CLIENT_URL || "")
   .split(",")
   .map((o) => o.trim().replace(/\/$/, ""))
@@ -35,12 +34,17 @@ const productionFrontendOrigins = [
   "https://ai-resume-analyzer-git-main-musa-ba96.vercel.app",
 ];
 const allowedOrigins = new Set([...configuredOrigins, ...productionFrontendOrigins]);
+const frontendDeploymentOrigin = /^https:\/\/ai-resume-analyzer-[a-z0-9-]+\.vercel\.app$/i;
 
 app.use(
   cors({
     origin(origin, callback) {
       const normalizedOrigin = String(origin || "").replace(/\/$/, "");
-      if (!origin || allowedOrigins.has(normalizedOrigin)) {
+      if (
+        !origin ||
+        allowedOrigins.has(normalizedOrigin) ||
+        frontendDeploymentOrigin.test(normalizedOrigin)
+      ) {
         return callback(null, true);
       }
       return callback(new Error(`Not allowed by CORS: ${origin}`));
