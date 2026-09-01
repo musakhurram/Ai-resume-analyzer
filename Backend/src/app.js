@@ -22,12 +22,33 @@ app.set("trust proxy", 1);
 app.use(helmet());
 app.use(compression());
 
-const allowedOrigins = env.CLIENT_URL.split(",").map((o) => o.trim());
+// CLIENT_URL is the source of truth, but Vercel creates multiple frontend
+// deployment hostnames. Allow those project deployments so auth/API calls do
+// not fail with CORS when a new deployment URL becomes production.
+const configuredOrigins = String(env.CLIENT_URL || "")
+  .split(",")
+  .map((origin) => origin.trim().replace(/\/$/, ""))
+  .filter(Boolean);
+const productionFrontendOrigins = [
+  "https://ai-resume-analyzer-lemon-three.vercel.app",
+  "https://ai-resume-analyzer-musa-ba96.vercel.app",
+  "https://ai-resume-analyzer-git-main-musa-ba96.vercel.app",
+];
+const allowedOrigins = new Set([...configuredOrigins, ...productionFrontendOrigins]);
+const frontendDeploymentOrigin = /^https:\/\/ai-resume-analyzer-[a-z0-9-]+\.vercel\.app$/i;
+
 app.use(
   cors({
     origin(origin, callback) {
-      if (!origin || allowedOrigins.includes(origin)) return callback(null, true);
-      return callback(new Error("Not allowed by CORS"));
+      const normalizedOrigin = String(origin || "").replace(/\/$/, "");
+      if (
+        !origin ||
+        allowedOrigins.has(normalizedOrigin) ||
+        frontendDeploymentOrigin.test(normalizedOrigin)
+      ) {
+        return callback(null, true);
+      }
+      return callback(new Error(`Not allowed by CORS: ${origin}`));
     },
     credentials: true,
   }),
