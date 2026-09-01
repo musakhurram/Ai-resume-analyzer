@@ -22,12 +22,28 @@ app.set("trust proxy", 1);
 app.use(helmet());
 app.use(compression());
 
-const allowedOrigins = env.CLIENT_URL.split(",").map((o) => o.trim());
+// CLIENT_URL is the source of truth. Keep the current production frontend
+// domains here as a safe fallback so an outdated/missing CLIENT_URL cannot
+// break every authenticated request with a 500 CORS error.
+const configuredOrigins = String(env.CLIENT_URL || "")
+  .split(",")
+  .map((o) => o.trim().replace(/\/$/, ""))
+  .filter(Boolean);
+const productionFrontendOrigins = [
+  "https://ai-resume-analyzer-lemon-three.vercel.app",
+  "https://ai-resume-analyzer-musa-ba96.vercel.app",
+  "https://ai-resume-analyzer-git-main-musa-ba96.vercel.app",
+];
+const allowedOrigins = new Set([...configuredOrigins, ...productionFrontendOrigins]);
+
 app.use(
   cors({
     origin(origin, callback) {
-      if (!origin || allowedOrigins.includes(origin)) return callback(null, true);
-      return callback(new Error("Not allowed by CORS"));
+      const normalizedOrigin = String(origin || "").replace(/\/$/, "");
+      if (!origin || allowedOrigins.has(normalizedOrigin)) {
+        return callback(null, true);
+      }
+      return callback(new Error(`Not allowed by CORS: ${origin}`));
     },
     credentials: true,
   }),
