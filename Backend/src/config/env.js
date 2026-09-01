@@ -28,7 +28,7 @@ function loadEnv() {
     GOOGLE_GENAI_API_KEY: process.env.GOOGLE_GENAI_API_KEY,
     GOOGLE_CLIENT_ID: process.env.GOOGLE_CLIENT_ID,
     GOOGLE_OAUTH_CLIENT_SECRET: process.env.GOOGLE_OAUTH_CLIENT_SECRET || "",
-    GOOGLE_OAUTH_REDIRECT_URI: process.env.GOOGLE_OAUTH_REDIRECT_URI || "http://localhost:5000/api/auth/gmail/callback",
+    GOOGLE_OAUTH_REDIRECT_URI: process.env.GOOGLE_OAUTH_REDIRECT_URI || "http://localhost:3000/api/auth/gmail/callback",
     CLIENT_URL: process.env.CLIENT_URL || "http://localhost:5173",
     COOKIE_DOMAIN: process.env.COOKIE_DOMAIN || undefined,
     STRIPE_SECRET_KEY: process.env.STRIPE_SECRET_KEY || "",
