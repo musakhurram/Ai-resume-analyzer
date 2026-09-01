@@ -3,17 +3,13 @@ import "./GoogleSignInButton.scss";
 
 const GOOGLE_CLIENT_ID = import.meta.env.VITE_GOOGLE_CLIENT_ID;
 
-// Google Identity Services keeps its initialize() state globally. React 18+
-// StrictMode intentionally mounts effects twice in development, and auth
-// pages can also remount this component during navigation. Keep one GSI
-// initialization and always route the response to the latest component.
+// GSI stores initialize() state globally. Keep initialization outside React's
+// component lifecycle so React StrictMode/remounts cannot initialize it twice.
 let initializedClientId = null;
 let latestCredentialHandler = null;
 
 const handleGoogleCredential = (response) => {
-  if (response?.credential) {
-    latestCredentialHandler?.(response.credential);
-  }
+  if (response?.credential) latestCredentialHandler?.(response.credential);
 };
 
 const handleGoogleError = (err) => {
@@ -36,28 +32,23 @@ function initializeGoogleIdentity() {
   return true;
 }
 
-/**
- * Renders a plain, always-consistent "Continue with Google" button.
- * Google's real button is rendered transparently on top of our visual button
- * so the actual Google authentication flow remains fully controlled by GSI.
- */
 const GoogleSignInButton = ({ onCredential, disabled }) => {
   const realBtnRef = useRef(null);
-  const onCredentialRef = useRef(onCredential);
+  const handlerRef = useRef(onCredential);
 
-  // Always keep the singleton callback pointed at the current page's handler
-  // without causing GSI initialize() to run again on every render.
   useEffect(() => {
-    onCredentialRef.current = onCredential;
-    latestCredentialHandler = (credential) => onCredentialRef.current?.(credential);
+    handlerRef.current = onCredential;
+    const handler = (credential) => handlerRef.current?.(credential);
+    latestCredentialHandler = handler;
 
     return () => {
-      if (latestCredentialHandler) latestCredentialHandler = null;
+      // Do not clear a newer component's handler during StrictMode/remounts.
+      if (latestCredentialHandler === handler) latestCredentialHandler = null;
     };
   }, [onCredential]);
 
   useEffect(() => {
-    if (!GOOGLE_CLIENT_ID || disabled) return;
+    if (!GOOGLE_CLIENT_ID || disabled) return undefined;
 
     let cancelled = false;
     let attempts = 0;
