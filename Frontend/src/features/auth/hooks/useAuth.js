@@ -1,6 +1,7 @@
 import { useContext } from "react";
 import { AuthContext } from "../auth.context.definition";
 import { login, register, logout, googleAuth } from "../services/auth.api";
+import { invalidateAuthCheck } from "../auth.context";
 
 export const useAuth = () => {
     const context = useContext(AuthContext);
@@ -15,9 +16,8 @@ export const useAuth = () => {
         setLoading(true);
         try {
             const data = await login({ email, password });
-            if (data?.user) {
-                setUser(data.user);
-            }
+            invalidateAuthCheck();
+            if (data?.user) setUser(data.user);
             return data;
         } catch (err) {
             console.error("Login failed:", err);
@@ -31,9 +31,8 @@ export const useAuth = () => {
         setLoading(true);
         try {
             const data = await googleAuth({ credential });
-            if (data?.user) {
-                setUser(data.user);
-            }
+            invalidateAuthCheck();
+            if (data?.user) setUser(data.user);
             return data;
         } catch (err) {
             console.error("Google sign-in failed:", err);
@@ -47,9 +46,8 @@ export const useAuth = () => {
         setLoading(true);
         try {
             const data = await register({ username, email, password });
-            if (data?.user) {
-                setUser(data.user);
-            }
+            invalidateAuthCheck();
+            if (data?.user) setUser(data.user);
             return data;
         } catch (err) {
             console.error("Registration failed:", err);
@@ -63,6 +61,7 @@ export const useAuth = () => {
         setLoading(true);
         try {
             await logout();
+            invalidateAuthCheck();
             setUser(null);
         } catch (err) {
             console.error("Logout failed:", err);
@@ -71,5 +70,6 @@ export const useAuth = () => {
             setLoading(false);
         }
     };
+
     return { user, loading, handleRegister, handleLogin, handleGoogleAuth, handleLogout };
 };
