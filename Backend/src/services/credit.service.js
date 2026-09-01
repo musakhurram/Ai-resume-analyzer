@@ -12,6 +12,7 @@ const TOKEN_COSTS = {
   resumeOptimization: 2000,
   atsResumeGeneration: 2500,
   interviewPreparation: 1000,
+  emailApplication: 500,
 };
 
 const PLAN_CONFIG = {
@@ -29,8 +30,6 @@ function toMongoUserId(userId) {
 }
 
 async function ensureTokenBalance(userId) {
-  // Read the raw MongoDB document so Mongoose schema defaults cannot hide a
-  // missing aiTokens field. JWT ids are strings, but MongoDB _id is an ObjectId.
   const mongoUserId = toMongoUserId(userId);
   const rawUser = await userModel.collection.findOne(
     { _id: mongoUserId },
@@ -44,14 +43,9 @@ async function ensureTokenBalance(userId) {
   if (!hasStoredTokens) {
     const legacyCredits = Number(rawUser.resumeCredits);
     let startingTokens;
-
-    if (plan === "free") {
-      startingTokens = 3000;
-    } else if (Number.isFinite(legacyCredits) && legacyCredits >= 0) {
-      startingTokens = Math.floor(legacyCredits * 1000);
-    } else {
-      startingTokens = getPlanConfig(plan).tokens;
-    }
+    if (plan === "free") startingTokens = 3000;
+    else if (Number.isFinite(legacyCredits) && legacyCredits >= 0) startingTokens = Math.floor(legacyCredits * 1000);
+    else startingTokens = getPlanConfig(plan).tokens;
 
     await userModel.collection.updateOne(
       { _id: mongoUserId, aiTokens: { $exists: false } },
