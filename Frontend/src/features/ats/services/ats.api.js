@@ -17,11 +17,14 @@ export async function saveAtsManualRevision(id, revisedResume) { const response 
 export async function getAtsReportById(id) { const response = await api.get(`/api/resume/ats-report/${id}`); return response.data; }
 export async function getCurrentUser() { const response = await api.get("/api/auth/get-me"); return response.data; }
 export async function getGmailStatus() { const response = await api.get("/api/auth/gmail/status"); return response.data; }
-export function connectGmail(returnTo = window.location.pathname) {
-  const apiBase = api.defaults.baseURL || window.location.origin;
-  const url = new URL("/api/auth/gmail/connect", apiBase);
-  url.searchParams.set("returnTo", returnTo);
-  window.location.assign(url.toString());
+export async function connectGmail(returnTo = window.location.pathname) {
+  const clientOrigin = window.location.origin;
+  // Use Axios for the OAuth-start request so the existing Bearer-token fallback
+  // is preserved when the frontend and backend are hosted on different domains.
+  const response = await api.get("/api/auth/gmail/connect", { params: { returnTo, clientOrigin } });
+  const authorizationUrl = response.data?.url;
+  if (!authorizationUrl) throw new Error("Unable to start Gmail connection.");
+  window.location.assign(authorizationUrl);
 }
 export async function disconnectGmail() { const response = await api.delete("/api/auth/gmail/connect"); return response.data; }
 export async function listAtsReports({ search = "", sort = "recent", limit = 50 } = {}) { const params = { sort, limit }; if (search.trim()) params.search = search.trim(); const response = await api.get("/api/resume/ats-reports", { params }); return response.data; }
