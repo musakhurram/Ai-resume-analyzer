@@ -1,0 +1,97 @@
+/* Mobile-first UX hardening. Intentionally additive so feature styles remain the source of truth. */
+
+:root {
+  --tap-target: 44px;
+  --content-gutter: clamp(0.75rem, 3vw, 2rem);
+}
+
+/* Never let long AI output, filenames, URLs, or chips create horizontal scroll. */
+.app-shell__content,
+.app-shell__content * {
+  min-width: 0;
+}
+
+.app-shell__content {
+  overflow-x: clip;
+}
+
+/* Consistent interactive targets on touch devices. */
+@media (pointer: coarse) {
+  button,
+  [role="button"],
+  a,
+  select,
+  input[type="checkbox"],
+  input[type="radio"] {
+    min-height: var(--tap-target);
+  }
+}
+
+/* iOS Safari zooms small form controls when focused. */
+@media (max-width: 768px) {
+  input,
+  textarea,
+  select {
+    font-size: 16px;
+  }
+
+  .app-shell__content {
+    padding-left: var(--content-gutter);
+    padding-right: var(--content-gutter);
+  }
+
+  /* Let dense toolbars wrap instead of squeezing controls off-screen. */
+  .app-shell__content [class*="toolbar"],
+  .app-shell__content [class*="actions"],
+  .app-shell__content [class*="filters"] {
+    max-width: 100%;
+    min-width: 0;
+  }
+
+  /* Tables/data-heavy panels should scroll internally rather than expand the page. */
+  .app-shell__content table {
+    max-width: 100%;
+  }
+
+  .app-shell__content pre,
+  .app-shell__content code {
+    max-width: 100%;
+    overflow-x: auto;
+  }
+}
+
+/* Compact phones: favor readable content over decorative spacing. */
+@media (max-width: 480px) {
+  .app-shell__content {
+    padding-top: 1rem;
+    padding-bottom: 1.5rem;
+  }
+
+  .app-shell__content h1 {
+    font-size: clamp(1.45rem, 8vw, 1.8rem);
+    line-height: 1.12;
+  }
+
+  .app-shell__content h2 {
+    line-height: 1.18;
+  }
+
+  .app-shell__content .glass-panel {
+    box-shadow: var(--shadow-sm);
+  }
+
+  /* Full-width primary actions are easier to reach with one hand. */
+  .app-shell__content [class*="actions"] > .primary,
+  .app-shell__content [class*="actions"] > button:first-child {
+    min-height: 44px;
+  }
+}
+
+/* Respect users who ask for less motion while retaining state changes. */
+@media (prefers-reduced-motion: reduce) {
+  .app-shell__content *,
+  .topbar *,
+  .sidebar * {
+    scroll-behavior: auto !important;
+  }
+}
