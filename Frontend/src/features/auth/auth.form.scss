@@ -24,6 +24,20 @@
   &__callout-content { display:flex; align-items:center; justify-content:space-between; gap:.5rem; width:100%; }
 }
 
+/* Keep the visual checkbox compact on touch devices; the label remains the touch target. */
+input.auth-form__checkbox {
+  min-height: 0 !important;
+  min-width: 16px !important;
+  width: 16px !important;
+  height: 16px !important;
+}
+
+@media (pointer: coarse) {
+  .auth-form__checkbox-label {
+    min-height: 44px;
+  }
+}
+
 .auth-form__switch { font-size:.875rem; color:var(--ink-muted); text-align:center; margin-top:var(--space-4); a{color:var(--accent-light,var(--accent));font-weight:600;text-decoration:none;transition:color var(--duration-fast) var(--ease);&:hover{color:var(--accent);text-decoration:underline;}} }
 
 .forgot-password__intro { display:flex; align-items:flex-start; gap:.875rem; margin:0 0 var(--space-5); padding:1rem; border:1px solid var(--border); border-radius:var(--radius-md); background:var(--surface-2); }
