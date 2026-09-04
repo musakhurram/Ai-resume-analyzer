@@ -11,13 +11,13 @@ const KNOWN_FRONTEND_ORIGINS = [
 
 function getUserId(req) { return req.user?.id || req.user?._id; }
 function safeReturnTo(value) { const candidate = String(value || "/"); return !candidate.startsWith("/") || candidate.startsWith("//") || candidate.includes("\\") ? "/" : candidate; }
+function isFrontendOrigin(value) {
+  const candidate = String(value || "").trim().replace(/\/$/, "");
+  return KNOWN_FRONTEND_ORIGINS.includes(candidate) || /^https:\/\/ai-resume-analyzer-[a-z0-9-]+\.vercel\.app$/i.test(candidate);
+}
 function safeClientOrigin(value) {
   const candidate = String(value || "").trim().replace(/\/$/, "");
-  if (!candidate) return "";
-  const configured = String(env.CLIENT_URL || "").split(",").map((origin) => origin.trim().replace(/\/$/, "")).filter(Boolean);
-  if ([...configured, ...KNOWN_FRONTEND_ORIGINS].includes(candidate)) return candidate;
-  if (/^https:\/\/ai-resume-analyzer-[a-z0-9-]+\.vercel\.app$/i.test(candidate)) return candidate;
-  return "";
+  return isFrontendOrigin(candidate) ? candidate : "";
 }
 function wantsJson(req) { return String(req.headers.accept || "").toLowerCase().includes("application/json"); }
 
