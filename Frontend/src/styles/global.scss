@@ -14,6 +14,7 @@
 html {
   -webkit-text-size-adjust: 100%;
   scroll-behavior: smooth;
+  min-height: 100%;
 }
 
 html,
@@ -31,78 +32,49 @@ body {
   line-height: 1.6;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-  transition: background-color var(--duration-med) var(--ease),
-    color var(--duration-med) var(--ease);
+  transition: background-color var(--duration-med) var(--ease), color var(--duration-med) var(--ease);
   position: relative;
   overflow-x: hidden;
+  min-width: 320px;
 }
 
-// Faint top-of-canvas wash — quiet, not a glowing blob
-[data-theme="dark"] body::before {
-  content: "";
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  height: 420px;
-  background: linear-gradient(180deg, rgba(168, 240, 107, 0.035) 0%, transparent 100%);
-  pointer-events: none;
-  z-index: 0;
+button,
+a,
+input,
+textarea,
+select {
+  -webkit-tap-highlight-color: transparent;
 }
 
-[data-theme="light"] body::before {
-  content: "";
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  height: 360px;
-  background: linear-gradient(180deg, rgba(90, 156, 47, 0.04) 0%, transparent 100%);
-  pointer-events: none;
-  z-index: 0;
+button {
+  touch-action: manipulation;
 }
 
-// Fine hairline grid utility — used sparingly behind editorial compositions
-.hairline-grid {
-  position: relative;
-
-  &::after {
-    content: "";
-    position: absolute;
-    inset: 0;
-    background-image:
-      linear-gradient(to right, var(--border-subtle) 1px, transparent 1px),
-      linear-gradient(to bottom, var(--border-subtle) 1px, transparent 1px);
-    background-size: 34px 34px;
-    pointer-events: none;
-    mask-image: radial-gradient(ellipse at center, black 40%, transparent 80%);
-    -webkit-mask-image: radial-gradient(ellipse at center, black 40%, transparent 80%);
-  }
+button:disabled {
+  cursor: not-allowed;
 }
 
-// Custom refined scrollbar
-::-webkit-scrollbar {
-  width: 8px;
-  height: 8px;
+input,
+textarea,
+select {
+  max-width: 100%;
 }
 
-::-webkit-scrollbar-track {
-  background: transparent;
-}
-
-::-webkit-scrollbar-thumb {
-  background: var(--border-strong);
-  border-radius: var(--radius-full);
-}
-
-::-webkit-scrollbar-thumb:hover {
-  background: var(--ink-faint);
+textarea {
+  resize: vertical;
 }
 
 img,
-svg {
+svg,
+video,
+canvas {
   display: block;
   max-width: 100%;
+}
+
+img,
+video {
+  height: auto;
 }
 
 a {
@@ -124,9 +96,81 @@ button {
   cursor: pointer;
 }
 
-// Consistent native <select> styling — custom chevron, touch-friendly height,
-// matches the pill/menu language used by SortDropdown so every dropdown in
-// the app reads as the same component family.
+::selection {
+  background: var(--accent);
+  color: var(--on-accent);
+}
+
+/* Prevent long AI-generated strings, URLs and tokens from widening a page. */
+:where(p, li, h1, h2, h3, h4, h5, h6, a, span, code, pre, td, th) {
+  overflow-wrap: anywhere;
+}
+
+/* Keep preformatted AI output readable while allowing horizontal scrolling only
+   inside the code block instead of creating a page-level scrollbar. */
+pre {
+  max-width: 100%;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+// Faint top-of-canvas wash — quiet, not a glowing blob
+[data-theme="dark"] body::before,
+[data-theme="light"] body::before {
+  content: "";
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  pointer-events: none;
+  z-index: 0;
+}
+
+[data-theme="dark"] body::before {
+  height: 420px;
+  background: linear-gradient(180deg, rgba(168, 240, 107, 0.035) 0%, transparent 100%);
+}
+
+[data-theme="light"] body::before {
+  height: 360px;
+  background: linear-gradient(180deg, rgba(90, 156, 47, 0.04) 0%, transparent 100%);
+}
+
+.hairline-grid {
+  position: relative;
+
+  &::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background-image:
+      linear-gradient(to right, var(--border-subtle) 1px, transparent 1px),
+      linear-gradient(to bottom, var(--border-subtle) 1px, transparent 1px);
+    background-size: 34px 34px;
+    pointer-events: none;
+    mask-image: radial-gradient(ellipse at center, black 40%, transparent 80%);
+    -webkit-mask-image: radial-gradient(ellipse at center, black 40%, transparent 80%);
+  }
+}
+
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--border-strong);
+  border-radius: var(--radius-full);
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--ink-faint);
+}
+
 select {
   appearance: none;
   -webkit-appearance: none;
@@ -155,8 +199,6 @@ select option {
 [data-theme="light"] select {
   background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' fill='none'%3E%3Cpath d='M4.5 6.5 8 10l3.5-3.5' stroke='%23666f74' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
 }
-
-
 
 h1,
 h2,
@@ -190,26 +232,18 @@ h4 {
   font-size: 0.95rem;
 }
 
-::selection {
-  background: var(--accent);
-  color: var(--on-accent);
-}
-
-// Accessible, clean keyboard focus
 :focus-visible {
   outline: 2px solid var(--focus-ring);
   outline-offset: 2px;
   border-radius: var(--radius-xs);
 }
 
-// Restrained emphasis text — used sparingly, not as a global decoration
 .gradient-text,
 .gradient-text-neon {
   color: var(--ink);
   display: inline-block;
 }
 
-// Micro-typography label
 .eyebrow {
   font-family: var(--font-mono);
   font-size: 0.6875rem;
@@ -219,7 +253,6 @@ h4 {
   color: var(--ink-muted);
 }
 
-// Quiet status/label pill — a border and a dot, no glow
 .glow-pill {
   display: inline-flex;
   align-items: center;
@@ -243,7 +276,6 @@ h4 {
   }
 }
 
-// Flat elevated card — the app's standard surface, no glass/blur
 .glass-panel {
   background: var(--surface-solid);
   border: 1px solid var(--border);
@@ -258,7 +290,6 @@ h4 {
   }
 }
 
-// Shared page header block
 .page-header {
   margin-bottom: var(--space-6);
 
@@ -294,6 +325,68 @@ h4 {
   white-space: nowrap;
 }
 
+.app-error {
+  min-height: 100dvh;
+  display: grid;
+  place-items: center;
+  padding: max(1.25rem, env(safe-area-inset-top)) 1rem max(1.25rem, env(safe-area-inset-bottom));
+  background: var(--bg);
+}
+
+.app-error__card {
+  width: min(100%, 520px);
+  padding: clamp(1.25rem, 5vw, 2rem);
+  background: var(--surface-solid);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-xl);
+  box-shadow: var(--shadow-lg);
+}
+
+.app-error__card h1 {
+  margin: 0.45rem 0 0.65rem;
+  font-size: clamp(1.6rem, 7vw, 2.2rem);
+}
+
+.app-error__card p {
+  color: var(--ink-muted);
+}
+
+.app-error__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.65rem;
+  margin-top: 1.25rem;
+}
+
+.app-error__actions button {
+  min-height: 44px;
+  padding: 0.65rem 1rem;
+  border-radius: var(--radius-md);
+  font-weight: 700;
+}
+
+.app-error__primary {
+  background: var(--accent);
+  color: var(--on-accent);
+}
+
+.app-error__secondary {
+  border: 1px solid var(--border-strong);
+  background: var(--surface-2);
+}
+
+.app-error__details {
+  margin-top: 1rem;
+  color: var(--ink-faint);
+  font-size: 0.78rem;
+}
+
+.app-error__details code {
+  display: block;
+  margin-top: 0.5rem;
+  overflow-wrap: anywhere;
+}
+
 @media (prefers-reduced-motion: reduce) {
   *,
   *::before,
@@ -310,6 +403,12 @@ h4 {
     font-size: 14px;
   }
 
+  input,
+  textarea,
+  select {
+    font-size: 16px;
+  }
+
   .page-header {
     margin-bottom: var(--space-5);
 
@@ -320,5 +419,19 @@ h4 {
     &__desc {
       font-size: 0.875rem;
     }
+  }
+}
+
+@media (max-width: 480px) {
+  .glass-panel {
+    border-radius: var(--radius-md);
+  }
+
+  .app-error__actions {
+    flex-direction: column;
+  }
+
+  .app-error__actions button {
+    width: 100%;
   }
 }

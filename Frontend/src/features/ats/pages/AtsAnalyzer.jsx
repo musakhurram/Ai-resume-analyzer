@@ -1,4 +1,4 @@
-import { useState, useRef } from "react";
+import { useEffect, useState, useRef } from "react";
 import AtsUploadForm from "../components/AtsUploadForm";
 import AtsScoreOverview from "../components/AtsScoreOverview";
 import AtsIssuesList from "../components/AtsIssuesList";
@@ -31,6 +31,12 @@ const AtsAnalyzer = () => {
   const [downloadError, setDownloadError] = useState("");
 
   const previewSectionRef = useRef(null);
+
+  useEffect(() => {
+    return () => {
+      if (originalPdfUrl) window.URL.revokeObjectURL(originalPdfUrl);
+    };
+  }, [originalPdfUrl]);
 
   const handleAnalyze = async ({ resume, resumeText, fileName }) => {
     setAnalysisError("");
@@ -88,6 +94,8 @@ const AtsAnalyzer = () => {
 
   const handleFixAll = () => {
     setActiveTab("studio");
+    // If a revision already exists, the action should navigate to it rather
+    // than silently doing nothing.
     if (!revisedResume) handleRevise({ sections: "all" });
   };
 
@@ -138,17 +146,17 @@ const AtsAnalyzer = () => {
           Scan Another Resume
         </button>
 
-        <div className="ats-main-tabs">
-          <button type="button" className={`ats-main-tab ${activeTab === "audit" ? "is-active" : ""}`} onClick={() => setActiveTab("audit")}>
-            <svg viewBox="0 0 16 16" fill="none" width="14" height="14"><path d="M2 4h12M2 8h12M2 12h8" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" /></svg>
+        <div className="ats-main-tabs" role="tablist" aria-label="Resume analysis views">
+          <button type="button" role="tab" aria-selected={activeTab === "audit"} className={`ats-main-tab ${activeTab === "audit" ? "is-active" : ""}`} onClick={() => setActiveTab("audit")}>
+            <svg viewBox="0 0 16 16" fill="none" width="14" height="14" aria-hidden="true"><path d="M2 4h12M2 8h12M2 12h8" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" /></svg>
             <span className="ats-main-tab__label ats-main-tab__label--full">Comprehensive Audit</span>
             <span className="ats-main-tab__label ats-main-tab__label--short">Audit</span>
           </button>
-          <button type="button" className={`ats-main-tab ${activeTab === "studio" ? "is-active" : ""}`} onClick={() => setActiveTab("studio")}>
-            <svg viewBox="0 0 16 16" fill="none" width="14" height="14"><path d="M8 2.5l1.5 3.5 3.8.3-2.9 2.5.9 3.7L8 10.7l-3.3 1.8.9-3.7-2.9-2.5 3.8-.3L8 2.5z" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round" /></svg>
+          <button type="button" role="tab" aria-selected={activeTab === "studio"} className={`ats-main-tab ${activeTab === "studio" ? "is-active" : ""}`} onClick={() => setActiveTab("studio")}>
+            <svg viewBox="0 0 16 16" fill="none" width="14" height="14" aria-hidden="true"><path d="M8 2.5l1.5 3.5 3.8.3-2.9 2.5.9 3.7L8 10.7l-3.3 1.8.9-3.7-2.9-2.5 3.8-.3L8 2.5z" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round" /></svg>
             <span className="ats-main-tab__label ats-main-tab__label--full">AI Rewrite & PDF Studio</span>
             <span className="ats-main-tab__label ats-main-tab__label--short">Studio</span>
-            {revisedResume && <span className="ats-tab-dot" />}
+            {revisedResume && <span className="ats-tab-dot" aria-label="Revised resume available" />}
           </button>
         </div>
 
